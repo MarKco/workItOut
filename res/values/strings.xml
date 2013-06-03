@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">workItOut</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="entranceButtonLabel">Entrata</string>
+    <string name="lunchOutButtonLabel">A pranzo</string>
+    <string name="lunchInButtonLabel">Da pranzo</string>
+    <string name="exitButtonLabel">Uscita</string>
+    <string name="clearButtonLabel">Cancella</string>
+    <string name="estimatedTimeLabel">Ora di uscita:</string>
+    <string name="notificationTitle">E\' ora di uscire! Che dici, chiudiamo baracca e burattini?</string>
+    <string name="notificationMessage">E\' arrivata la fine della tua giornata di lavoro.</string>
+    <string name="longTextForNotification">WorkItOut ha calcolato in base ai tuoi orari di entrata e uscita che è arrivata la fine della tua giornata lavorativa. Che dici, chiudiamo baracca e burattini?</string>
+    <string name="extraTimeLabel">Oltre orario:</string>
+    
+</resources>

@@ -1,0 +1,204 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:weightSum="10" >
+
+    <LinearLayout
+        android:id="@+id/entrance_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:background="@color/red_industry"
+        android:orientation="horizontal"
+        android:padding="5dip" >
+
+        <Button
+            android:id="@+id/entrance_button"
+            android:layout_width="200dip"
+            android:layout_height="fill_parent"
+            android:text="@string/entranceButtonLabel" >
+        </Button>
+
+        <EditText
+            android:id="@+id/entrance_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="10"
+            android:editable="false"
+            android:focusable="false"
+            android:gravity="center_horizontal" />
+
+        <ImageView
+            android:layout_width="20dip"
+            android:layout_height="20dip"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="5"
+            android:src="@drawable/industry" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/lunch_out_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:background="@color/yellow_sandwich"
+        android:orientation="horizontal"
+        android:padding="5dip" >
+
+        <Button
+            android:id="@+id/lunch_out_button"
+            android:layout_width="200dip"
+            android:layout_height="fill_parent"
+            android:text="@string/lunchOutButtonLabel" >
+        </Button>
+
+        <EditText
+            android:id="@+id/lunch_out_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="10"
+            android:editable="false"
+            android:focusable="false"
+            android:gravity="center_horizontal" />
+
+        <ImageView
+            android:layout_width="20dip"
+            android:layout_height="20dip"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="5"
+            android:src="@drawable/burger" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/lunch_in_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:background="@color/red_industry"
+        android:orientation="horizontal"
+        android:padding="5dip" >
+
+        <Button
+            android:id="@+id/lunch_in_button"
+            android:layout_width="200dip"
+            android:layout_height="fill_parent"
+            android:text="@string/lunchInButtonLabel" >
+        </Button>
+
+        <EditText
+            android:id="@+id/lunch_in_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="10"
+            android:editable="false"
+            android:focusable="false"
+            android:gravity="center_horizontal" />
+
+        <ImageView
+            android:layout_width="20dip"
+            android:layout_height="20dip"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="5"
+            android:src="@drawable/industry" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/exit_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:background="@color/yellow_sandwich"
+        android:orientation="horizontal"
+        android:padding="5dip" >
+
+        <Button
+            android:id="@+id/exit_button"
+            android:layout_width="200dip"
+            android:layout_height="fill_parent"
+            android:text="@string/exitButtonLabel" >
+        </Button>
+
+        <EditText
+            android:id="@+id/exit_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="10"
+            android:editable="false"
+            android:focusable="false"
+            android:gravity="center_horizontal" />
+
+        <ImageView
+            android:layout_width="20dip"
+            android:layout_height="20dip"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="5"
+            android:src="@drawable/clock" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dip"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="2dip"
+        android:paddingTop="8dip" >
+
+        <TextView
+            android:layout_width="200dip"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingRight="10dip"
+            android:text="@string/estimatedTimeLabel"
+            android:textSize="18dip" />
+
+        <TextView
+            android:id="@+id/time_to_leave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:textSize="18dip"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/extraTimeLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="2dip" >
+
+        <TextView
+            android:layout_width="200dip"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingRight="10dip"
+            android:text=""
+            android:textSize="16dip" />
+
+        <TextView
+            android:id="@+id/extra_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:textSize="16dip"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/clear"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/clearButtonLabel"
+        android:visibility="gone" />
+
+</LinearLayout>
