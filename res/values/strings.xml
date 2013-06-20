@@ -16,5 +16,6 @@
     <string name="extraTimeLabel">Oltre orario:</string>
     <string name="workday_length_label">Ore di lavoro:</string>
     <string name="send_email">Invia mail</string>
+    <string name="workday_hours">workday_hours</string>
     
 </resources>

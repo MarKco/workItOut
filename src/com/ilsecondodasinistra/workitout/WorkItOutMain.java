@@ -87,11 +87,9 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	
 	final Handler handler = new Handler();
 	
-	double workDayHours = 8.0;		//Length of work day in hours
-	
 	//How long a work day lasts
 	Date workTime;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -484,22 +482,26 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		//Preferences
 		final SharedPreferences sharedSettings = PreferenceManager.getDefaultSharedPreferences(WorkItOutMain.this);
 		
+		int workHours = sharedSettings.getInt(getString(R.string.workday_hours)+".hour", 8);
+		int workMinutes = sharedSettings.getInt(getString(R.string.workday_hours)+".minute", 0);
+
+//		Toast.makeText(getBaseContext(), "Ore: "+workHours+" e minuti "+workMinutes, 3000).show();
+
 		try
 		{
-			workDayHours = Double.parseDouble(sharedSettings.getString("workday_hours", "8.0"));
-			logIt("Okay, la giornata dura " + workDayHours + " ore.");
+			workTime = hhmmFormatter.parse(String.valueOf(workHours)+":"+String.valueOf(workMinutes));
+			logIt("Okay, la giornata dura " + workHours + " ore e "+ workMinutes + " minuti");
 		}
 		catch(NumberFormatException e)
 		{
-			workDayHours = 8.0;
-			logIt("Azz, la giornata dura le solite 8 ore.");
+			workTime = new Date();
+			logIt("Azz, C'è stato un problema!");
+		} catch (ParseException e) {
+			workTime = new Date();
+			logIt("Azz, C'è stato un problema!");
 		}
 		
-		workTime = new Date((int)Math.ceil(workDayHours*60*60*1000));	//Realistic work day -> 8 hours
-//		workTime = new Date(1*10*1000);		//Test work day -> 30 sec
-		logIt("La giornata di lavoro dura " + workDayHours + " ore.");
-		
-		workdayLength.setText(Double.toString(workDayHours));
+		workdayLength.setText(hhmmFormatter.format(workTime));
 	}
 	
 	@Override
@@ -661,10 +663,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				return true;
 			case R.id.send_email:
 				
+				long oneHour = 1000*60*60;
+				
 				/* Quanto tempo lavorato quest'oggi? */
 				Date dailyWorkedTime = new Date(
 						(exitTime.getTime() - lunchInTime.getTime())
-						+ (lunchOutTime.getTime() - entranceTime.getTime()));
+						+ (lunchOutTime.getTime() - entranceTime.getTime()) - oneHour);
 
 				
 				Intent i = new Intent(Intent.ACTION_SEND);
@@ -745,13 +749,13 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		if(estimatedExitTime.after(now))
 		{
 			//Se sono ancora nelle ore regolamentari
-			extraTime = new Date(estimatedExitTime.getTime() - now.getTime() - 1000*60*60);
+			extraTime = new Date(estimatedExitTime.getTime() - now.getTime());
 			extraTimeText.setText("-" + hhmmssFormatter.format(extraTime));
 		}
 		else
 		{
 			//Se sarei già dovuto uscire
-			extraTime = new Date(now.getTime() - estimatedExitTime.getTime() - 1000*60*60);
+			extraTime = new Date(now.getTime() - estimatedExitTime.getTime());
 			extraTimeText.setText(hhmmssFormatter.format(extraTime));
 		}
 	}
@@ -764,7 +768,8 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		
 //		if(now.getTime() - inputDate.getTime() > 86400000)	//Un giorno intero
 //		if(now.getTime() - inputDate.getTime() > 60000)			//Un minuto
-		long workDayInMillis = (long)Math.ceil(workDayHours*60*60*1000);
+//		long workDayInMillis = (long)Math.ceil(workDayHours*60*60*1000);
+		long workDayInMillis = workTime.getTime();
 		if(now.getTime() - inputDate.getTime() > workDayInMillis)	//Giornata lavorativa di 8 ore
 		{
 			inputText.setTextColor(Color.GRAY);

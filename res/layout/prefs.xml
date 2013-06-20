@@ -5,17 +5,24 @@
   <PreferenceCategory
      android:title="Durata della giornata">
 
-    <EditTextPreference
-        android:capitalize="words"
-        android:inputType="numberDecimal"
-        android:key="workday_hours"
-        android:maxLines="1"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:defaultValue="8.0"
-        android:maxLength="3"
-        android:title="@string/prefs_choose_workday_length"
-    />
+<!--     <EditTextPreference -->
+<!--         android:capitalize="words" -->
+<!--         android:inputType="numberDecimal" -->
+<!--         android:key="workday_hours" -->
+<!--         android:maxLines="1" -->
+<!--         android:selectAllOnFocus="true" -->
+<!--         android:singleLine="true" -->
+<!--         android:defaultValue="8.0" -->
+<!--         android:maxLength="3" -->
+<!--         android:title="@string/prefs_choose_workday_length" -->
+<!--     /> -->
+    
+<com.ilsecondodasinistra.workitout.TimePreference
+  android:name="Default notification time"
+  android:summary=""
+  android:dialogLayout="@layout/time_preference"
+  android:title="@string/prefs_choose_workday_length"
+  android:key="@string/workday_hours" />
      
   </PreferenceCategory>   
 </PreferenceScreen>
