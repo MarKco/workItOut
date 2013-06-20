@@ -7,14 +7,13 @@
 
     <EditTextPreference
         android:capitalize="words"
-        android:numeric="integer"
-        android:inputType="number"
+        android:inputType="numberDecimal"
         android:key="workday_hours"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:defaultValue="8"
-        android:maxLength="2"
+        android:defaultValue="8.0"
+        android:maxLength="3"
         android:title="@string/prefs_choose_workday_length"
     />
      
