@@ -1,9 +1,8 @@
 package com.ilsecondodasinistra.workitout;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
 import android.preference.PreferenceActivity;
-import android.text.InputType;
 public class SettingsActivity extends PreferenceActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -14,14 +13,17 @@ public class SettingsActivity extends PreferenceActivity {
 //        pref.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER);
     }
     
-//    @Override
-//    protected void onDestroy() {
-//    	// TODO Auto-generated method stub
-//    	super.onDestroy();
-//    	
+    @Override
+    protected void onDestroy() {
+    	Intent returnIntent = new Intent();
+    	 returnIntent.putExtra("result","backFromSettings");
+    	 setResult(RESULT_OK,returnIntent);     
+    	 finish();
+    	super.onDestroy();
+    	
 //        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 //        SharedPreferences.Editor editor = settings.edit();
 //        editor.putString("workday_hours", value);
 //        editor.commit();  
-//    }
+    }
 }

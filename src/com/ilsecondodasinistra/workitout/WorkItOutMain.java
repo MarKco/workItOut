@@ -42,7 +42,7 @@ import com.google.analytics.tracking.android.EasyTracker;
 
 public class WorkItOutMain extends SherlockFragmentActivity {
 
-	boolean DEBUG = true;
+	boolean DEBUG = false;
 	
 	/*
 	 * Elements for app Drawer
@@ -73,6 +73,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	private Date exitTime = new Date();					//Time you declare you're leaving
 	private Date estimatedExitTime = new Date();		//Hour of the day you should leave the office
 	private Date extraTime = new Date();				//Extra time elapsed, or to pass before end of the day
+	private boolean extraTimeSign = false;				//true -> extratime positive ; false -> extratime negative
 	private Calendar dateTimeForPicker = Calendar.getInstance();
 	
 	private SimpleDateFormat hhmmFormatter = new SimpleDateFormat("H:mm");
@@ -89,7 +90,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	
 	//How long a work day lasts
 	Date workTime;
-
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -120,9 +121,9 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		
 		updateWorkDayLength();
 		
-		final Calendar c = Calendar.getInstance();
-		final int calendarHour = c.get(Calendar.HOUR_OF_DAY);
-		final int calendarMinute = c.get(Calendar.MINUTE);
+		Calendar sharedCal = Calendar.getInstance();
+		final int calendarHour = sharedCal.get(Calendar.HOUR_OF_DAY);
+		final int calendarMinute = sharedCal.get(Calendar.MINUTE);
 		
 		try {
 			//Initialization
@@ -146,7 +147,14 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				lunchInTime = new Date(settings.getLong("lunchInTime", 0));
 				lunchInText.setText(hhmmFormatter.format(lunchInTime));
 				setTextColor(entranceText,entranceTime);
-				extraTimeLayout.setVisibility(View.VISIBLE);
+				if(!isYesterday(lunchInTime))
+				{
+					extraTimeLayout.setVisibility(View.VISIBLE);
+				}
+				else
+				{
+					extraTimeLayout.setVisibility(View.GONE);
+				}					
 			}
 	
 	
@@ -166,7 +174,10 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				exitTime = new Date(settings.getLong("exitTime", 0));
 				exitText.setText(hhmmFormatter.format(exitTime));
 				setTextColor(exitText,exitTime);
-			}			
+			}
+			
+			extraTimeSign = settings.getBoolean("exitTimeSign", false);
+
 		}
 		catch(ParseException e)
 		{
@@ -258,6 +269,18 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				exitTime = setActualTime(exitText, exitTime);
 
 				toggleCountForExtraTime();
+				
+				//Preferences
+				final SharedPreferences settings = getPreferences(0);
+				SharedPreferences.Editor editor = settings.edit();
+				
+				editor.putLong("extraTimeHours", extraTime.getHours());
+				editor.putLong("extraTimeMinutes", extraTime.getMinutes());
+				editor.putLong("extraTimeSeconds", extraTime.getSeconds());
+				editor.putBoolean("exitTimeSign", extraTimeSign);
+				
+				editor.commit();
+				
 				removeAlarm();
 			}
 		});
@@ -281,17 +304,14 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		{
 			handler.removeCallbacks(updateExtraTime);
 			isTimerMarching = false;
-			Toast.makeText(getBaseContext(), "Conteggio straordinario fermato", 500).show();
 			extraTimeLayout.setVisibility(View.VISIBLE);
 			
 			NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			mNotificationManager.cancelAll(); //When application is open all its notifications must be deleted
-
 		}
 		else
 		{
 			startCountForExtraTime();
-			Toast.makeText(getBaseContext(), "Conteggio straordinario ripreso", 500).show();			
 			extraTimeLayout.setVisibility(View.VISIBLE);
 		}
 	}
@@ -364,15 +384,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			Intent i = new Intent(getBaseContext(), NotificationService.class);
 			PendingIntent pi = PendingIntent.getService(getBaseContext(), 0, i, 0);
 			AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
-		Calendar calendar = Calendar.getInstance();
-//        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.setTimeInMillis(estimatedExitTime.getTime());
 
         /*
          * Debug: the line below allows to set notification to 5 seconds in future.
          */
 //		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
-		mAlarm.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pi);
+		mAlarm.set(AlarmManager.RTC_WAKEUP, estimatedExitTime.getTime(), pi);
 		
 		Toast.makeText(getBaseContext(), "Allarme attivato per le ore " + hhmmFormatter.format(estimatedExitTime), 3000).show();
 		}
@@ -485,8 +502,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		int workHours = sharedSettings.getInt(getString(R.string.workday_hours)+".hour", 8);
 		int workMinutes = sharedSettings.getInt(getString(R.string.workday_hours)+".minute", 0);
 
-//		Toast.makeText(getBaseContext(), "Ore: "+workHours+" e minuti "+workMinutes, 3000).show();
-
 		try
 		{
 			workTime = hhmmFormatter.parse(String.valueOf(workHours)+":"+String.valueOf(workMinutes));
@@ -505,18 +520,15 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	}
 	
 	@Override
-	public void onStart() {
-		super.onStart();
+	protected void onResumeFragments() {
+		// TODO Auto-generated method stub
+		super.onResumeFragments();
 		
 		//Preferences
 		final SharedPreferences settings = getPreferences(0);
 		
 		SharedPreferences.Editor editor = settings.edit();
 
-		updateWorkDayLength();
-		updateEstimatedTimeOfExit();
-		updateExtraTimeFields();
-		
 		NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.cancelAll(); //When application is open all its notifications must be deleted
 		
@@ -538,19 +550,16 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			 */
 			isTimerMarching = false;
 			
-			if(settings.getLong("extraTime", 0) != 0)
-			{	
-				extraTime = new Date(settings.getLong("extraTime", 0));
-//				Toast.makeText(getBaseContext(), "Extratime vale " + extraTime.getTime(), 100).show();
+			if(settings.getLong("extraTimeSeconds", -1) != -1)
+			{
+				extraTime = new Date();
+				extraTime.setHours((int)settings.getLong("extraTimeHours", 0));
+				extraTime.setMinutes((int)settings.getLong("extraTimeMinutes", -1));
+				extraTime.setSeconds((int)settings.getLong("extraTimeSeconds", -1));
 				extraTimeLayout.setVisibility(View.VISIBLE);
-				
-				if(extraTime.getTime() < 0)
+
+				if(extraTimeSign)
 				{
-					try {
-						extraTime = hhmmssFormatter.parse(Long.toString(settings.getLong("extraTime", 0)));
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-					}
 					extraTimeText.setText(hhmmssFormatter.format(extraTime));
 				}
 				else
@@ -560,7 +569,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			}
 			else
 			{
-//				Toast.makeText(getBaseContext(), "Il tempo vale zero!", 100).show();
 				extraTimeLayout.setVisibility(View.GONE);
 			}
 		}
@@ -573,9 +581,10 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	    {
 			timeToLeave.setVisibility(View.GONE);
 	    }
+
 	}
 	
-	  @Override
+	@Override
 	protected void onPause() {
 		super.onPause();
 		
@@ -584,14 +593,19 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		SharedPreferences.Editor editor = settings.edit();
 
 		editor.putBoolean("isTimerMarching", isTimerMarching);
-		editor.putLong("extraTime", extraTime.getTime());
+		if(isTimerMarching)
+		{
+			editor.putLong("extraTimeHours", extraTime.getHours());
+			editor.putLong("extraTimeMinutes", extraTime.getMinutes());
+			editor.putLong("extraTimeSeconds", extraTime.getSeconds());
+			editor.putBoolean("exitTimeSign", extraTimeSign);
+		}
 		editor.putLong("entranceTime", entranceTime.getTime());
 		editor.putLong("lunchOutTime", lunchOutTime.getTime());
 		editor.putLong("exitTime", exitTime.getTime());
 		editor.putLong("lunchInTime", lunchInTime.getTime());
 
 		editor.commit();
-
 	}
 	
 	  @Override
@@ -621,7 +635,9 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		editor.putLong("lunchInTime", 0);
 		editor.putLong("lunchOutTime", 0);
 		editor.putLong("exitTime",0);
-		editor.putLong("extraTime",0);
+		editor.putLong("extraTimeHours",-1);
+		editor.putLong("extraTimeMinutes",-1);
+		editor.putLong("extraTimeSeconds",-1);
 		editor.commit();
 		
 		entranceText.setText("");
@@ -659,16 +675,23 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				return true;
 			case R.id.action_settings:
 				Intent openSettings = new Intent(WorkItOutMain.this, SettingsActivity.class);
-				startActivity(openSettings);
+				startActivityForResult(openSettings,1);
 				return true;
 			case R.id.send_email:
 				
-				long oneHour = 1000*60*60;
-				
 				/* Quanto tempo lavorato quest'oggi? */
-				Date dailyWorkedTime = new Date(
-						(exitTime.getTime() - lunchInTime.getTime())
-						+ (lunchOutTime.getTime() - entranceTime.getTime()) - oneHour);
+				Calendar dailyWorkedTime = Calendar.getInstance();
+				dailyWorkedTime.setTime(exitTime);
+				dailyWorkedTime.add(Calendar.HOUR, -lunchInTime.getHours());
+				dailyWorkedTime.add(Calendar.MINUTE, -lunchInTime.getMinutes());
+				dailyWorkedTime.add(Calendar.HOUR, lunchOutTime.getHours());
+				dailyWorkedTime.add(Calendar.MINUTE, lunchOutTime.getMinutes());
+				dailyWorkedTime.add(Calendar.HOUR, -entranceTime.getHours());
+				dailyWorkedTime.add(Calendar.MINUTE, -entranceTime.getMinutes());
+				
+//				Date dailyWorkedTime = new Date(
+//						(exitTime.getTime() - lunchInTime.getTime())
+//						+ (lunchOutTime.getTime() - entranceTime.getTime()) - oneHour);
 
 				
 				Intent i = new Intent(Intent.ACTION_SEND);
@@ -678,7 +701,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 							+ "\nOrario di pranzo: " + hhmmFormatter.format(lunchOutTime)
 							+ "\nOrario di rientro: " + hhmmFormatter.format(lunchInTime)
 							+ "\nOrario di uscita: " + hhmmFormatter.format(exitTime)
-							+ "\nTempo totale lavorato: " + hhmmFormatter.format(dailyWorkedTime)
+							+ "\nTempo totale lavorato: " + hhmmFormatter.format(dailyWorkedTime.getTime())
 							+ "\nStraordinario: " + extraTimeText.getText());
 				try {
 				    startActivity(Intent.createChooser(i, "Invia mail..."));
@@ -713,10 +736,20 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	
 	private void updateEstimatedTimeOfExit()
 	{	
-		estimatedExitTime = new Date(entranceTime.getTime() 
-							+ workTime.getTime() 
-							+ (lunchInTime.getTime() 
-							- lunchOutTime.getTime()));
+		Calendar cal = Calendar.getInstance(); // creates calendar
+	    cal.setTime(new Date(entranceTime.getTime())); // sets calendar time/date
+	    cal.add(Calendar.HOUR_OF_DAY, workTime.getHours()); // adds one hour
+	    cal.add(Calendar.MINUTE, workTime.getMinutes());
+	    cal.add(Calendar.HOUR_OF_DAY, lunchInTime.getHours());
+	    cal.add(Calendar.MINUTE, lunchInTime.getMinutes());
+	    cal.add(Calendar.HOUR_OF_DAY, -(lunchOutTime.getHours()));
+	    cal.add(Calendar.MINUTE, -(lunchOutTime.getMinutes()));
+	    estimatedExitTime = cal.getTime(); // returns new date object, one hour in the future
+		
+//		Toast.makeText(getBaseContext(), "Worktime: " + hhmmFormatter.format(workTime)
+//										+ "Pausa pranzo: " + hhmmFormatter.format(lunchInTime.getTime() - lunchOutTime.getTime())
+//										+ "Ingresso: " + hhmmFormatter.format(entranceTime.getTime())
+//										+ "Uscita: " + hhmmFormatter.format(estimatedExitTime), 3000).show();
 //		logIt("Pausa pranzo: " + dateFormatter.format((lunchInTime.getTime() - lunchOutTime.getTime())));
 //		logIt("Worktime: " + dateFormatter.format(workTime));
 //		logIt("Entrance: " + dateFormatter.format(entranceTime));
@@ -744,18 +777,37 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	};
 	
 	private void updateExtraTimeFields() {
-		Date now = new Date();
+		Date exitDateTime = new Date();
+
+		if(exitTime != null && !(isYesterday(exitTime)))
+		{
+			exitDateTime = exitTime;
+		}
 		
-		if(estimatedExitTime.after(now))
+		if(estimatedExitTime.after(exitDateTime))
 		{
 			//Se sono ancora nelle ore regolamentari
-			extraTime = new Date(estimatedExitTime.getTime() - now.getTime());
+			Calendar cal = Calendar.getInstance(); // creates calendar
+		    cal.setTime(new Date(estimatedExitTime.getTime())); // sets calendar time/date
+		    cal.add(Calendar.HOUR_OF_DAY, -exitDateTime.getHours());
+		    cal.add(Calendar.MINUTE, -exitDateTime.getMinutes());
+		    cal.add(Calendar.SECOND, -exitDateTime.getSeconds());
+		    extraTime = cal.getTime();
+		    
+		    extraTimeSign = false;	//Deve avere il segno - davanti
 			extraTimeText.setText("-" + hhmmssFormatter.format(extraTime));
 		}
 		else
 		{
-			//Se sarei già dovuto uscire
-			extraTime = new Date(now.getTime() - estimatedExitTime.getTime());
+			//Se sto facendo dello straordinario
+			Calendar cal = Calendar.getInstance(); // creates calendar
+		    cal.setTime(new Date(exitDateTime.getTime())); // sets calendar time/date
+		    cal.add(Calendar.HOUR_OF_DAY, -estimatedExitTime.getHours());
+		    cal.add(Calendar.MINUTE, -estimatedExitTime.getMinutes());
+		    cal.add(Calendar.SECOND, -estimatedExitTime.getSeconds());
+		    extraTime = cal.getTime();
+
+		    extraTimeSign = true;	//Dev'essere stampato come orario positivo
 			extraTimeText.setText(hhmmssFormatter.format(extraTime));
 		}
 	}
@@ -822,5 +874,17 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			Log.i("workitout", message);
 		}
 	}
-	
+
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+		  if (requestCode == 1) {
+
+		     if(resultCode == 0){
+		    	 //We successfully get back from settings
+		    	 updateWorkDayLength();
+		    	 updateEstimatedTimeOfExit();
+		    	 updateExtraTimeFields();
+		     }
+		  }
+		}//onActivityResult
 }
