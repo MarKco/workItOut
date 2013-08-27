@@ -19,5 +19,17 @@
     <string name="workday_hours">workday_hours</string>
     <string name="exit_stop_counting">Uscita: conteggio straordinario fermato</string>
     <string name="restart_counting">Conteggio straordinario ripreso</string>
-    
+    <string name="workday_length_1">Okay, la giornata dura </string>
+    <string name="workday_length_2"> ore e </string>
+    <string name="workday_length_3"> minuti</string>
+    <string name="email_subject">WorkItOut: orari del giorno </string>
+    <string name="email_in_time">Orario di entrata: </string>
+    <string name="email_lunch_time">Orario di pranzo: </string>
+    <string name="email_back_from_lunch">Orario di rientro: </string>
+    <string name="email_exit_time">Orario di uscita: </string>
+    <string name="email_total_time">Tempo totale lavorato: </string>
+    <string name="email_extra_time">Straordinario: </string>
+    <string name="send_email">"Invia mail..."</string>
+    <string name="no_email_client">Nessun client email installato.</string>
+        
 </resources>

@@ -560,7 +560,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		try
 		{
 			workTime = hhmmFormatter.parse(String.valueOf(workHours)+":"+String.valueOf(workMinutes));
-			logIt("Okay, la giornata dura " + workHours + " ore e "+ workMinutes + " minuti");
+			logIt(getString(R.string.workday_length_1) + workHours + getString(R.string.workday_length_2) + workMinutes + getString(R.string.workday_length_3));
 		}
 		catch(NumberFormatException e)
 		{
@@ -755,17 +755,17 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				
 				Intent i = new Intent(Intent.ACTION_SEND);
 				i.setType("message/rfc822");
-				i.putExtra(Intent.EXTRA_SUBJECT, "WorkItOut: orari del giorno " + longDateFormatter.format(new Date()));
-				i.putExtra(Intent.EXTRA_TEXT   , "Orario di entrata: " + hhmmFormatter.format(entranceTime)
-							+ "\nOrario di pranzo: " + hhmmFormatter.format(lunchOutTime)
-							+ "\nOrario di rientro: " + hhmmFormatter.format(lunchInTime)
-							+ "\nOrario di uscita: " + hhmmFormatter.format(exitTime)
-							+ "\nTempo totale lavorato: " + hhmmFormatter.format(dailyWorkedTime.getTime())
-							+ "\nStraordinario: " + extraTimeText.getText());
+				i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject) + longDateFormatter.format(new Date()));
+				i.putExtra(Intent.EXTRA_TEXT   , getString(R.string.email_in_time) + hhmmFormatter.format(entranceTime)
+							+ "\n" + getString(R.string.email_lunch_time) + hhmmFormatter.format(lunchOutTime)
+							+ "\n" + getString(R.string.email_back_from_lunch) + hhmmFormatter.format(lunchInTime)
+							+ "\n" + getString(R.string.email_exit_time) + hhmmFormatter.format(exitTime)
+							+ "\n" + getString(R.string.email_total_time) + hhmmFormatter.format(dailyWorkedTime.getTime())
+							+ "\n" + getString(R.string.email_extra_time) + extraTimeText.getText());
 				try {
-				    startActivity(Intent.createChooser(i, "Invia mail..."));
+				    startActivity(Intent.createChooser(i, getString(R.string.send_email)));
 				} catch (android.content.ActivityNotFoundException ex) {
-				    Toast.makeText(WorkItOutMain.this, "Nessun client email installato.", Toast.LENGTH_SHORT).show();
+				    Toast.makeText(WorkItOutMain.this, getString(R.string.no_email_client), Toast.LENGTH_SHORT).show();
 				}
 			default:
 				return false;
