@@ -1,20 +1,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:icon="@drawable/action_settings"
-        android:showAsAction="always"
-        android:title="@string/action_settings"/>
-    
-    <item
-        android:id="@+id/action_clear"
-        android:icon="@drawable/ic_action_turn_left"
-        android:showAsAction="always"
-        android:title="@string/clearButtonLabel"
-        />
-    
-    <item
         android:id="@+id/send_email"
         android:icon="@drawable/content_new_email"
         android:showAsAction="always"

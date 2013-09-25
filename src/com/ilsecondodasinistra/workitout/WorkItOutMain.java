@@ -4,6 +4,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 
 import android.app.AlarmManager;
 import android.app.NotificationManager;
@@ -13,14 +15,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -32,12 +35,13 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.analytics.tracking.android.EasyTracker;
 
-public class WorkItOutMain extends SherlockFragmentActivity {
+public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 
 	boolean DEBUG = false;
 	
@@ -50,6 +54,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
     private ActionBarDrawerToggle mDrawerToggle;
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
+    private DrawerLayoutHelper drawerLayoutHelper;
 	
 	private TextView timeToLeave;
 	private Button entranceButton;
@@ -85,6 +90,9 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	
 	final Handler handler = new Handler();
 	
+	boolean mIgnoreTimeSet = false;
+	ActionBar actionBar;
+	
 	//How long a work day lasts
 	Date workTime;
 	
@@ -92,9 +100,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_work_it_out_main);
+		
+		actionBar = getSupportActionBar();
+		actionBar.setTitle(getString(R.string.app_name));
 
 		//Preferences
-		final SharedPreferences settings = getPreferences(0);
+		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		
 		/*
 		 * Initializations
@@ -321,7 +332,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 				toggleCountForExtraTime();
 				
 				//Preferences
-				final SharedPreferences settings = getPreferences(0);
+				final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 				SharedPreferences.Editor editor = settings.edit();
 				
 				editor.putLong("extraTimeHours", extraTime.getHours());
@@ -342,13 +353,20 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			public void onClick(View v) {
 				clearAllInput();
 			}
-		});        
+		});
+		
+		/*
+		 * Toggles handler for application drawer
+		 */
+        drawerLayoutHelper = new DrawerLayoutHelper(WorkItOutMain.this, actionBar);
+        
+
 	}
 	
 	private void toggleCountForExtraTime() {
 		
 		//Preferences
-		final SharedPreferences settings = getPreferences(0);
+		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		
 		if(isTimerMarching)
 		{
@@ -442,14 +460,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 //		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
 		mAlarm.set(AlarmManager.RTC_WAKEUP, estimatedExitTime.getTime(), pi);
 		
-		Toast.makeText(getBaseContext(), "Allarme attivato per le ore " + hhmmFormatter.format(estimatedExitTime), 3000).show();
+		Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + hhmmFormatter.format(estimatedExitTime), 3000).show();
 		
 		}
 		
 		startCountForExtraTime();
 	}
-
-	boolean mIgnoreTimeSet = false;
 	
 	public void chooseTime(int hours, int minutes) {
 		
@@ -549,10 +565,13 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		   return "0" + String.valueOf(c);
 	}
 	
+	/*
+	 * Updates workday length by calling a helper function
+	 */
 	private void updateWorkDayLength()
 	{
 		//Preferences
-		final SharedPreferences sharedSettings = PreferenceManager.getDefaultSharedPreferences(WorkItOutMain.this);
+		final SharedPreferences sharedSettings = getSharedPreferences("WorkItOutMain", 0);
 		
 		int workHours = sharedSettings.getInt(getString(R.string.workday_hours)+".hour", 8);
 		int workMinutes = sharedSettings.getInt(getString(R.string.workday_hours)+".minute", 0);
@@ -561,6 +580,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		{
 			workTime = hhmmFormatter.parse(String.valueOf(workHours)+":"+String.valueOf(workMinutes));
 			logIt(getString(R.string.workday_length_1) + workHours + getString(R.string.workday_length_2) + workMinutes + getString(R.string.workday_length_3));
+			workdayLength.setText(hhmmFormatter.format(workTime));
 		}
 		catch(NumberFormatException e)
 		{
@@ -570,8 +590,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 			workTime = new Date();
 			logIt("Azz, C'è stato un problema!");
 		}
-		
-		workdayLength.setText(hhmmFormatter.format(workTime));
 	}
 	
 	@Override
@@ -580,7 +598,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		super.onResumeFragments();
 		
 		//Preferences
-		final SharedPreferences settings = getPreferences(0);
+		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		
 		SharedPreferences.Editor editor = settings.edit();
 
@@ -648,7 +666,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		super.onPause();
 		
 		//Preferences
-		final SharedPreferences settings = getPreferences(0);
+		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		SharedPreferences.Editor editor = settings.edit();
 
 		editor.putBoolean("isTimerMarching", isTimerMarching);
@@ -678,10 +696,10 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	 * e resetta le date a mezzanotte. Annulla anche tutte
 	 * le notifiche
 	 */
-	private void clearAllInput()
+	public void clearAllInput()
 	{
 		//Preferences
-		final SharedPreferences settings = getPreferences(0);
+		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		
 			estimatedExitTime = new Date(0);
 			entranceTime = new Date(0);
@@ -728,14 +746,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
+        if (item.getItemId() == android.R.id.home) {
+            drawerLayoutHelper.toggle();
+            return true;
+        }
+
 		switch(item.getItemId()) {
-			case R.id.action_clear:
-				clearAllInput();
-				return true;
-			case R.id.action_settings:
-				Intent openSettings = new Intent(WorkItOutMain.this, SettingsActivity.class);
-				startActivityForResult(openSettings,1);
-				return true;
 			case R.id.send_email:
 				
 				/* Quanto tempo lavorato quest'oggi? */
@@ -946,4 +962,36 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		     }
 		  }
 		}//onActivityResult
+	
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerLayoutHelper.getDrawerToggle().syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        drawerLayoutHelper.getDrawerToggle().onConfigurationChanged(newConfig);
+    }
+
+    @Override
+    public boolean onKeyDown(final int keyCode, final KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+
+            drawerLayoutHelper.toggle();
+
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+	@Override
+	public void update(Observable observable, Object data) {
+		onResumeFragments();
+		updateWorkDayLength();
+		updateEstimatedTimeOfExit();
+		updateExtraTimeFields();
+	}
+    
 }

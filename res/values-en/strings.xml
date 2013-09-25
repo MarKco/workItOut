@@ -31,5 +31,14 @@
     <string name="email_extra_time">Overtime: </string>
     <string name="send_email">"Send email..."</string>
     <string name="no_email_client">No mail client installed.</string>
+    <string name="workday_duration_prefs_title">Workday duration</string>
+    <string name="settings_title">Settings</string>
+    <string name="alarm_activated">Alarm set at </string>
+    <string name="drawer_open">Open</string>
+    <string name="drawer_close">Closed</string>
+    <string name="title_activity_drawer_fragment">DrawerFragment</string>
+    <string name="prefs_choose_workday_length">Duration in hours and minutes</string>
+    <string name="prefs_delete_timings">Delete timestamps</string>
+    <string name="prefs_about">About WorkItOut</string>
     
 </resources>

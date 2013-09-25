@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    android:title="Impostazioni">
+    android:title="@string/settings_title">
 
   <PreferenceCategory
-     android:title="Durata della giornata">
+     android:title="@string/workday_duration_prefs_title">
 
 <!--     <EditTextPreference -->
 <!--         android:capitalize="words" -->
@@ -17,7 +17,7 @@
 <!--         android:title="@string/prefs_choose_workday_length" -->
 <!--     /> -->
     
-<com.ilsecondodasinistra.workitout.TimePreference
+<com.ilsecondodasinistra.workitout.CustomTimeDialog
   android:name="Default notification time"
   android:summary=""
   android:dialogLayout="@layout/time_preference"

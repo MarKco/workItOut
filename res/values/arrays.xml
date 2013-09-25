@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <array name="planets_array">
-        <item>first</item>
-        <item>second</item>
-        <item>third</item>
-        <item>fourth</item>
-        <item>fifth</item>
-    </array>
-
+   <array name="drawer_items">
+       <item>@string/prefs_choose_workday_length</item>
+       <item>@string/prefs_delete_timings</item>
+       <item>@string/prefs_about</item>
+   </array> 
+    
 </resources>

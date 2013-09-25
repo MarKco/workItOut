@@ -13,7 +13,7 @@
     <string name="pref_default_display_name">John Smith</string>
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     
-    <string name="prefs_choose_workday_length">Numero di ore della giornata di lavoro</string>
+    <string name="prefs_choose_workday_length">Duration in hours and minutes</string>
 
     <string-array name="pref_example_list_titles">
         <item>Always</item>
