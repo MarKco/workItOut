@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.workitout;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.Fragment;
@@ -8,6 +10,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SlidingDrawer.OnDrawerOpenListener;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.example.android.navigationdrawerexample.MainActivity.PlanetFragment;
@@ -71,7 +75,7 @@ public class DrawerLayoutHelper {
             	
                 restoreActionBar();
             }
-
+            
             public void onDrawerOpened(View drawerView) {
                 actionBar.setTitle(activity.getString(R.string.title_activity_settings));
                 actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
@@ -87,7 +91,7 @@ public class DrawerLayoutHelper {
     public DrawerLayout getDrawerLayout() {
         return drawerLayout;
     }
-
+    
     public void toggle() {
         if (drawerLayout.isDrawerOpen(drawerListView)) {
             drawerLayout.closeDrawer(drawerListView);
@@ -129,21 +133,20 @@ public class DrawerLayoutHelper {
 		case 1:
 			activity.clearAllInput();
 			break;
+		case 2:
+			this.activity.sendMail();
+			break;
+		case 3:
+			Intent aboutIntent = new Intent(this.activity, AboutActivity.class);
+			this.activity.startActivity(aboutIntent);
+			break;
 		default:
 			break;
 		}
-
-//        // Insert the fragment by replacing any existing fragment
-//        FragmentManager fragmentManager = getFragmentManager();
-//        fragmentManager.beginTransaction()
-//                       .replace(R.id.content_frame, fragment)
-//                       .commit();
 
         // Highlight the selected item, update the title, and close the drawer
         drawerListView.setItemChecked(position, true);
         drawerLayout.closeDrawer(drawerListView);
         
-        
-    }
-
+    }    
 }

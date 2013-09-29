@@ -37,7 +37,6 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.analytics.tracking.android.EasyTracker;
 
@@ -360,7 +359,19 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		 */
         drawerLayoutHelper = new DrawerLayoutHelper(WorkItOutMain.this, actionBar);
         
-
+        /*
+         * If application drawer was never opened manually,
+         * automatically open it at first application run
+         */
+		if (settings.getBoolean("drawerFirstOpening", true))
+		{
+			drawerLayoutHelper.toggle();
+			
+			SharedPreferences.Editor editor = settings.edit();
+			editor.putBoolean("drawerFirstOpening", false);
+			editor.commit();
+		}
+		
 	}
 	
 	private void toggleCountForExtraTime() {
@@ -730,13 +741,13 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		removeAlarm();
 	}
 	
-	@Override
-	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		MenuInflater inflater = getSupportMenuInflater();
-		inflater.inflate(R.menu.work_it_out_main, menu);
-		return true;
-	}
+//	@Override
+//	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
+//		// Inflate the menu; this adds items to the action bar if it is present.
+//		MenuInflater inflater = getSupportMenuInflater();
+//		inflater.inflate(R.menu.work_it_out_main, menu);
+//		return true;
+//	}
 	
 	/*
 	 * (non-Javadoc)
@@ -753,36 +764,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
 		switch(item.getItemId()) {
 			case R.id.send_email:
-				
-				/* Quanto tempo lavorato quest'oggi? */
-				Calendar dailyWorkedTime = Calendar.getInstance();
-				dailyWorkedTime.setTime(exitTime);
-				dailyWorkedTime.add(Calendar.HOUR, -lunchInTime.getHours());
-				dailyWorkedTime.add(Calendar.MINUTE, -lunchInTime.getMinutes());
-				dailyWorkedTime.add(Calendar.HOUR, lunchOutTime.getHours());
-				dailyWorkedTime.add(Calendar.MINUTE, lunchOutTime.getMinutes());
-				dailyWorkedTime.add(Calendar.HOUR, -entranceTime.getHours());
-				dailyWorkedTime.add(Calendar.MINUTE, -entranceTime.getMinutes());
-				
-//				Date dailyWorkedTime = new Date(
-//						(exitTime.getTime() - lunchInTime.getTime())
-//						+ (lunchOutTime.getTime() - entranceTime.getTime()) - oneHour);
-
-				
-				Intent i = new Intent(Intent.ACTION_SEND);
-				i.setType("message/rfc822");
-				i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject) + longDateFormatter.format(new Date()));
-				i.putExtra(Intent.EXTRA_TEXT   , getString(R.string.email_in_time) + hhmmFormatter.format(entranceTime)
-							+ "\n" + getString(R.string.email_lunch_time) + hhmmFormatter.format(lunchOutTime)
-							+ "\n" + getString(R.string.email_back_from_lunch) + hhmmFormatter.format(lunchInTime)
-							+ "\n" + getString(R.string.email_exit_time) + hhmmFormatter.format(exitTime)
-							+ "\n" + getString(R.string.email_total_time) + hhmmFormatter.format(dailyWorkedTime.getTime())
-							+ "\n" + getString(R.string.email_extra_time) + extraTimeText.getText());
-				try {
-				    startActivity(Intent.createChooser(i, getString(R.string.send_email)));
-				} catch (android.content.ActivityNotFoundException ex) {
-				    Toast.makeText(WorkItOutMain.this, getString(R.string.no_email_client), Toast.LENGTH_SHORT).show();
-				}
+				sendMail();
+				return true;
 			default:
 				return false;
 		}
@@ -992,6 +975,38 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		updateWorkDayLength();
 		updateEstimatedTimeOfExit();
 		updateExtraTimeFields();
+	}
+	
+	public void sendMail() {
+		/* Quanto tempo lavorato quest'oggi? */
+		Calendar dailyWorkedTime = Calendar.getInstance();
+		dailyWorkedTime.setTime(exitTime);
+		dailyWorkedTime.add(Calendar.HOUR, -lunchInTime.getHours());
+		dailyWorkedTime.add(Calendar.MINUTE, -lunchInTime.getMinutes());
+		dailyWorkedTime.add(Calendar.HOUR, lunchOutTime.getHours());
+		dailyWorkedTime.add(Calendar.MINUTE, lunchOutTime.getMinutes());
+		dailyWorkedTime.add(Calendar.HOUR, -entranceTime.getHours());
+		dailyWorkedTime.add(Calendar.MINUTE, -entranceTime.getMinutes());
+		
+//		Date dailyWorkedTime = new Date(
+//				(exitTime.getTime() - lunchInTime.getTime())
+//				+ (lunchOutTime.getTime() - entranceTime.getTime()) - oneHour);
+
+		
+		Intent i = new Intent(Intent.ACTION_SEND);
+		i.setType("message/rfc822");
+		i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject) + longDateFormatter.format(new Date()));
+		i.putExtra(Intent.EXTRA_TEXT   , getString(R.string.email_in_time) + hhmmFormatter.format(entranceTime)
+					+ "\n" + getString(R.string.email_lunch_time) + hhmmFormatter.format(lunchOutTime)
+					+ "\n" + getString(R.string.email_back_from_lunch) + hhmmFormatter.format(lunchInTime)
+					+ "\n" + getString(R.string.email_exit_time) + hhmmFormatter.format(exitTime)
+					+ "\n" + getString(R.string.email_total_time) + hhmmFormatter.format(dailyWorkedTime.getTime())
+					+ "\n" + getString(R.string.email_extra_time) + extraTimeText.getText());
+		try {
+		    startActivity(Intent.createChooser(i, getString(R.string.send_email)));
+		} catch (android.content.ActivityNotFoundException ex) {
+		    Toast.makeText(WorkItOutMain.this, getString(R.string.no_email_client), Toast.LENGTH_SHORT).show();
+		}
 	}
     
 }

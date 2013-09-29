@@ -57,7 +57,6 @@ public class CustomTimeDialog extends Dialog implements android.view.View.OnClic
     timePicker = (TimePicker)findViewById(R.id.prefTimePicker);
     
     SharedPreferences prefs = context.getApplicationContext().getSharedPreferences("WorkItOutMain", 0);
-    Editor editor = prefs.edit();
     timePicker.setCurrentHour(prefs.getInt(context.getString(R.string.workday_hours) + ".hour", DEFAULT_HOUR));
     timePicker.setCurrentMinute(prefs.getInt(context.getString(R.string.workday_hours) + ".minute", DEFAULT_MINUTE));
     timePicker.setIs24HourView(true);
