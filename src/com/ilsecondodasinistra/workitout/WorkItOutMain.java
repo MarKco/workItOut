@@ -39,6 +39,7 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.analytics.tracking.android.EasyTracker;
+import com.ilsecondodasinistra.workitout.NotificationService;
 
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 
