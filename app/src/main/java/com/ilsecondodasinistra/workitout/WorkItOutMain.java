@@ -515,22 +515,22 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 				minutes, true);
 		
 		// Make the Set button
-		dialogToShow.setButton(DialogInterface.BUTTON_POSITIVE, "Set", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				mIgnoreTimeSet = false;
-				// only manually invoke OnTimeSetListener (through the dialog) on pre-ICS devices
-				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) dialogToShow.onClick(dialog, which);
-				Log.i("workitout", "Clicked on set");
-			}
-		});
+//		dialogToShow.setButton(DialogInterface.BUTTON_POSITIVE, "Set", new DialogInterface.OnClickListener() {
+//			public void onClick(DialogInterface dialog, int which) {
+//				mIgnoreTimeSet = false;
+//				// only manually invoke OnTimeSetListener (through the dialog) on pre-ICS devices
+//				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) dialogToShow.onClick(dialog, which);
+//				Log.i("workitout", "Clicked on set");
+//			}
+//		});
 		
 		// Set the Cancel button
-		dialogToShow.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				mIgnoreTimeSet = true;
-				dialog.cancel();
-			}
-		});
+//		dialogToShow.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+//			public void onClick(DialogInterface dialog, int which) {
+//				mIgnoreTimeSet = true;
+//				dialog.cancel();
+//			}
+//		});
 		
 		dialogToShow.show();
 	}

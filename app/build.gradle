@@ -8,8 +8,8 @@ android {
         applicationId "com.ilsecondodasinistra.workitout"
         minSdkVersion 10
         targetSdkVersion 20
-        versionCode 36
-        versionName "2.6"
+        versionCode 37
+        versionName "2.7"
     }
     buildTypes {
         release {
