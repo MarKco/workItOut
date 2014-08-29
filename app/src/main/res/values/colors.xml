@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="yellow_sandwich">#33ffde05</color>
+    <color name="red_industry">#33f50d0e</color>
+    <color name="orange_clock">#33ff7c0e</color>
+    <color name="lightBlueCustom">#44CCFFCC</color>
+    <color name="lightRedCustom">#119966FF</color>
+    <color name="lightYellowCustom">#44ffffcc</color>
+
+</resources>
