@@ -80,8 +80,9 @@
     <orderEntry type="jdk" jdkName="Android API 20 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="support-v4-18.0.0" level="project" />
-    <orderEntry type="library" exported="" name="libGoogleAnalyticsV2" level="project" />
+    <orderEntry type="library" exported="" name="gson-2.2.4" level="project" />
     <orderEntry type="library" exported="" name="acra-4.5.0" level="project" />
+    <orderEntry type="library" exported="" name="libGoogleAnalyticsV2" level="project" />
     <orderEntry type="library" exported="" name="actionbarsherlock-4.4.0" level="project" />
   </component>
 </module>

@@ -5,14 +5,13 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -31,13 +30,16 @@ import android.widget.Toast;
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.MenuItem;
+import com.google.gson.Gson;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Vector;
 //import com.google.analytics.tracking.android.EasyTracker;
 
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
@@ -102,7 +104,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		setContentView(R.layout.activity_work_it_out_main);
 		
 		actionBar = getSupportActionBar();
-		actionBar.setTitle(getString(R.string.app_name));
 
 		//Preferences
 		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
@@ -127,47 +128,54 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		workdayLength = (TextView)findViewById(R.id.workday_length);
 
 		extraTimeLayout = (LinearLayout)findViewById(R.id.extraTimeLayout);
-		
-		updateWorkDayLength();
+
+        updateWorkDayLength();
 		
 		Calendar sharedCal = Calendar.getInstance();
 		final int calendarHour = sharedCal.get(Calendar.HOUR_OF_DAY);
 		final int calendarMinute = sharedCal.get(Calendar.MINUTE);
 		
 		try {
-			//Initialization
-			if(settings.getLong("entranceTime", 0) == 0)
-			{
-				entranceTime = hhmmFormatter.parse("0:00");
-			}
-			else
-			{
-				entranceTime = new Date(settings.getLong("entranceTime", 0));
-				entranceText.setText(hhmmFormatter.format(entranceTime));
-				setTextColor(entranceText,entranceTime);
-			}
-			
-			if(settings.getLong("lunchInTime", 0) == 0)
-			{
-				lunchInTime = hhmmFormatter.parse("0:00");
-			}
-			else
-			{
-				lunchInTime = new Date(settings.getLong("lunchInTime", 0));
-				lunchInText.setText(hhmmFormatter.format(lunchInTime));
-				setTextColor(entranceText,entranceTime);
-				if(!isYesterday(lunchInTime))
-				{
-					extraTimeLayout.setVisibility(View.VISIBLE);
-				}
-				else
-				{
-					extraTimeLayout.setVisibility(View.GONE);
-				}					
-			}
-	
-	
-			if(settings.getLong("lunchOutTime", 0) == 0)
+            //Initialization
+            if (settings.getLong("entranceTime", 0) == 0) {
+                entranceTime = hhmmFormatter.parse("0:00");
+            } else {
+                entranceTime = new Date(settings.getLong("entranceTime", 0));
+                entranceText.setText(hhmmFormatter.format(entranceTime));
+                setTextColor(entranceText, entranceTime);
+            }
+
+            if (settings.getLong("lunchInTime", 0) == 0) {
+                lunchInTime = hhmmFormatter.parse("0:00");
+            } else {
+                lunchInTime = new Date(settings.getLong("lunchInTime", 0));
+                lunchInText.setText(hhmmFormatter.format(lunchInTime));
+                setTextColor(entranceText, entranceTime);
+                if (!isYesterday(lunchInTime)) {
+                    extraTimeLayout.setVisibility(View.VISIBLE);
+                } else {
+                    extraTimeLayout.setVisibility(View.GONE);
+                }
+            }
+
+            ArrayList<Long> listOfDurations = new ArrayList<Long>();
+
+            listOfDurations = getArrayListFromPreferneces(getApplicationContext());
+
+            long sum = 0;
+            double averageDuration = 0.0;
+
+            if (listOfDurations.size() > 0) {
+                for (Long duration : listOfDurations) {
+                    sum += duration;
+                }
+                averageDuration = sum / listOfDurations.size();
+                actionBar.setTitle(getString(R.string.app_name) + "Average length of day: " + Double.toString(averageDuration));   //Sets the title of the app to the name + the average, if chosen
+            }
+            else
+                actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
+
+            if(settings.getLong("lunchOutTime", 0) == 0)
 			{
 				lunchOutTime = hhmmFormatter.parse("0:00");
 			}
@@ -1031,5 +1039,18 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 			Toast.makeText(WorkItOutMain.this, getString(R.string.no_email_client), Toast.LENGTH_SHORT).show();
 		}
 	}
-	
+
+    private static void setArrayListToPreferences(Context ctx, Vector obj){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("COMPLEX_OBJECT",new Gson().toJson(obj));
+        editor.commit();
+    }
+
+    private static ArrayList getArrayListFromPreferneces(Context ctx){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String sobj = preferences.getString("COMPLEX_OBJECT", "");
+        if(sobj.equals(""))return null;
+        else return new Gson().fromJson(sobj, ArrayList.class);
+    }
 }
