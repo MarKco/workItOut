@@ -56,6 +56,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 	private CharSequence mDrawerTitle;
 	private CharSequence mTitle;
 	private DrawerLayoutHelper drawerLayoutHelper;
+    private ArrayList<Double> listOfDurations = new ArrayList<Double>();
 	
 	private TextView timeToLeave;
 	private Button entranceButton;
@@ -158,19 +159,19 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                 }
             }
 
-            ArrayList<Long> listOfDurations = new ArrayList<Long>();
-
             listOfDurations = getArrayListFromPreferneces(getApplicationContext());
+            if(listOfDurations == null)
+                listOfDurations = new ArrayList<Double>();
 
-            long sum = 0;
+            double sum = 0;
             double averageDuration = 0.0;
 
             if (listOfDurations.size() > 0) {
-                for (Long duration : listOfDurations) {
+                for (Double duration : listOfDurations) {
                     sum += duration;
                 }
                 averageDuration = sum / listOfDurations.size();
-                actionBar.setTitle(getString(R.string.app_name) + "Average length of day: " + Double.toString(averageDuration));   //Sets the title of the app to the name + the average, if chosen
+                actionBar.setTitle(getString(R.string.app_name) + " - Average length of day: " + hhmmFormatter.format(averageDuration));   //Sets the title of the app to the name + the average, if chosen
             }
             else
                 actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
@@ -297,7 +298,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 			@Override
 			public void onClick(View arg0) {
 				optionSelected = 4;
-				if (isYesterday(exitTime))
+
+                if (isYesterday(exitTime))
 					chooseTime(calendarHour, calendarMinute);
 				else
 					chooseTime(exitTime.getHours(), exitTime.getMinutes());
@@ -339,8 +341,12 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 				exitTime = setActualTime(exitText, exitTime);
 
 				toggleCountForExtraTime();
-				
-				//Preferences
+
+                double duration = (exitTime.getTime() - entranceTime.getTime() - (lunchInTime.getTime() - lunchOutTime.getTime()));
+
+                listOfDurations.add(duration);
+
+                //Preferences
 				final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 				SharedPreferences.Editor editor = settings.edit();
 				
@@ -403,7 +409,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
 					mAlarm.set(AlarmManager.RTC_WAKEUP, now.getTime(), pi);
 				
-					Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(now.getTime()), 3000).show();
+					Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(now.getTime()), Toast.LENGTH_LONG).show();
 			}
 		});
 	}
@@ -505,7 +511,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 //		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
 		mAlarm.set(AlarmManager.RTC_WAKEUP, estimatedExitTime.getTime(), pi);
 
-		Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(estimatedExitTime), 3000).show();
+		Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(estimatedExitTime), Toast.LENGTH_LONG).show();
 
 		}
 		
@@ -706,7 +712,9 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		
+
+        setArrayListToPreferences(getApplicationContext(), listOfDurations);    //Append duration (in millis) to ArrayList and saves it
+
 		//Preferences
 		final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 		SharedPreferences.Editor editor = settings.edit();
@@ -726,7 +734,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
 		editor.commit();
 	}
-	
+
 	  @Override
 	  public void onStop() {
 		super.onStop();
@@ -1040,15 +1048,15 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		}
 	}
 
-    private static void setArrayListToPreferences(Context ctx, Vector obj){
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
+    private static void setArrayListToPreferences(Context ctx, ArrayList obj){
+        final SharedPreferences preferences = ctx.getSharedPreferences("WorkItOutMain", 0);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("COMPLEX_OBJECT",new Gson().toJson(obj));
         editor.commit();
     }
 
     private static ArrayList getArrayListFromPreferneces(Context ctx){
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final SharedPreferences preferences = ctx.getSharedPreferences("WorkItOutMain", 0);
         String sobj = preferences.getString("COMPLEX_OBJECT", "");
         if(sobj.equals(""))return null;
         else return new Gson().fromJson(sobj, ArrayList.class);
