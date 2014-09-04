@@ -42,6 +42,13 @@ import java.util.Observer;
 import java.util.Vector;
 //import com.google.analytics.tracking.android.EasyTracker;
 
+/** Joda-Time **/
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.Period;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 
 	boolean DEBUG = false;
@@ -171,7 +178,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                     sum += duration;
                 }
                 averageDuration = sum / listOfDurations.size();
-                actionBar.setTitle(getString(R.string.app_name) + " - Average length of day: " + hhmmFormatter.format(averageDuration));   //Sets the title of the app to the name + the average, if chosen
+
+                actionBar.setTitle(getString(R.string.app_name) + " - " + formatMillis((long)averageDuration));   //Sets the title of the app to the name + the average, if chosen
             }
             else
                 actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
@@ -1060,5 +1068,19 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         String sobj = preferences.getString("COMPLEX_OBJECT", "");
         if(sobj.equals(""))return null;
         else return new Gson().fromJson(sobj, ArrayList.class);
+    }
+
+    /**
+     * Formatting Millisec with JODA Time
+     * @return
+     */
+    private String formatMillis(long millis) {
+//        Interval interval = new Interval(0, millis);
+        Period period = new Period(millis);
+//        DateTime dateTime = new DateTime(millis);
+//        return interval.toString("HH:mm:ss");
+        String returnString = period.getHours() + ":" + period.getMinutes() + ":" + period.getSeconds() + "." + period.getMillis();
+        return returnString;
+
     }
 }
