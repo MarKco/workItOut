@@ -27,9 +27,12 @@
         <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" >
         </service>
 
-        <activity
-            android:name="com.ilsecondodasinistra.workitout.SettingsActivity"
-            android:label="@string/title_activity_settings" >
+        <activity android:name="com.ilsecondodasinistra.workitout.PrefActivity"
+            android:label="Settings"
+            android:enabled="true" >
+            <intent-filter>
+                <category android:name="android.intent.category.PREFERENCE" />
+            </intent-filter>
         </activity>
 
         <receiver android:name="com.ilsecondodasinistra.workitout.MyWidgetProvider" >

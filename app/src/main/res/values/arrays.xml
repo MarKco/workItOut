@@ -5,6 +5,7 @@
        <item>@string/prefs_choose_workday_length</item>
        <item>@string/prefs_delete_timings</item>
 	   <item>@string/send_email</item>
+       <item>@string/prefs_settings</item>
        <item>@string/prefs_about</item>
        <item></item>
    </array> 

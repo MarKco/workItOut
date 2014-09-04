@@ -138,10 +138,13 @@ public class DrawerLayoutHelper {
 			this.activity.sendMail();
 			break;
 		case 3:
-			Intent aboutIntent = new Intent(this.activity, AboutActivity.class);
-			this.activity.startActivity(aboutIntent);
-			break;
-		default:
+            this.activity.startActivity(new Intent(this.activity, PrefActivity.class));
+            break;
+        case 4:
+            Intent aboutIntent = new Intent(this.activity, AboutActivity.class);
+            this.activity.startActivity(aboutIntent);
+            break;
+        default:
 			break;
 		}
 
