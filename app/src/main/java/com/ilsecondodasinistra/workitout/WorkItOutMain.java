@@ -517,6 +517,22 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
     public void chooseTime( Integer hours, Integer minutes ){
         final TimePickerDialog timeFragment = new TimePickerDialog( WorkItOutMain.this );
+
+        switch( optionSelected ){
+            case R.id.entrance_text:
+                timeFragment.setTitle(R.string.entranceButtonLabel);
+                break;
+            case R.id.lunch_out_text:
+                timeFragment.setTitle(R.string.lunchOutButtonLabel);
+                break;
+            case R.id.lunch_in_text:
+                timeFragment.setTitle(R.string.lunchInButtonLabel);
+                break;
+            case R.id.exit_text:
+                timeFragment.setTitle(R.string.exitButtonLabel);
+                break;
+        }
+
         timeFragment.setCallbacks(new TimePickerDialog.Callbacks() {
 
             @Override
@@ -560,7 +576,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             }
 
             @Override
-            public void onButtonCancelClicked( Dialog dialog, int i, int i2) {
+            public void onButtonCancelClicked( Dialog dialog, int hour, int minute ) {
                 timeFragment.dismiss();
             }
         });
