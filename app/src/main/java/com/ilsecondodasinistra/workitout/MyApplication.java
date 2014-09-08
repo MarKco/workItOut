@@ -7,6 +7,10 @@ import org.acra.annotation.ReportsCrashes;
 
 import android.app.Application;
 
+import it.lucichkevin.cip.Utils;
+import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
+
+
 @ReportsCrashes(formKey = "", // will not be used
 mailTo = "ilsecondodasinistra@gmail.com", //
 customReportContent = { ReportField.APP_VERSION_CODE, ReportField.PACKAGE_NAME,
@@ -21,7 +25,11 @@ public class MyApplication extends Application {
 	public void onCreate() {
 		super.onCreate();
 
+        Utils.init(getBaseContext());
+        PreferencesManager.init(getBaseContext());
+        PreferencesManager.setDebugLog(true);
+
 		// The following line triggers the initialization of ACRA
-		ACRA.init(this);
+//		ACRA.init(this);
 	}
 }

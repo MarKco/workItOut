@@ -2,16 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ilsecondodasinistra.workitout"
     android:installLocation="auto" >
-
+<!--
     <uses-sdk
-        android:minSdkVersion="9"
+        android:minSdkVersion="10"
         android:targetSdkVersion="17" />
-
+-->
     <application
         android:allowBackup="true"
         android:icon="@drawable/workitout_icon"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Sherlock.Light" android:name="MyApplication">
+        android:theme="@style/Theme.Sherlock.Light"
+        android:name="MyApplication">
         <activity
             android:name="com.ilsecondodasinistra.workitout.WorkItOutMain"
             android:label="@string/app_name" >
@@ -26,12 +27,12 @@
         </service>
         <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" >
         </service>
-
+<!--
         <activity
-            android:name="com.ilsecondodasinistra.workitout.SettingsActivity"
+            android:name=".unused.SettingsActivity"
             android:label="@string/title_activity_settings" >
         </activity>
-
+-->
         <receiver android:name="com.ilsecondodasinistra.workitout.MyWidgetProvider" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -41,19 +42,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_workitout" />
         </receiver>
-
+<!--
         <activity
-            android:name="com.ilsecondodasinistra.workitout.DrawerFragment"
+            android:name=".drawer.DrawerFragment"
             android:label="@string/title_activity_drawer_fragment"
             android:parentActivityName="com.actionbarsherlock.app.SherlockFragmentActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.actionbarsherlock.app.SherlockFragmentActivity" />
         </activity>
+-->
         <activity
             android:name="com.ilsecondodasinistra.workitout.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>
+
     </application>
 
     <uses-permission android:name="android.permission.VIBRATE" />

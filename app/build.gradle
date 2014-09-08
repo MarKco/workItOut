@@ -6,11 +6,12 @@ android {
 
     defaultConfig {
         applicationId "com.ilsecondodasinistra.workitout"
-        minSdkVersion 10
+        minSdkVersion 11
         targetSdkVersion 20
         versionCode 36
         versionName "2.6"
     }
+
     buildTypes {
         release {
             runProguard false
@@ -20,8 +21,8 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
-    compile "com.android.support:support-v4:18.0.+"
-
+    compile 'it.lucichkevin:cip-library:0.4.4-SNAPSHOT@aar'
+    compile 'com.android.support:support-v4:20.0.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
 }
