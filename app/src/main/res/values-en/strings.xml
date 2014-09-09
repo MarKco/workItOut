@@ -36,12 +36,10 @@
     <string name="drawer_open">Open</string>
     <string name="drawer_close">Closed</string>
     <string name="title_activity_drawer_fragment">DrawerFragment</string>
-
     <string name="prefs_choose_workday_length">Duration in hours and minutes</string>
     <string name="prefs_delete_timings">Delete timestamps</string>
     <string name="prefs_about">About WorkItOut</string>
     <string name="prefs_settings">Settings</string>
-
     <string name="title_activity_about">About WorkItOut</string>
     <string name="app_author"><a href="http://www.marcozanetti.it">Marco Zanetti</a></string>
     <string name="author_email">Mail me: <a href="mailto:ilsecondodasinistra@gmail.com">ilsecondodasinistra@gmail.com</a></string>

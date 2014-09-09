@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="settings category debug"
+        android:key="prefs_debug_category">
+<!--
+        <SwitchPreference
+            android:key="debug_flag"
+            android:width="4dip"
+            android:height="1dip"
+            android:switchTextOn="@string/yes"
+            android:switchTextOff="@android:string/no"
+            android:title="@string/settings_debug_title"
+            android:summary="@string/settings_debug_summary" />
+
+        <SwitchPreference
+            android:key="log_all_toast"
+            android:width="10dip"
+            android:height="7dip"
+            android:switchTextOn="@string/yes"
+            android:switchTextOff="@string/no"
+            android:title="@string/settings_log_all_toast_title"
+            android:summary="@string/settings_log_all_toast_summary"/>
+
+        <SwitchPreference
+            android:key="debug_log"
+            android:width="10dip"
+            android:height="7dip"
+            android:switchTextOn="@string/yes"
+            android:switchTextOff="@string/no"
+            android:title="@string/settings_is_debug_log_title"
+            android:summary="@string/settings_is_debug_log_summary" />
+-->
+
+        <CheckBoxPreference
+            android:key="DEBUG_LOG"
+            android:width="10dip"
+            android:height="7dip"
+            android:title="Debug logging in logcat"
+            android:summary="Check this if you want debug logging enabled on logcat" />
+
+        <CheckBoxPreference
+            android:key="TOASTER_TO_LOGCAT"
+            android:width="10dip"
+            android:height="7dip"
+            android:title="Toast vs. Log"
+            android:summary="Check this and all toasts will be converted in Info Log" />
+
+    </PreferenceCategory>
+</PreferenceScreen>

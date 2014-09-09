@@ -36,11 +36,9 @@
     <string name="drawer_open">Aperto</string>
     <string name="drawer_close">Chiuso</string>
     <string name="title_activity_drawer_fragment">DrawerFragment</string>
-
     <string name="prefs_delete_timings">Cancella gli orari</string>
     <string name="prefs_about">Info su WorkItOut</string>
     <string name="prefs_settings">Impostazioni</string>
-
     <string name="title_activity_about">Informazioni su WorkItOut</string>
     <string name="app_author"><a href="http://www.marcozanetti.it">Marco Zanetti</a></string>
     <string name="author_email">Scrivimi: <a href="mailto:ilsecondodasinistra@gmail.com">ilsecondodasinistra@gmail.com</a></string>

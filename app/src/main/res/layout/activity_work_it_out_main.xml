@@ -265,9 +265,12 @@
                 android:text="@string/clearButtonLabel"
                 android:visibility="gone" />
         </LinearLayout>
-        
+
         <!-- DRAWER LAYOUT - MENU -->
+
         <include layout="@layout/drawer_layout" />
+
+
     </android.support.v4.widget.DrawerLayout>
 
 </RelativeLayout>
