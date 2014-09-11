@@ -6,12 +6,12 @@ import android.database.sqlite.SQLiteDatabase;
 import com.ilsecondodasinistra.workitout.database.DaoMaster;
 import com.ilsecondodasinistra.workitout.database.DaoSession;
 
-import de.greenrobot.dao.AbstractDaoMaster;
+import it.lucichkevin.cip.Utils;
 
 /**
  * Created by kevin on 01/09/2014.
  */
-public class DatabaseHelper{
+public class DatabaseHelper {
 
     private static SQLiteDatabase db = null;
     private static DaoSession daoSession = null;
@@ -22,6 +22,8 @@ public class DatabaseHelper{
                 @Override
                 public void onUpgrade( SQLiteDatabase db, int oldVersion, int newVersion ){
                     //  Do nothing...
+//                    DaoMaster.dropAllTables(db, true);
+//                    onCreate(db);
                 }
             };
             // Access the database using the helper
@@ -31,6 +33,9 @@ public class DatabaseHelper{
     }
 
     public static SQLiteDatabase getDatabase(){
+        if( db == null ){
+            return getDatabase( Utils.getContext() );
+        }
         return db;
     }
 
