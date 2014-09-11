@@ -23,10 +23,17 @@ public class SettingsWorkitout extends PreferencesManager {
 //        return getName("default_name");
 //    }
 
+    private static final String WORKDAY_HOURS = "workday_hours";
+    private static final String WORKDAY_MINUTES = "workday_minutes";
     private static final String WORK_TIME = "work_time";
 
     //////  TEMPORANEE
     private static final String TIMER_MARCHING = "timer_marching";
+
+    private static final String ENTRANCE_TIME = "entranceTime";
+    private static final String LUNCH_OUT_TIME = "lunchOutTime";
+    private static final String LUNCH_IN_TIME = "lunchInTime";
+    private static final String EXIT_TIME = "exitTime";
 
     private static final String EXTRA_TIME_HOURS = "extra_time_hours";
     private static final String EXTRA_TIME_MINUTES = "extra_time_minutes";
@@ -56,21 +63,50 @@ public class SettingsWorkitout extends PreferencesManager {
         return getPauseDuration(15);
     }
 
+
+//    public static void setWorkdayHours( int hours ){
+//        setPreferences(WORKDAY_HOURS,hours);
+//    }
+//    public static int getWorkdayHours( int default_name ){
+//        return getPreferences().getInt(WORKDAY_HOURS, default_name );
+//    }
+//    public static int getWorkdayHours(){
+//        return getWorkdayHours(8);
+//    }
+
+//    public static void setWorkdayMinutes( int minutes ){
+//        setPreferences(WORKDAY_MINUTES,minutes);
+//    }
+//    public static int getWorkdayMinutes( int default_name ){
+//        return getPreferences().getInt(WORKDAY_HOURS, default_name );
+//    }
+//    public static int getWorkdayMinutes(){
+//        return getWorkdayMinutes(0);
+//    }
+
     public static void setWorkTime( Date work_time_date ){
-        //  Save in milliseconds
-        setPreferences(WORK_TIME, work_time_date.getTime() );
+        setWorkTime( work_time_date.getTime() );
+    }
+    public static void setWorkTime( long work_time ){
+        setPreferences(WORK_TIME, work_time);
+    }
+    public static long getWorkTimeInMillis( long default_value ){
+        return getPreferences().getLong(WORK_TIME, default_value );
     }
     public static Date getWorkTime( long default_value ){
-        long millis = getPreferences().getLong(WORK_TIME, default_value );
-        return new Date(millis);
+        long work_time = getWorkTimeInMillis(default_value);
+        return new Date(work_time);
     }
     public static Date getWorkTime(){
+        return getWorkTime(getWorkTimeInMillis());
+    }
+    public static long getWorkTimeInMillis(){
         //  Default 8 ore :)
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(0);
         calendar.set(Calendar.HOUR_OF_DAY, 8);
         calendar.set(Calendar.MINUTE, 0 );
-        return getWorkTime( calendar.getTimeInMillis() );
+        return getWorkTimeInMillis( calendar.getTimeInMillis() );
     }
 
     public static void setTimerMarching( boolean is_timer_marching ){
@@ -126,44 +162,44 @@ public class SettingsWorkitout extends PreferencesManager {
         return getExtraTimeSeconds(-1);
     }
 
-//    public static void setLunchOutTime( long lunch_out_time ){
-//        setPreferences(LUNCH_OUT_TIME,lunch_out_time);
-//    }
-//    public static long getLunchOutTime( long default_value ){
-//        return getPreferences().getLong(LUNCH_OUT_TIME, default_value);
-//    }
-//    public static long getLunchOutTime(){
-//        return getLunchOutTime(0);
-//    }
+    public static void setLunchOutTime( long lunch_out_time ){
+        setPreferences(LUNCH_OUT_TIME,lunch_out_time);
+    }
+    public static long getLunchOutTime( long default_value ){
+        return getPreferences().getLong(LUNCH_OUT_TIME, default_value);
+    }
+    public static long getLunchOutTime(){
+        return getLunchOutTime(0);
+    }
 
-//    public static void setLunchInTime( long lunch_in_time ){
-//        setPreferences(LUNCH_IN_TIME,lunch_in_time);
-//    }
-//    public static long getLunchInTime( long default_value ){
-//        return getPreferences().getLong(LUNCH_IN_TIME, default_value);
-//    }
-//    public static long getLunchInTime(){
-//        return getLunchInTime(0);
-//    }
+    public static void setLunchInTime( long lunch_in_time ){
+        setPreferences(LUNCH_IN_TIME,lunch_in_time);
+    }
+    public static long getLunchInTime( long default_value ){
+        return getPreferences().getLong(LUNCH_IN_TIME, default_value);
+    }
+    public static long getLunchInTime(){
+        return getLunchInTime(0);
+    }
 
-//    public static void setEntranceTime( long v ){
-//        setPreferences(ENTRANCE_TIME,v);
-//    }
-//    public static long getEntranceTime( long default_value ){
-//        return getPreferences().getLong(ENTRANCE_TIME, default_value);
-//    }
-//    public static long getEntranceTime(){
-//        return getEntranceTime(0);
-//    }
+    public static void setEntranceTime( long v ){
+        setPreferences(ENTRANCE_TIME,v);
+    }
+    public static long getEntranceTime( long default_value ){
+        return getPreferences().getLong(ENTRANCE_TIME, default_value);
+    }
+    public static long getEntranceTime(){
+        return getEntranceTime(0);
+    }
 
-//    public static void setExitTime( long v ){
-//        setPreferences(EXIT_TIME,v);
-//    }
-//    public static long getExitTime( long default_value ){
-//        return getPreferences().getLong(EXIT_TIME, default_value);
-//    }
-//    public static long getExitTime(){
-//        return getExitTime(0);
-//    }
+    public static void setExitTime( long v ){
+        setPreferences(EXIT_TIME,v);
+    }
+    public static long getExitTime( long default_value ){
+        return getPreferences().getLong(EXIT_TIME, default_value);
+    }
+    public static long getExitTime(){
+        return getExitTime(0);
+    }
 
 }

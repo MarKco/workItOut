@@ -13,7 +13,6 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.Sherlock.Light"
         android:name="MyApplication">
-
         <activity
             android:name="com.ilsecondodasinistra.workitout.WorkItOutMain"
             android:label="@string/app_name" >
@@ -24,9 +23,16 @@
             </intent-filter>
         </activity>
 
-        <service android:name="com.ilsecondodasinistra.workitout.NotificationService" />
-        <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" />
-
+        <service android:name="com.ilsecondodasinistra.workitout.NotificationService" >
+        </service>
+        <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" >
+        </service>
+<!--
+        <activity
+            android:name=".unused.SettingsActivity"
+            android:label="@string/title_activity_settings" >
+        </activity>
+-->
         <receiver android:name="com.ilsecondodasinistra.workitout.MyWidgetProvider" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -36,15 +42,19 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_workitout" />
         </receiver>
-
+<!--
+        <activity
+            android:name=".drawer.DrawerFragment"
+            android:label="@string/title_activity_drawer_fragment"
+            android:parentActivityName="com.actionbarsherlock.app.SherlockFragmentActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.actionbarsherlock.app.SherlockFragmentActivity" />
+        </activity>
+-->
         <activity
             android:name="com.ilsecondodasinistra.workitout.AboutActivity"
             android:label="@string/title_activity_about" >
-        </activity>
-
-        <activity
-            android:name="com.ilsecondodasinistra.workitout.SessionWorkingsList"
-            android:label="Lista sessioni di lavoro" >
         </activity>
 
     </application>
