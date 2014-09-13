@@ -7,7 +7,11 @@ import android.widget.TextView;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Period;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import it.lucichkevin.cip.Utils;
 
 
 /**
@@ -15,22 +19,27 @@ import org.joda.time.Period;
  */
 public class CounterWorkingTime {
 
+    private static final SimpleDateFormat hhmmssFormatter = new SimpleDateFormat("H:mm:ss");
     private static final int MSG = 1;
     private final static long interval = 1000;
 
     private boolean STARTED = false;
     //  Mi dice se sto facendo uno straordinario o no
-    private boolean overTime = false;
     private TextView textView;
-    private long currentMillis;
+    private Long currentMillis;
 
     public CounterWorkingTime( TextView textView ){
         this.textView = textView;
     }
 
     public void calculateMillis(){
-        stop();
-        currentMillis = DateTime.now(DateTimeZone.UTC).getMillis() - BadgeHelper.getCurrentSessionWorking().calcExitTime();
+//        stop();
+        Long time = BadgeHelper.getCurrentSessionWorking().calcExitTime();
+        if( time == null ){
+            currentMillis = null;
+            return;
+        }
+        currentMillis = DateTime.now(DateTimeZone.UTC).getMillis() - time;
     }
 
     public void restart(){
@@ -39,34 +48,49 @@ public class CounterWorkingTime {
     }
 
     public synchronized final CounterWorkingTime start() {
+
         if( STARTED ){
             return this;
         }
 
         calculateMillis();
-        STARTED = true;
 
-        if( currentMillis < 0 ){
-            currentMillis *= -1;
-            overTime = false;
-        }else{
-            overTime = true;
+        if( currentMillis == null ){
+            return this;
         }
+
+        STARTED = true;
 
         mHandler.sendMessage(mHandler.obtainMessage(MSG));
         return this;
     }
 
-    public void stop(){
+    public CounterWorkingTime stop(){
         if( !STARTED ){
-            return;
+            return this;
         }
         STARTED = false;
         mHandler.removeMessages(MSG);
+        return this;
     }
 
     public void onTick( long millis ){
-        textView.setText( ((overTime)?"":"-") + BadgeHelperFormat.formatPeriodHHmmss(millis) );
+        textView.setText( format(millis) );
+    }
+
+    private String format( long millis ){
+
+        int seconds = (int) millis / 1000;
+
+        if( seconds < 0 ){
+            seconds *= -1;
+        }
+
+        int hours = seconds / 3600;
+        int minutes = (seconds - hours*60) / 60;
+        seconds = (seconds - minutes * 60);
+
+        return ((currentMillis < 0)?"-":"") + ((hours<10)?"0":"") + hours +":"+ ((minutes<10)?"0":"") + minutes +":"+ ((seconds<10)?"0":"") + seconds;
     }
 
     private Handler mHandler = new Handler() {
@@ -79,13 +103,7 @@ public class CounterWorkingTime {
             // take into account user's onTick taking time to execute
             long delay = lastTickStart + interval - SystemClock.elapsedRealtime();
 
-            if( overTime ){
-                //  Se sto facendo straordinari, il counter deve auomentare
-                currentMillis += delay;
-            }else{
-                //  Altrimenti diminuisco il tempo sperando che la giornata finisca presto :D
-                currentMillis -= delay;
-            }
+            currentMillis += delay;
 
             CounterWorkingTime.this.onTick(currentMillis);
 
@@ -106,6 +124,10 @@ public class CounterWorkingTime {
 
     public TextView getTextView(){
         return textView;
+    }
+
+    public boolean isRunning() {
+        return STARTED;
     }
 
 }

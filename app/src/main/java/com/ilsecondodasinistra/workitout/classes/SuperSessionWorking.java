@@ -112,11 +112,18 @@ public class SuperSessionWorking {
         return duration.toPeriod();
     }
 
-    public long calcExitTime(){
+    /**
+     *  Return the millis of exit time or the overtime
+     *  @return     Long    number of millis or NULL
+     */
+    public Long calcExitTime(){
+
+        if( entranceDate == 0 ){
+            return null;
+        }
 
         //  Start
-        long coundown = entranceDate;
-        Utils.logger("entranceDate => "+ entranceDate, Utils.LOG_DEBUG );
+        Long coundown = entranceDate;
 
         //  Hour to work
         coundown += BadgeHelper.getWorkTimeInMillis();

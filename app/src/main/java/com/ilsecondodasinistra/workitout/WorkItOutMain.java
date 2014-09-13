@@ -128,11 +128,8 @@ public class WorkItOutMain extends SherlockFragmentActivity {
     };
 
 
-	/*
-	 * Elements for app Drawer
-	 */
-
 	private TextView timeToLeave;
+    private View rowTimeToLeave;
 
 	private EditText entranceText;
 	private EditText lunchInText;
@@ -166,6 +163,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		exitText = (EditText)findViewById(R.id.exit_text);
 
 		timeToLeave = (TextView)findViewById(R.id.time_to_leave);
+        rowTimeToLeave = findViewById(R.id.row_time_to_leave);
         workdayLength = (TextView)findViewById(R.id.workday_length);
         extraTimeLayout = (LinearLayout)findViewById(R.id.extraTimeLayout);
 
@@ -174,7 +172,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		updateWorkDayLength();
 
         DateTime entranceTime = BadgeHelper.getEntranceTime();
-//        Utils.logger("entranceTime = "+ entranceTime, Utils.LOG_DEBUG );
+//        Utils.logger("entranccalcExitTimeeTime = "+ entranceTime, Utils.LOG_DEBUG );
         if( entranceTime.getMillis() != 0 ){
             entranceText.setText( BadgeHelperFormat.formatTime(entranceTime) );
             setTextColor(entranceText, entranceTime );
@@ -404,8 +402,13 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.cancelAll();   //    When application is open all its notifications must be deleted
 
-		extraTimeLayout.setVisibility(View.GONE);
-		timeToLeave.setVisibility(View.VISIBLE);
+		extraTimeLayout.setVisibility(View.VISIBLE);
+        rowTimeToLeave.setVisibility(View.VISIBLE);
+
+        if( chronoWorkingTime.isRunning() ){
+            chronoWorkingTime.restart();
+        }
+
 		removeAlarm();
 	}
 
@@ -416,14 +419,14 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		updateEstimatedTimeOfExit();
 
 		extraTimeLayout.setVisibility(View.GONE);
-        timeToLeave.setVisibility(View.GONE);
+        rowTimeToLeave.setVisibility(View.INVISIBLE);
 	}
 	
 	private void lunchInActions() {
 		//  Ricalcola l'orario di uscita
 		updateEstimatedTimeOfExit();
 
-		timeToLeave.setVisibility(View.VISIBLE);
+        rowTimeToLeave.setVisibility(View.VISIBLE);
 		extraTimeLayout.setVisibility(View.VISIBLE);
 
 		lunchInText.setTextColor(Color.BLACK);
@@ -439,7 +442,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
             //  Debug: the line below allows to set notification to 5 seconds in future.
 //    		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
             mAlarm.set(AlarmManager.RTC_WAKEUP, calcExitTime.getMillis(), pi);
-
 
             Utils.Toaster( getBaseContext(), getString(R.string.alarm_activated) + " " + BadgeHelperFormat.formatTime(calcExitTime), 2000 );
 		}
@@ -553,12 +555,12 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 
 //		EasyTracker.getInstance().activityStart(this); // Add this method.
 
-        if( BadgeHelper.getCurrentSessionWorking().calcExitTime() != 0 ){
+        if( BadgeHelper.getCurrentSessionWorking().calcExitTime() != null ){
             startCountForExtraTime();
             (findViewById(R.id.row_time_to_leave)).setVisibility(View.VISIBLE);
             extraTimeLayout.setVisibility(View.VISIBLE);
         }else{
-            (findViewById(R.id.row_time_to_leave)).setVisibility(View.GONE);
+            (findViewById(R.id.row_time_to_leave)).setVisibility(View.INVISIBLE);
             extraTimeLayout.setVisibility(View.GONE);
         }
 
@@ -584,7 +586,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		chronoWorkingTime.getTextView().setText("");
 		exitText.setText("");
 
-		timeToLeave.setVisibility(View.GONE);
+        rowTimeToLeave.setVisibility(View.INVISIBLE);
 		extraTimeLayout.setVisibility(View.GONE);
 
 		removeAlarm();
@@ -623,7 +625,11 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	}	
 
 	private void updateEstimatedTimeOfExit(){
-        timeToLeave.setText( BadgeHelperFormat.formatTime(BadgeHelper.getCurrentSessionWorking().calcExitTime()) );
+        Long time = BadgeHelper.getCurrentSessionWorking().calcExitTime();
+        if( time == null ){
+            return;
+        }
+        timeToLeave.setText( BadgeHelperFormat.formatTime(time) );
 	}
 
     private void setTextColor( EditText inputText, DateTime inputDate ){
