@@ -1,14 +1,18 @@
 package com.ilsecondodasinistra.workitout.classes;
 
-import com.ilsecondodasinistra.workitout.database.Entity_PauseWorking;
-import com.ilsecondodasinistra.workitout.database.Entity_SessionWorking;
-import com.ilsecondodasinistra.workitout.utils.SettingsWorkitout;
+import com.ilsecondodasinistra.workitout.database.PauseWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorking;
+import com.ilsecondodasinistra.workitout.utils.BadgeHelper;
+
+import org.joda.time.Duration;
+import org.joda.time.Period;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+import it.lucichkevin.cip.Utils;
 
 /**
  * Created by kevin on 01/09/2014.
@@ -21,29 +25,27 @@ public class SuperSessionWorking {
 
 //    protected transient long id_sessionworking;
     protected Long id;
-    protected Date entranceDate;
-    protected Date exitDate;
-    protected List<Entity_PauseWorking> pauses;
+    protected long entranceDate;
+    protected long exitDate;
+    protected List<PauseWorking> pauses;
 
 
 
-    public static Entity_SessionWorking newInstance(){
-        Date tmp = new Date(0);
-
-        Entity_SessionWorking session = new Entity_SessionWorking();
-        session.setEntranceDate(tmp);
-        session.setExitDate(tmp);
-        session.setPauses(new ArrayList<Entity_PauseWorking>());
+    public static SessionWorking newInstance(){
+        SessionWorking session = new SessionWorking();
+        session.setEntranceDate(0);
+        session.setExitDate(0);
+        session.setPauses(new ArrayList<PauseWorking>());
 
         return session;
     }
 
-    public Entity_PauseWorking getPauseOfLunch(){
+    public PauseWorking getPauseOfLunch(){
 
         int indexOfLunchPause = getIndexOfPauseOfLunch();
 
         if( indexOfLunchPause == -1 ){
-            Entity_PauseWorking pause = Entity_PauseWorking.newInstance( this.getId(), true);
+            PauseWorking pause = PauseWorking.newInstance(this.getId(), true);
             pauses.add(pause);
             return pause;
         }
@@ -51,7 +53,7 @@ public class SuperSessionWorking {
         return getPauses().get(indexOfLunchPause);
     }
 
-    public void setPauseOfLunch( Entity_PauseWorking pauseOfLunch ){
+    public void setPauseOfLunch( PauseWorking pauseOfLunch ){
 
         int indexOfLunchPause = getIndexOfPauseOfLunch();
 
@@ -69,6 +71,7 @@ public class SuperSessionWorking {
     public int getIndexOfPauseOfLunch(){
 
         if( pauses == null ){
+            pauses = new ArrayList<PauseWorking>();
             return -1;
         }
 
@@ -85,32 +88,44 @@ public class SuperSessionWorking {
 //        pauses.set( location, pause );
 //    }
 
-    public void setPauses( ArrayList<Entity_PauseWorking> pauses ){
+    public void setPauses( ArrayList<PauseWorking> pauses ){
         this.pauses = pauses;
     }
 
-    public void addPause( Entity_PauseWorking pause ){
+    public void addPause( PauseWorking pause ){
         pauses.add(pause);
     }
 
-    public Date getTimeWorked(){
-        return new Date( getExitDate().getTime() - getEntranceDate().getTime() );
+    public Period getTimeWorked(){
+        return new Duration( getExitDate() - getEntranceDate() ).toPeriod();
+    }
+
+
+    public Period getAllPausesDuration(){
+
+        Duration duration = new Duration(0);
+
+        for( PauseWorking pause : getPauses() ){
+            duration = duration.plus( pause.getDurationInMillis() );
+        }
+
+        return duration.toPeriod();
     }
 
     public long calcExitTime(){
 
-        Calendar coundown = Calendar.getInstance();
-        coundown.setTime(entranceDate);
-        coundown.add(Calendar.MINUTE, ((SettingsWorkitout.getWorkTime().getHours()*60) + SettingsWorkitout.getWorkTime().getMinutes()) );  //  Aggiungo l'ora di uscita
+        //  Start
+        long coundown = entranceDate;
+        Utils.logger("entranceDate => "+ entranceDate, Utils.LOG_DEBUG );
 
-        Entity_PauseWorking pauseLunch = getPauseOfLunch();
+        //  Hour to work
+        coundown += BadgeHelper.getWorkTimeInMillis();
 
-        int pauseEnd = pauseLunch.getEndDate().getHours()*60 + pauseLunch.getEndDate().getMinutes();
-        int pauseStart = pauseLunch.getStartDate().getHours()*60 + pauseLunch.getStartDate().getMinutes();
+        //  Add the pause of lunch
+        PauseWorking pauseLunch = getPauseOfLunch();
+        coundown += pauseLunch.getDurationInMillis();
 
-        coundown.add(Calendar.MINUTE, (pauseEnd-pauseStart) );
-
-        return coundown.getTimeInMillis();
+        return coundown;
     }
 
     /*
@@ -131,7 +146,6 @@ public class SuperSessionWorking {
         return sign + (new SimpleDateFormat("HH:mm:ss")).format(new Date(countDown));
     }
 
-
     ///////////////////////////////////////////
     //  Getters and Setters
 
@@ -142,24 +156,27 @@ public class SuperSessionWorking {
         this.id = id;
     }
 
-    public Date getEntranceDate() {
+    public long getEntranceDate() {
         return entranceDate;
     }
-    public void setEntranceDate(Date entranceDate) {
+    public void setEntranceDate(long entranceDate) {
         this.entranceDate = entranceDate;
     }
 
-    public Date getExitDate() {
+    public long getExitDate() {
         return exitDate;
     }
-    public void setExitDate(Date exitDate) {
+    public void setExitDate(long exitDate) {
         this.exitDate = exitDate;
     }
 
-    public List<Entity_PauseWorking> getPauses() {
+    public List<PauseWorking> getPauses() {
+        if( pauses == null ){
+            pauses = new ArrayList<PauseWorking>();
+        }
         return pauses;
     }
-    public void setPauses(List<Entity_PauseWorking> pauses) {
+    public void setPauses(List<PauseWorking> pauses) {
         this.pauses = pauses;
     }
 

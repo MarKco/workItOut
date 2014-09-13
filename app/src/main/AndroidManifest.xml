@@ -44,7 +44,7 @@
 
         <activity
             android:name="com.ilsecondodasinistra.workitout.SessionWorkingsList"
-            android:label="Lista sessioni di lavoro" >
+            android:label="@string/past_sessions_working" >
         </activity>
 
     </application>

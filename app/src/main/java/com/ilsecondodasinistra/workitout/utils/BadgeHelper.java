@@ -1,57 +1,64 @@
 package com.ilsecondodasinistra.workitout.utils;
 
-import com.ilsecondodasinistra.workitout.database.Entity_PauseWorking;
-import com.ilsecondodasinistra.workitout.database.Entity_SessionWorking;
-import com.ilsecondodasinistra.workitout.database.Entity_SessionWorkingDao;
+import com.ilsecondodasinistra.workitout.database.PauseWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorkingDao;
+
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 
 /**
- * Created by kevin on 03/09/2014.
+ *  @author     Kevin Lucich (03/09/2014).
  */
 public class BadgeHelper {
 
-    private static Date estimatedExitTime = new Date();		//  Hour of the day you should leave the office
-    private static Date extraTime = new Date();				//  Extra time elapsed, or to pass before end of the day
-    private static boolean extraTimeSign = false;			//  true -> extratime positive ; false -> extratime negative
     private static boolean isTimerMarching = true;
+    private static SessionWorking CURRENT_SESSION = null;
 
-    private static Entity_SessionWorking CURRENT_SESSION = null;
+    //  Così da non dover ricalcorare OGNI SECONDO (timer per l'uscita/straordinari) il tempo che lavoro ogni giorno
+    private static Long WORK_TIME_CACHE = null;
+
+
 
     ////////////////////////////////////////////////////
     //  Helpers
 
 
-    public static Entity_SessionWorking getNewSessionWorking(){
-        Entity_SessionWorking session = Entity_SessionWorking.newInstance();
+    public static SessionWorking getNewSessionWorking(){
+        SessionWorking session = SessionWorking.newInstance();
 
         //  Insert new new session into the database
-        DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().insert(session);
+        DatabaseHelper.getDaoSession().getSessionWorkingDao().insert(session);
 
         //  Do something... init?
         return session;
     }
 
     //  Finchè non memorizziamo i dati nel Database non possiamo salvare più di una sessione alla volta
-    public static Entity_SessionWorking getLastSessionWorking(){
+    public static SessionWorking getLastSessionWorking(){
 
         //  This is first run
         if( PreferencesManager.isFirstRun() ){
             return getNewSessionWorking();
         }
 
-        Entity_SessionWorkingDao sessionDao = DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao();
+        SessionWorkingDao sessionDao = DatabaseHelper.getDaoSession().getSessionWorkingDao();
 
-        List<Entity_SessionWorking> sessions = sessionDao.queryBuilder().orderDesc(Entity_SessionWorkingDao.Properties.Id).limit(1).list();
+        List<SessionWorking> sessions = sessionDao.queryBuilder().orderDesc(SessionWorkingDao.Properties.Id).limit(1).list();
 
-        Entity_SessionWorking last = sessions.get(0);
+        SessionWorking last = sessions.get(0);
 
         if( last.getPauses() == null ){
-            last.setPauses( new ArrayList<Entity_PauseWorking>() );
+            last.setPauses( new ArrayList<PauseWorking>() );
         }
 
         //  Get last row of sessionWoriking
@@ -59,7 +66,7 @@ public class BadgeHelper {
     }
 
     //  Now the session must build manually (vars there are in SettingsWorkitout: SharedPreferences), in the future this will be get from the SQLite
-    public static Entity_SessionWorking getCurrentSessionWorking(){
+    public static SessionWorking getCurrentSessionWorking(){
 
         if( CURRENT_SESSION == null ){
             CURRENT_SESSION = getLastSessionWorking();
@@ -75,49 +82,74 @@ public class BadgeHelper {
     //  Quando tocco una qualsiasi variabile di una mia sessione lavorativa (SessionWorking), aggiorno la sorgente (SQLite o SharedPreferences)
     public static void saveCurrentSession() {
         //  Save pauses
-        DatabaseHelper.getDaoSession().getEntity_PauseWorkingDao().updateInTx(CURRENT_SESSION.getPauses());
+        DatabaseHelper.getDaoSession().getPauseWorkingDao().updateInTx(CURRENT_SESSION.getPauses());
 
         //  Save Session
-        DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().update(CURRENT_SESSION);
+        DatabaseHelper.getDaoSession().getSessionWorkingDao().update(CURRENT_SESSION);
     }
+
+    public static long getWorkTimeInMillis() {
+        if( BadgeHelper.WORK_TIME_CACHE == null ){
+            BadgeHelper.WORK_TIME_CACHE = SettingsWorkitout.getWorkTime().getMillis();
+        }
+        return BadgeHelper.WORK_TIME_CACHE;
+    }
+
+    public static void setWorkTime( Duration duration ){
+        SettingsWorkitout.setWorkTime(duration);
+        BadgeHelper.WORK_TIME_CACHE = null;
+    }
+
 
     /////////////////////
     //  Getters and Setters
 
-    public static Entity_PauseWorking getPauseOfLunch(){
+    public static PauseWorking getPauseOfLunch(){
         return getCurrentSessionWorking().getPauseOfLunch();
     }
 
-    public static Date getEntranceTime() {
-        return getCurrentSessionWorking().getEntranceDate();
+    public static DateTime getEntranceTime() {
+        return new DateTime(getCurrentSessionWorking().getEntranceDate());
     }
-    public static void setEntranceTime( Date entranceTime ){
-        CURRENT_SESSION.setEntranceDate(entranceTime);
+    public static void setEntranceTime( DateTime entranceTime ){
+        BadgeHelper.setEntranceTime(entranceTime.getMillis());
+    }
+    public static void setEntranceTime( long entranceTimeInMillis ){
+        CURRENT_SESSION.setEntranceDate(entranceTimeInMillis);
     }
 
-    public static Date getLunchInTime() {
-        return getPauseOfLunch().getEndDate();
+    public static DateTime getLunchInTime() {
+        return new DateTime(getPauseOfLunch().getEndDate());
     }
-    public static void setLunchInTime( Date lunchInTime ){
-        Entity_PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
-        lunchPause.setEndDate(lunchInTime);
+    public static void setLunchInTime( DateTime lunchInTime ){
+        BadgeHelper.setLunchInTime( lunchInTime.getMillis() ) ;
+    }
+    public static void setLunchInTime( long lunchInTimeInMillis ){
+        PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
+        lunchPause.setEndDate( lunchInTimeInMillis );
         CURRENT_SESSION.setPauseOfLunch( lunchPause );
     }
 
-    public static Date getLunchOutTime() {
-        return getPauseOfLunch().getStartDate();
+    public static DateTime getLunchOutTime() {
+        return new DateTime(getPauseOfLunch().getStartDate());
     }
-    public static void setLunchOutTime( Date lunchOutTime ){
-        Entity_PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
-        lunchPause.setStartDate( lunchOutTime );
+    public static void setLunchOutTime( DateTime lunchOutTime ){
+        BadgeHelper.setLunchOutTime(lunchOutTime.getMillis());
+    }
+    public static void setLunchOutTime( long lunchOutTimeInMillis ){
+        PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
+        lunchPause.setStartDate( lunchOutTimeInMillis );
         CURRENT_SESSION.setPauseOfLunch(lunchPause);
     }
 
-    public static Date getExitTime() {
-        return getCurrentSessionWorking().getExitDate();
+    public static DateTime getExitTime() {
+        return new DateTime(getCurrentSessionWorking().getExitDate());
     }
-    public static void setExitTime(Date exitTime) {
-        CURRENT_SESSION.setExitDate(exitTime);
+    public static void setExitTime( DateTime exitTime ){
+        BadgeHelper.setExitTime(exitTime.getMillis());
+    }
+    public static void setExitTime( long exitTimeInMillis ){
+        CURRENT_SESSION.setExitDate( exitTimeInMillis );
     }
 
 
@@ -128,17 +160,17 @@ public class BadgeHelper {
         BadgeHelper.isTimerMarching = isTimerMarching;
     }
 
-    public static void addPause( Date start ){
-        long pauseInMillis = SettingsWorkitout.getPauseDuration() * 60 * 1000;  //   break duration
-        BadgeHelper.addPause( start, new Date(start.getTime() + pauseInMillis) );
+    public static void addPause( DateTime start ){
+        long pauseInMillis = SettingsWorkitout.getPauseDuration() * 60000;  //   break duration
+        BadgeHelper.addPause( start, new DateTime(start.getMillis() + pauseInMillis) );
     }
-    public static void addPause( Date start, Date end ){
-        Entity_PauseWorking pause = Entity_PauseWorking.newInstance();
-        pause.setStartDate(start);
-        pause.setEndDate(end);
+    public static void addPause( DateTime start, DateTime end ){
+        PauseWorking pause = PauseWorking.newInstance();
+        pause.setStartDate( start.getMillis() );
+        pause.setEndDate( end.getMillis() );
         BadgeHelper.addPause(pause);
     }
-    public static void addPause( Entity_PauseWorking pause ){
+    public static void addPause( PauseWorking pause ){
         CURRENT_SESSION.addPause(pause);
     }
 

@@ -2,10 +2,11 @@ package com.ilsecondodasinistra.workitout;
 
 import android.app.Application;
 
-import com.ilsecondodasinistra.workitout.database.Entity_PauseWorking;
-import com.ilsecondodasinistra.workitout.database.Entity_SessionWorking;
+import com.ilsecondodasinistra.workitout.database.PauseWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorking;
 import com.ilsecondodasinistra.workitout.utils.DatabaseHelper;
 
+import org.acra.ACRA;
 import org.acra.ReportField;
 import org.acra.ReportingInteractionMode;
 import org.acra.annotation.ReportsCrashes;
@@ -47,25 +48,6 @@ public class MyApplication extends Application {
 
     private void insertFakeData(){
 
-//        ArrayList<Entity_SessionWorking> ssss = (ArrayList<Entity_SessionWorking>) DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().queryBuilder().list();
-//        ArrayList<Entity_PauseWorking> pppp = (ArrayList<Entity_PauseWorking>) DatabaseHelper.getDaoSession().getEntity_PauseWorkingDao().queryBuilder().list();
-//
-//        int i = 0;
-//        String idsPause = "";
-//        for( Entity_PauseWorking p : pppp ){
-//            idsPause += ","+ p.getId();
-//            i++;
-//        }
-//        i = 0;
-//        String idsSessiosn = "";
-//        for( Entity_SessionWorking s : ssss ){
-//            idsSessiosn += ","+ s.getId();
-//            i++;
-//        }
-//
-//        Utils.logger("IDS SESSION = "+ idsSessiosn, Utils.LOG_DEBUG );
-//        Utils.logger("IDS PAUSES = "+ idsPause, Utils.LOG_DEBUG );
-
         Random random = new Random();
 
         Calendar calendar = Calendar.getInstance();
@@ -74,38 +56,39 @@ public class MyApplication extends Application {
         Calendar sessionCalendar = Calendar.getInstance();
         sessionCalendar.set(Calendar.DAY_OF_MONTH, 1);
 
-        ArrayList<Entity_SessionWorking> sessions = new ArrayList<Entity_SessionWorking>();
-        ArrayList<Entity_PauseWorking> pauses = new ArrayList<Entity_PauseWorking>();
+        ArrayList<SessionWorking> sessions = new ArrayList<SessionWorking>();
+        ArrayList<PauseWorking> pauses = new ArrayList<PauseWorking>();
 
         while(true){
 
             if( sessionCalendar.getTimeInMillis() >= today ){
                 break;
             }
+
             sessionCalendar.set( Calendar.MINUTE, 0 );
             sessionCalendar.set( Calendar.SECOND, 0 );
 
-            Entity_SessionWorking session = Entity_SessionWorking.newInstance();
-            DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().insert( session );
+            SessionWorking session = SessionWorking.newInstance();
+            DatabaseHelper.getDaoSession().getSessionWorkingDao().insert( session );
 
-            Entity_PauseWorking pause = Entity_PauseWorking.newInstance( session.getId(), true );
+            PauseWorking pause = PauseWorking.newInstance(session.getId(), true);
 
             //  9:00
             sessionCalendar.set( Calendar.HOUR_OF_DAY, 9 );
-            session.setEntranceDate( sessionCalendar.getTime() );
+            session.setEntranceDate( sessionCalendar.getTimeInMillis() );
 
             //  13:00
             sessionCalendar.set( Calendar.HOUR_OF_DAY, 13 );
-            pause.setEndDate( sessionCalendar.getTime() );
+            pause.setEndDate( sessionCalendar.getTimeInMillis() );
 
             //  12:XX
             sessionCalendar.set( Calendar.MINUTE, (random.nextInt(29)+30) );
             sessionCalendar.set( Calendar.HOUR_OF_DAY, 12 );
-            pause.setStartDate( sessionCalendar.getTime() );
+            pause.setStartDate( sessionCalendar.getTimeInMillis() );
 
             //  17:XX
             sessionCalendar.set( Calendar.HOUR_OF_DAY, 17 );
-            session.setExitDate( sessionCalendar.getTime() );
+            session.setExitDate( sessionCalendar.getTimeInMillis() );
 
             sessions.add(session);
             pauses.add(pause);
@@ -116,8 +99,8 @@ public class MyApplication extends Application {
         Utils.logger("sessions.size() = "+ sessions.size(), Utils.LOG_DEBUG );
         Utils.logger("pauses.size() = "+ pauses.size(), Utils.LOG_DEBUG );
 
-        DatabaseHelper.getDaoSession().getEntity_PauseWorkingDao().insertOrReplaceInTx( pauses );
-        DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().updateInTx( sessions );
+        DatabaseHelper.getDaoSession().getPauseWorkingDao().insertOrReplaceInTx( pauses );
+        DatabaseHelper.getDaoSession().getSessionWorkingDao().updateInTx( sessions );
 
     }
 }

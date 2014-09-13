@@ -18,40 +18,40 @@ import de.greenrobot.dao.internal.DaoConfig;
  */
 public class DaoSession extends AbstractDaoSession {
 
-    private final DaoConfig entity_PauseWorkingDaoConfig;
-    private final DaoConfig entity_SessionWorkingDaoConfig;
+    private final DaoConfig pauseWorkingDaoConfig;
+    private final DaoConfig sessionWorkingDaoConfig;
 
-    private final Entity_PauseWorkingDao entity_PauseWorkingDao;
-    private final Entity_SessionWorkingDao entity_SessionWorkingDao;
+    private final PauseWorkingDao pauseWorkingDao;
+    private final SessionWorkingDao sessionWorkingDao;
 
     public DaoSession(SQLiteDatabase db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
 
-        entity_PauseWorkingDaoConfig = daoConfigMap.get(Entity_PauseWorkingDao.class).clone();
-        entity_PauseWorkingDaoConfig.initIdentityScope(type);
+        pauseWorkingDaoConfig = daoConfigMap.get(PauseWorkingDao.class).clone();
+        pauseWorkingDaoConfig.initIdentityScope(type);
 
-        entity_SessionWorkingDaoConfig = daoConfigMap.get(Entity_SessionWorkingDao.class).clone();
-        entity_SessionWorkingDaoConfig.initIdentityScope(type);
+        sessionWorkingDaoConfig = daoConfigMap.get(SessionWorkingDao.class).clone();
+        sessionWorkingDaoConfig.initIdentityScope(type);
 
-        entity_PauseWorkingDao = new Entity_PauseWorkingDao(entity_PauseWorkingDaoConfig, this);
-        entity_SessionWorkingDao = new Entity_SessionWorkingDao(entity_SessionWorkingDaoConfig, this);
+        pauseWorkingDao = new PauseWorkingDao(pauseWorkingDaoConfig, this);
+        sessionWorkingDao = new SessionWorkingDao(sessionWorkingDaoConfig, this);
 
-        registerDao(Entity_PauseWorking.class, entity_PauseWorkingDao);
-        registerDao(Entity_SessionWorking.class, entity_SessionWorkingDao);
+        registerDao(PauseWorking.class, pauseWorkingDao);
+        registerDao(SessionWorking.class, sessionWorkingDao);
     }
     
     public void clear() {
-        entity_PauseWorkingDaoConfig.getIdentityScope().clear();
-        entity_SessionWorkingDaoConfig.getIdentityScope().clear();
+        pauseWorkingDaoConfig.getIdentityScope().clear();
+        sessionWorkingDaoConfig.getIdentityScope().clear();
     }
 
-    public Entity_PauseWorkingDao getEntity_PauseWorkingDao() {
-        return entity_PauseWorkingDao;
+    public PauseWorkingDao getPauseWorkingDao() {
+        return pauseWorkingDao;
     }
 
-    public Entity_SessionWorkingDao getEntity_SessionWorkingDao() {
-        return entity_SessionWorkingDao;
+    public SessionWorkingDao getSessionWorkingDao() {
+        return sessionWorkingDao;
     }
 
 }

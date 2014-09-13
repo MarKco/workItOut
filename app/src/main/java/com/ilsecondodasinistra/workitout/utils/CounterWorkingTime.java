@@ -5,15 +5,16 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.widget.TextView;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Period;
+
 
 /**
- * Created by kevin on 11/09/14.
+ *  @author     Kevin Lucich (11/09/14)
  */
 public class CounterWorkingTime {
 
-    private static final SimpleDateFormat hhmmssFormatter = new SimpleDateFormat("H:mm:ss");
     private static final int MSG = 1;
     private final static long interval = 1000;
 
@@ -29,7 +30,12 @@ public class CounterWorkingTime {
 
     public void calculateMillis(){
         stop();
-        currentMillis = new Date().getTime() - BadgeHelper.getCurrentSessionWorking().calcExitTime();
+        currentMillis = DateTime.now(DateTimeZone.UTC).getMillis() - BadgeHelper.getCurrentSessionWorking().calcExitTime();
+    }
+
+    public void restart(){
+        stop();
+        start();
     }
 
     public synchronized final CounterWorkingTime start() {
@@ -60,7 +66,7 @@ public class CounterWorkingTime {
     }
 
     public void onTick( long millis ){
-        textView.setText( ((overTime)?"":"-") + hhmmssFormatter.format( new Date(millis)) );
+        textView.setText( ((overTime)?"":"-") + BadgeHelperFormat.formatPeriodHHmmss(millis) );
     }
 
     private Handler mHandler = new Handler() {

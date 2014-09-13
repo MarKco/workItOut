@@ -1,7 +1,6 @@
 package com.ilsecondodasinistra.workitout.utils;
 
-import java.util.Calendar;
-import java.util.Date;
+import org.joda.time.Duration;
 
 import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 
@@ -14,28 +13,14 @@ public class SettingsWorkitout extends PreferencesManager {
 //        PreferencesManager.setDefaultPreferences();
 //    }
 
-//    private static final String KEY_NAME = "test_name";
-//
-//    public static String getName( String default_name ){
-//        return getPreferences().getString(KEY_NAME, default_name);
-//    }
-//    public static String getName(){
-//        return getName("default_name");
-//    }
-
     private static final String WORK_TIME = "work_time";
 
     //////  TEMPORANEE
     private static final String TIMER_MARCHING = "timer_marching";
 
-    private static final String EXTRA_TIME_HOURS = "extra_time_hours";
-    private static final String EXTRA_TIME_MINUTES = "extra_time_minutes";
-    private static final String EXTRA_TIME_SECONDS = "extra_time_seconds";
-
-    private static final String EXTRA_TIME_SIGN = "extra_time_sign";
-
-    //  If application drawer was never opened manually, automatically open it at first application run
-    private static final String DRAWER_FIRST_OPENING = "drawer_first_opening";
+//    private static final String EXTRA_TIME_HOURS = "extra_time_hours";
+//    private static final String EXTRA_TIME_MINUTES = "extra_time_minutes";
+//    private static final String EXTRA_TIME_SECONDS = "extra_time_seconds";
 
     ////////////////////////////////////////////
 
@@ -44,7 +29,7 @@ public class SettingsWorkitout extends PreferencesManager {
     //////////////////////////////////////
     //  Settings
 
-    private static final String PAUSE_DURATION = "pause_duration";  //  Minutes
+    public static final String PAUSE_DURATION = "pause_duration";  //  Minutes
 
     public static void setPauseDuration( int pauseDuration ){
         setPreferences(PAUSE_DURATION, pauseDuration );
@@ -56,21 +41,17 @@ public class SettingsWorkitout extends PreferencesManager {
         return getPauseDuration(15);
     }
 
-    public static void setWorkTime( Date work_time_date ){
+    public static void setWorkTime( Duration work_time_duration ){
         //  Save in milliseconds
-        setPreferences(WORK_TIME, work_time_date.getTime() );
+        setPreferences(WORK_TIME, work_time_duration.getMillis() );
     }
-    public static Date getWorkTime( long default_value ){
+    public static Duration getWorkTime( long default_value ){
         long millis = getPreferences().getLong(WORK_TIME, default_value );
-        return new Date(millis);
+        return new Duration(millis);
     }
-    public static Date getWorkTime(){
+    public static Duration getWorkTime(){
         //  Default 8 ore :)
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(0);
-        calendar.set(Calendar.HOUR_OF_DAY, 8);
-        calendar.set(Calendar.MINUTE, 0 );
-        return getWorkTime( calendar.getTimeInMillis() );
+        return getWorkTime(28800000);
     }
 
     public static void setTimerMarching( boolean is_timer_marching ){
@@ -83,48 +64,38 @@ public class SettingsWorkitout extends PreferencesManager {
         return isTimerMarching(true);
     }
 
-    public static void setExtraTimeSign( boolean extra_time_sign ){
-        setPreferences(EXTRA_TIME_SIGN,extra_time_sign);
-    }
-    public static boolean isExtraTimeSign( boolean default_value ){
-        return getPreferences().getBoolean(EXTRA_TIME_SIGN, default_value);
-    }
-    public static boolean isExtraTimeSign(){
-        return isExtraTimeSign(false);
-    }
-
     /////////////////////////////////////////////////
     //  Extra time
 
-    public static void setExtraTimeHours( long extra_time_hours ){
-        setPreferences(EXTRA_TIME_HOURS,extra_time_hours);
-    }
-    public static long getExtraTimeHours( long default_value ){
-        return getPreferences().getLong(EXTRA_TIME_HOURS, default_value);
-    }
-    public static long getExtraTimeHours(){
-        return getExtraTimeHours(0);
-    }
+//    public static void setExtraTimeHours( long extra_time_hours ){
+//        setPreferences(EXTRA_TIME_HOURS,extra_time_hours);
+//    }
+//    public static long getExtraTimeHours( long default_value ){
+//        return getPreferences().getLong(EXTRA_TIME_HOURS, default_value);
+//    }
+//    public static long getExtraTimeHours(){
+//        return getExtraTimeHours(0);
+//    }
 
-    public static void setExtraTimeMinutes( long extra_time_minutes ){
-        setPreferences(EXTRA_TIME_MINUTES,extra_time_minutes);
-    }
-    public static long getExtraTimeMinutes( long default_value ){
-        return getPreferences().getLong(EXTRA_TIME_MINUTES, default_value);
-    }
-    public static long getExtraTimeMinutes(){
-        return getExtraTimeMinutes(-1);
-    }
+//    public static void setExtraTimeMinutes( long extra_time_minutes ){
+//        setPreferences(EXTRA_TIME_MINUTES,extra_time_minutes);
+//    }
+//    public static long getExtraTimeMinutes( long default_value ){
+//        return getPreferences().getLong(EXTRA_TIME_MINUTES, default_value);
+//    }
+//    public static long getExtraTimeMinutes(){
+//        return getExtraTimeMinutes(-1);
+//    }
 
-    public static void setExtraTimeSeconds( long extra_time_seconds ){
-        setPreferences(EXTRA_TIME_SECONDS,extra_time_seconds);
-    }
-    public static long getExtraTimeSeconds( long default_value ){
-        return getPreferences().getLong(EXTRA_TIME_SECONDS, default_value);
-    }
-    public static long getExtraTimeSeconds(){
-        return getExtraTimeSeconds(-1);
-    }
+//    public static void setExtraTimeSeconds( long extra_time_seconds ){
+//        setPreferences(EXTRA_TIME_SECONDS,extra_time_seconds);
+//    }
+//    public static long getExtraTimeSeconds( long default_value ){
+//        return getPreferences().getLong(EXTRA_TIME_SECONDS, default_value);
+//    }
+//    public static long getExtraTimeSeconds(){
+//        return getExtraTimeSeconds(-1);
+//    }
 
 //    public static void setLunchOutTime( long lunch_out_time ){
 //        setPreferences(LUNCH_OUT_TIME,lunch_out_time);

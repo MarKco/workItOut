@@ -35,7 +35,7 @@
     <string name="alarm_activated">Alarm set at </string>
     <string name="title_activity_drawer_fragment">DrawerFragment</string>
     <string name="prefs_delete_timings">Delete timestamps</string>
-    <string name="prefs_about">About WorkItOut</string>
+    <string name="about_workitout">About WorkItOut</string>
     <string name="title_activity_about">About WorkItOut</string>
     <string name="app_author"><a href="http://www.marcozanetti.it">Marco Zanetti</a></string>
     <string name="author_email">Mail me: <a href="mailto:ilsecondodasinistra@gmail.com">ilsecondodasinistra@gmail.com</a></string>
@@ -44,5 +44,7 @@
     <string name="changelog_title">Changelog</string>
     <string name="yes">Yes</string>
     <string name="change_break_time">Change break time</string>
+    <string name="empty_string"/>
+    <string name="past_sessions_working">Past sessions working</string>
 
 </resources>

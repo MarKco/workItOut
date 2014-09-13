@@ -1,57 +1,22 @@
 package com.ilsecondodasinistra.workitout.utils.preferences;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.preference.PreferenceFragment;
-import android.view.MenuItem;
 
 import com.ilsecondodasinistra.workitout.R;
+import com.ilsecondodasinistra.workitout.utils.SettingsWorkitout;
 
+import it.lucichkevin.cip.preferencesmanager.activity.AbstractPreferencesListActivity;
+import it.lucichkevin.cip.preferencesmanager.activity.ItemPreference;
 
 /**
  * Created by Kevin Lucich on 15/03/14.
  */
-public class PreferencesActivity extends Activity {
+public class PreferencesActivity extends AbstractPreferencesListActivity {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_preferences);
+    protected void populatePreferencesList() {
+        super.populatePreferencesListWithDefault();
 
-        // Display the fragment as the main content.
-        getFragmentManager().beginTransaction()
-                .replace( android.R.id.content, new SettingsFragment() )
-                .commit();
-
-        // Enabling Up navigation
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-//        getActionBar().setLogo(R.drawable.ic_launcher);
+        items.add(new ItemPreference( SettingsWorkitout.PAUSE_DURATION, R.string.change_break_time, R.string.empty_string, ItemPreference.TYPE_MINUTEPICKER ));
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        /*
-            When the back button on the ActionBar is pressed... well, go back!
-        */
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                this.finish();
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-
-    public static class SettingsFragment extends PreferenceFragment {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            // Load the preferences from an XML resource
-            addPreferencesFromResource(R.xml.preferences);
-        }
-
-    }
 }

@@ -2,69 +2,65 @@ package com.ilsecondodasinistra.workitout;
 
 import android.app.ListActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.widget.TextView;
 
-import com.ilsecondodasinistra.workitout.database.Entity_PauseWorking;
-import com.ilsecondodasinistra.workitout.database.Entity_SessionWorking;
+import com.ilsecondodasinistra.workitout.database.PauseWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorking;
+import com.ilsecondodasinistra.workitout.utils.BadgeHelperFormat;
 import com.ilsecondodasinistra.workitout.utils.DatabaseHelper;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 import it.lucichkevin.cip.ObjectAdapter;
-import it.lucichkevin.cip.Utils;
 
 /**
  * Created by kevin on 10/09/14.
  */
 public class SessionWorkingsList extends ListActivity {
 
-    private SimpleDateFormat hhmm = new SimpleDateFormat("HH:mm");
-    private SimpleDateFormat ddMMyyyy = new SimpleDateFormat("dd/MM/yyyy");
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        ArrayList<Entity_SessionWorking> ssss = (ArrayList<Entity_SessionWorking>) DatabaseHelper.getDaoSession().getEntity_SessionWorkingDao().queryBuilder().list();
+        ArrayList<SessionWorking> _sessions = (ArrayList<SessionWorking>) DatabaseHelper.getDaoSession().getSessionWorkingDao().queryBuilder().list();
+        SessionWorking[] sessions = new SessionWorking[_sessions.size()];
+        sessions = _sessions.toArray(sessions);
 
-        Entity_SessionWorking[] sessions = new Entity_SessionWorking[ssss.size()];
-
-        int i = 0;
-        for( Entity_SessionWorking s : ssss ){
-            sessions[i] = s;
-            i++;
-        }
-
-        Utils.logger("sessions = "+ sessions, Utils.LOG_DEBUG );
-        Utils.logger("sessions.size() = "+ ssss.size(), Utils.LOG_DEBUG );
-
-        ObjectAdapter<Entity_SessionWorking> adapter = new ObjectAdapter<Entity_SessionWorking>( getBaseContext(), R.layout.sessionworkingsitem, sessions ){
+        ObjectAdapter<SessionWorking> adapter = new ObjectAdapter<SessionWorking>( getBaseContext(), R.layout.sessionworkingsitem, sessions ){
             @Override
-            protected void attachItemToLayout( Entity_SessionWorking session, int position ){
+            protected void attachItemToLayout( SessionWorking session, int position ){
 
-                Date entranceDate = session.getEntranceDate();
+                String total_work_time = "Stai ancora lavorando....";
+                if( session.getExitDate() != 0 ){
+                    total_work_time = session.getTimeWorked().toString(BadgeHelperFormat.HHmm);
+                }
 
-//                Utils.logger(" ===> "+ session.getExitDate(), Utils.LOG_DEBUG );
+                ((TextView) findViewById(R.id.sessionworking_date)).setText( BadgeHelperFormat.formatDateTime(session.getEntranceDate()) );
+                ((TextView) findViewById(R.id.total_work_time)).setText( total_work_time );
+                ((TextView) findViewById(R.id.total_pauses_time)).setText( BadgeHelperFormat.formatPeriod(session.getAllPausesDuration()) );
 
-                ((TextView) findViewById(R.id.sessionworking_date)).setText( ddMMyyyy.format(entranceDate) );
-                ((TextView) findViewById(R.id.total_work_time)).setText( hhmm.format(session.getTimeWorked()));
+                ((TextView) findViewById(R.id.entrance_time)).setText( BadgeHelperFormat.formatTime(session.getEntranceDate()) );
+                ((TextView) findViewById(R.id.exit_time)).setText( BadgeHelperFormat.formatTime(session.getExitDate()) );
 
-                ((TextView) findViewById(R.id.entrance_time)).setText( hhmm.format(session.getEntranceDate()) );
-                ((TextView) findViewById(R.id.exit_time)).setText( hhmm.format(session.getExitDate()) );
-
-
-                Entity_PauseWorking pauseLunch = session.getPauseOfLunch();
-                Date lunchOut = pauseLunch.getStartDate();
-                Date lunchIn = pauseLunch.getEndDate();
-                ((TextView) findViewById(R.id.lunchout_time)).setText( hhmm.format(lunchOut) );
-                ((TextView) findViewById(R.id.lunchin_time)).setText( hhmm.format(lunchIn) );
+                PauseWorking pauseLunch = session.getPauseOfLunch();
+                ((TextView) findViewById(R.id.lunchout_time)).setText( BadgeHelperFormat.formatTime(pauseLunch.getStartDate()) );
+                ((TextView) findViewById(R.id.lunchin_time)).setText( BadgeHelperFormat.formatTime(pauseLunch.getEndDate()) );
 
             }
         };
 
         setListAdapter(adapter);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected( MenuItem item ){
+        switch( item.getItemId() ){
+            case android.R.id.home:
+                finish();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 }

@@ -10,8 +10,7 @@ import android.widget.RemoteViews;
 
 import com.ilsecondodasinistra.workitout.utils.BadgeHelper;
 
-import java.util.Calendar;
-import java.util.Date;
+import org.joda.time.DateTime;
 
 import it.lucichkevin.cip.Utils;
 
@@ -50,13 +49,11 @@ public class MyWidgetProvider extends AppWidgetProvider {
 		if( intent.getAction().equals(MyWidgetProvider.ACTION_BADGE) ){
             Utils.logger("ho premuto il widget! :D", Utils.LOG_DEBUG );
 
-            Calendar now = Calendar.getInstance();
+            DateTime date = BadgeHelper.getEntranceTime();
+            Utils.logger( "EntranceTime = "+ date.getHourOfDay() +":"+ date.getMinuteOfHour(), Utils.LOG_DEBUG );
 
-            Date date = BadgeHelper.getEntranceTime();
-            Utils.logger( "EntranceTime = "+ date.getHours() +":"+ date.getMinutes(), Utils.LOG_DEBUG );
-
-            date = now.getTime();
-            Utils.logger( "setEntrance = "+ date.getHours() +":"+ date.getMinutes(), Utils.LOG_DEBUG );
+            DateTime now = DateTime.now();
+            Utils.logger( "setEntrance = "+ now.getHourOfDay() +":"+ now.getMinuteOfHour(), Utils.LOG_DEBUG );
 
 //            Utils.Toaster( context, "EntranceTime = "+ date.getHours() +":"+ date.getMinutes() );
         }
