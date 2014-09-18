@@ -3,6 +3,7 @@ package com.ilsecondodasinistra.workitout.classes;
 import com.ilsecondodasinistra.workitout.database.PauseWorking;
 import com.ilsecondodasinistra.workitout.utils.BadgeHelper;
 import com.ilsecondodasinistra.workitout.utils.DatabaseHelper;
+import com.ilsecondodasinistra.workitout.utils.SettingsWorkitout;
 
 import org.joda.time.DateTime;
 
@@ -54,7 +55,12 @@ public class SuperPauseWorking {
      *  @see    #getDuration()
      */
     public long getDurationInMillis(){
-        return getEndDate() - getStartDate();
+        long minimum_duration = SettingsWorkitout.getMinimumLunchPause().getMillis();
+        long duration = getEndDate() - getStartDate();
+        if( duration < minimum_duration ){
+            return minimum_duration;
+        }
+        return duration;
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.ilsecondodasinistra.workitout;
 
-import android.app.ActionBar;
 import android.app.AlarmManager;
 import android.app.Dialog;
 import android.app.NotificationManager;
@@ -25,13 +24,10 @@ import com.ilsecondodasinistra.workitout.utils.BadgeHelper;
 import com.ilsecondodasinistra.workitout.utils.BadgeHelperFormat;
 import com.ilsecondodasinistra.workitout.utils.CounterWorkingTime;
 import com.ilsecondodasinistra.workitout.utils.SettingsWorkitout;
+import com.ilsecondodasinistra.workitout.utils.preferences.PreferencesActivity;
 
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.joda.time.MutableDateTime;
-import org.joda.time.Period;
-
-import java.util.Date;
 
 import it.lucichkevin.cip.Utils;
 import it.lucichkevin.cip.dialogs.pickers.TimePickerDialog;
@@ -46,41 +42,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
     private DrawerLayoutHelper drawerLayoutHelper;
     private ItemDrawerMenu[] ARRAY_ITEMS = new ItemDrawerMenu[]{
 
-        //  Duration in hours and minutes
-        new ItemDrawerMenu( R.string.prefs_choose_workday_length, new ItemDrawerMenu.OnClickListener() {
-            @Override
-            public void onClick() {
-                final TimePickerDialog timePickerDialog = new TimePickerDialog(WorkItOutMain.this);
-
-                Period periodWorkTime = new Period(SettingsWorkitout.getWorkTime());
-
-                timePickerDialog.getDialog().setTitle(R.string.workday_duration_prefs_title);
-                timePickerDialog.setHour( periodWorkTime.getHours() );
-                timePickerDialog.setMinute( periodWorkTime.getMinutes() );
-                timePickerDialog.setCallbacks(new TimePickerDialog.Callbacks() {
-                    @Override
-                    public void onButtonPositiveClicked( Dialog dialog, int hour, int minute ){
-
-                        Duration durationWorkTime = new Duration(0);
-                        durationWorkTime = durationWorkTime.plus((hour * 60 + minute) * 60000);
-
-                        BadgeHelper.setWorkTime(durationWorkTime);
-
-                        onResumeFragments();
-                        updateWorkDayLength();
-                        updateEstimatedTimeOfExit();
-
-                        dialog.dismiss();
-                    }
-                    @Override
-                    public void onButtonCancelClicked( Dialog dialog, int hour, int minute ){
-                        dialog.dismiss();
-                    }
-                });
-                timePickerDialog.show( getSupportFragmentManager(), "timeasdfasdf" );
-            }
-        }),
-
         //
         new ItemDrawerMenu( R.string.prefs_delete_timings, new ItemDrawerMenu.OnClickListener() {
             @Override
@@ -90,28 +51,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
         }),
 
         //
-//        new ItemDrawerMenu( R.string.change_break_time, new ItemDrawerMenu.OnClickListener() {
-//            @Override
-//            public void onClick() {
-//                final MinutesPickerDialog minutesPickerDialog = new MinutesPickerDialog( WorkItOutMain.this );
-//                minutesPickerDialog.getDialog().setTitle("Seleziona durata pausa");
-//                minutesPickerDialog.setMinute(SettingsWorkitout.getPauseDuration());
-//                minutesPickerDialog.setCallbacks(new MinutesPickerDialog.Callbacks(){
-//                    @Override
-//                    public void onButtonPositiveClicked( Dialog dialog, int minute ){
-//                        SettingsWorkitout.setPauseDuration(minute);
-//                        dialog.dismiss();
-//                    }
-//                    @Override
-//                    public void onButtonCancelClicked( Dialog dialog, int i) {
-//                        dialog.dismiss();
-//                    }
-//                });
-//                minutesPickerDialog.show(getSupportFragmentManager(), "timepicker-break-time");
-//            }
-//        }),
-
-        //
         new ItemDrawerMenu( R.string.send_email, new ItemDrawerMenu.OnClickListener() {
             @Override
             public void onClick() {
@@ -119,11 +58,19 @@ public class WorkItOutMain extends SherlockFragmentActivity {
             }
         }),
 
-        //  About WorkItOut
-        new ItemDrawerMenu( R.string.about_workitout, AboutActivity.class ),
-
         //  Vecchie "badgate"
         new ItemDrawerMenu( R.string.past_sessions_working, SessionWorkingsList.class ),
+
+        //  Settings
+        new ItemDrawerMenu( R.string.action_settings, PreferencesActivity.class, new ItemDrawerMenu.OnClickListener() {
+            @Override
+            public void onClick() {
+                PreferencesActivity.activity_main = WorkItOutMain.this;
+            }
+        }),
+
+        //  About WorkItOut
+        new ItemDrawerMenu( R.string.about_workitout, AboutActivity.class ),
 
     };
 
@@ -147,8 +94,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_work_it_out_main);
 
-        ActionBar actionBar = getActionBar();
-		actionBar.setTitle(getString(R.string.app_name));
+        getActionBar().setTitle(getString(R.string.app_name));
 
 		//  Initializations
 		Button entranceButton = (Button)findViewById(R.id.entrance_button);
@@ -172,7 +118,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		updateWorkDayLength();
 
         DateTime entranceTime = BadgeHelper.getEntranceTime();
-//        Utils.logger("entranccalcExitTimeeTime = "+ entranceTime, Utils.LOG_DEBUG );
         if( entranceTime.getMillis() != 0 ){
             entranceText.setText( BadgeHelperFormat.formatTime(entranceTime) );
             setTextColor(entranceText, entranceTime );
@@ -181,11 +126,10 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 
 
         DateTime lunchInTime = BadgeHelper.getLunchInTime();
-//        Utils.logger("lunchInTime = "+ lunchInTime, Utils.LOG_DEBUG );
         if( lunchInTime.getMillis() != 0 ){
             lunchInText.setText( BadgeHelperFormat.formatTime(lunchInTime) );
             setTextColor(entranceText,lunchInTime);
-            if( !isYesterday(lunchInTime) ){
+            if( !BadgeHelper.isYesterday(lunchInTime) ){
                 extraTimeLayout.setVisibility(View.VISIBLE);
             }else{
                 extraTimeLayout.setVisibility(View.GONE);
@@ -193,20 +137,16 @@ public class WorkItOutMain extends SherlockFragmentActivity {
         }
 
         DateTime lunchOutTime = BadgeHelper.getLunchOutTime();
-//        Utils.logger("lunchOutTime = "+ lunchOutTime, Utils.LOG_DEBUG );
         if( lunchOutTime.getMillis() != 0 ){
             lunchOutText.setText( BadgeHelperFormat.formatTime(lunchOutTime) );
             setTextColor(entranceText,lunchOutTime);
         }
 
         DateTime exitTime = BadgeHelper.getExitTime();
-//        Utils.logger("exitTime = "+ exitTime, Utils.LOG_DEBUG );
         if( exitTime.getMillis() != 0 ){
             exitText.setText( BadgeHelperFormat.formatTime(exitTime) );
             setTextColor(exitText,exitTime);
         }
-
-//        BadgeHelper.setExtraTimeSign( SettingsWorkitout.isExtraTimeSign() );
 
 		updateEstimatedTimeOfExit();
 		
@@ -341,18 +281,22 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 
                     long now = DateTime.now().getMillis();
 					long pauseInMillis = SettingsWorkitout.getPauseDuration() * 60000; //   break duration - in millis
-					long intervalForNotification = pauseInMillis - 120000;     // Notification is 2 minutes before the end of the break
 
-                    PauseWorking pause = PauseWorking.newInstance();
-                    pause.setStartDate( now );
-                    pause.setEndDate( new Date().getTime() + pauseInMillis );
-                    BadgeHelper.addPause(pause);
+                    if( SettingsWorkitout.isPausesCounted() ) {
+                        PauseWorking pause = PauseWorking.newInstance();
+                        pause.setStartDate(now);
+                        pause.setEndDate(now + pauseInMillis);
+                        BadgeHelper.addPause(pause);
+                    }
 
-					Intent i = new Intent(getBaseContext(), PauseNotificationService.class);
-					PendingIntent pi = PendingIntent.getService(getBaseContext(), 2, i, 0);
-					AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
+                    if( SettingsWorkitout.isNotificationsEnabled() ) {
+                        long intervalForNotification = pauseInMillis - 120000;     // Notification is 2 minutes before the end of the break
 
-					mAlarm.set( AlarmManager.RTC_WAKEUP, (now + intervalForNotification), pi);
+                        Intent i = new Intent(getBaseContext(), PauseNotificationService.class);
+                        PendingIntent pi = PendingIntent.getService(getBaseContext(), 2, i, 0);
+                        AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
+                        mAlarm.set(AlarmManager.RTC_WAKEUP, (now + intervalForNotification), pi);
+                    }
 			}
 		});
 	}
@@ -377,23 +321,22 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	}
 
 	private void entranceActions() {
-		//  Ricalcola l'orario di uscita
-		updateEstimatedTimeOfExit();
+
 		entranceText.setTextColor(Color.BLACK);
 		
 		//  Blanks out all previous entrance and exit timings, if timings are yesterday ones
-		if( isYesterday(BadgeHelper.getLunchInTime()) ){
+		if( BadgeHelper.isYesterday(BadgeHelper.getLunchInTime()) ){
 //            lunchInTime.setTime(0);
             BadgeHelper.setLunchInTime(0);
 		    lunchInText.setText("");
 		}
 
-		if( isYesterday(BadgeHelper.getLunchOutTime()) ){
+		if( BadgeHelper.isYesterday(BadgeHelper.getLunchOutTime()) ){
             BadgeHelper.setLunchOutTime(0);
 		    lunchOutText.setText("");
 		}
 
-		if( isYesterday(BadgeHelper.getExitTime()) ){
+		if( BadgeHelper.isYesterday(BadgeHelper.getExitTime()) ){
             BadgeHelper.setExitTime(0);
 		    exitText.setText("");
 		}
@@ -403,12 +346,13 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		mNotificationManager.cancelAll();   //    When application is open all its notifications must be deleted
 
 		extraTimeLayout.setVisibility(View.VISIBLE);
-        rowTimeToLeave.setVisibility(View.VISIBLE);
 
-        if( chronoWorkingTime.isRunning() ){
-            chronoWorkingTime.restart();
+        if( BadgeHelper.getLunchInTime().getMillis() != 0 ){
+            rowTimeToLeave.setVisibility(View.VISIBLE);
         }
 
+        //  Ricalcola l'orario di uscita
+        updateEstimatedTimeOfExit();
 		removeAlarm();
 	}
 
@@ -435,22 +379,24 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 
 		//  Set up notification for proper time
 		if( calcExitTime.isAfterNow() ){
-			Intent i = new Intent(getBaseContext(), NotificationService.class);
-			PendingIntent pi = PendingIntent.getService(getBaseContext(), 0, i, 0);
-			AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
 
-            //  Debug: the line below allows to set notification to 5 seconds in future.
-//    		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
-            mAlarm.set(AlarmManager.RTC_WAKEUP, calcExitTime.getMillis(), pi);
+            if( SettingsWorkitout.isNotificationsEnabled() ) {
+                Intent i = new Intent(getBaseContext(), NotificationService.class);
+                PendingIntent pi = PendingIntent.getService(getBaseContext(), 0, i, 0);
+                AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
+                //  Debug: the line below allows to set notification to 5 seconds in future.
+//        		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
+                mAlarm.set(AlarmManager.RTC_WAKEUP, calcExitTime.getMillis(), pi);
+            }
 
-            Utils.Toaster( getBaseContext(), getString(R.string.alarm_activated) + " " + BadgeHelperFormat.formatTime(calcExitTime), 2000 );
+            Utils.Toaster(getBaseContext(), getString(R.string.alarm_activated) + " " + BadgeHelperFormat.formatTime(calcExitTime), 2000);
 		}
 
 		startCountForExtraTime();
 	}
 
     public void chooseTime( DateTime date ){
-        if( isYesterday(date) ){
+        if( BadgeHelper.isYesterday(date) ){
             chooseTime( null, null );
         }else{
             chooseTime( date.getHourOfDay(), date.getMinuteOfHour() );
@@ -480,7 +426,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
             @Override
             public void onButtonPositiveClicked( Dialog dialog, int hour, int minute ){
 
-                MutableDateTime date = new MutableDateTime();
+                MutableDateTime date = MutableDateTime.now();
                 date.setHourOfDay(hour);
                 date.setMinuteOfHour(minute);
                 date.setSecondOfMinute(0);
@@ -538,13 +484,13 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	/*
 	 * Updates workday length by calling a helper function
 	 */
-	private void updateWorkDayLength(){
-		try{
-			workdayLength.setText( BadgeHelperFormat.formatPeriod(BadgeHelper.getWorkTimeInMillis()) );
-		}catch( NumberFormatException e ){
-            e.printStackTrace();
-		}
+	public void updateWorkDayLength(){
+        workdayLength.setText( BadgeHelperFormat.formatPeriod(BadgeHelper.getWorkTimeInMillis()) );
 	}
+
+    public void triggerResumeFragments(){
+        onResumeFragments();
+    }
 
 	@Override
 	protected void onResumeFragments() {
@@ -622,14 +568,18 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		textToChange.setText( BadgeHelperFormat.formatTime(now) );
 
 		return now;
-	}	
+	}
 
-	private void updateEstimatedTimeOfExit(){
+	public void updateEstimatedTimeOfExit(){
         Long time = BadgeHelper.getCurrentSessionWorking().calcExitTime();
         if( time == null ){
             return;
         }
         timeToLeave.setText( BadgeHelperFormat.formatTime(time) );
+
+        if( chronoWorkingTime.isRunning() ){
+            chronoWorkingTime.restart();
+        }
 	}
 
     private void setTextColor( EditText inputText, DateTime inputDate ){
@@ -643,17 +593,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
         }
     }
 
-	/*
-	 * Check if date provided is yesterday
-	 * @returns true if it's yesterday (or before)
-	 * @returns false otherwise
-	 */
-	private boolean isYesterday( DateTime dateToCheck ){
-
-        DateTime yesterday = DateTime.now().minusDays(1);
-		return !(yesterday.getYear() == dateToCheck.getYear()  && yesterday.getDayOfYear() < dateToCheck.getDayOfYear() );
-	}
-	
 	private void removeAlarm(){
 
 		Intent i = new Intent(getBaseContext(), NotificationService.class);
@@ -703,7 +642,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
         BadgeHelper.saveCurrentSession();
 
         chronoWorkingTime.stop();
-        SettingsWorkitout.setTimerMarching( BadgeHelper.isTimerMarching() );
     }
 
     @Override

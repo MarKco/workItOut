@@ -47,6 +47,11 @@
             android:label="@string/past_sessions_working" >
         </activity>
 
+        <activity
+            android:name="com.ilsecondodasinistra.workitout.utils.preferences.PreferencesActivity"
+            android:label="@string/settings_title" >
+        </activity>
+
     </application>
 
     <uses-permission android:name="android.permission.VIBRATE" />

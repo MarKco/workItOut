@@ -44,7 +44,7 @@ public class PauseNotificationService extends Service {
 //	        Toast.makeText(context, "Siamo nel caso Android 4.0", 1000).show();
 	        PendingIntent pi = PendingIntent.getActivity(context, 0, new Intent(context, WorkItOutMain.class), 0); // open MainActivity if the user selects this notification
 	        
-	        String longText = (String)getText(R.string.longTextForPause);
+//	        String longText = (String) getText(R.string.longTextForPause);
 	        
 	        Builder builder = new Builder(this);
 	        builder.setContentTitle(context.getString(R.string.notificationPauseTitle))

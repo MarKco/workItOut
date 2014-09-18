@@ -46,5 +46,8 @@
     <string name="app_changelog">Version 2.2\n- You can now share your daily timestamps via email\n- You can now customize your working time length\n\nVersion 2.2.1\n- Fixed wrong locales, now the app is in english in all countries except italy\n- Long press on a timestamp deletes itVersion 2.1\n- Bugfix: you can now cancel manual insertion of a timestamp\n- When inserting a new entrance timestamp old ones are deleted only if they belong to a previous day\n- You can change exit time\n\nVersion 2.0\n- You can change timestamps after first insert\n- You can stop overtime counting by stopping on the "Exit" button</string>
     <string name="changelog_title">Changelog</string>
     <string name="past_sessions_working">Past sessions working</string>
+    <string name="setting_notifications_enabled">Notifications enabled</string>
+    <string name="setting_pauses_count_for_exit">Pauses are counted</string>
+    <string name="setting_pauses_count_for_exit_desc">The pauses are counted for exit time</string>
 
 </resources>

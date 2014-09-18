@@ -45,10 +45,13 @@
     <string name="app_changelog">Versione 2.2.1\n- Aggiunta la traduzione in inglese, ora WorkItOut è disponibile in tutto il mondo.\n\nVersione 2.2\n- Possibilità di condivisione degli orari del giorno via email\n- Impostazione personalizzata della lunghezza della giornata lavorativa\n- Tenendo premuto a lungo su un orario esso viene cancellato\n\nVersione 2.0\n- Modifica degli orari anche dopo averli inseriti\n- Timbratura di uscita per fermare il conteggio dell\'eventuale straordinario</string>
     <string name="changelog_title">Changelog</string>
     <string name="past_sessions_working">Lista sessioni di lavoro</string>
+    <string name="setting_pauses_count_for_exit">Le pause contano</string>
+    <string name="setting_pauses_count_for_exit_desc">La pause contanto nel calcolo del tempo di uscita</string>
 
     <!-- Notifications -->
     <string name="longTextForPause">La pausa finirà tra 2 minuti, è il tempo di tornare al lavoro!</string>
     <string name="notificationPauseTitle">Fine della pausa</string>
     <string name="notificationPauseMessage">La pausa è finita</string>
+    <string name="change_minimum_break_time">Cambia la durata minima della pausa pranzo</string>
 
 </resources>

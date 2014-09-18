@@ -2,10 +2,14 @@ package com.ilsecondodasinistra.workitout.utils;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 
 import com.ilsecondodasinistra.workitout.database.DaoMaster;
 import com.ilsecondodasinistra.workitout.database.DaoSession;
 
+import java.lang.reflect.Field;
+
+import de.greenrobot.dao.AbstractDaoMaster;
 import it.lucichkevin.cip.Utils;
 
 /**

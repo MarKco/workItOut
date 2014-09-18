@@ -14,6 +14,7 @@ import org.joda.time.format.PeriodFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+import it.lucichkevin.cip.Utils;
 import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 
 /**
@@ -32,6 +33,15 @@ public class BadgeHelper {
     ////////////////////////////////////////////////////
     //  Helpers
 
+    /**
+     * Check if date provided is yesterday
+     * @returns true if it's yesterday (or before), false otherwise
+     */
+    public static boolean isYesterday( DateTime dateToCheck ){
+
+        DateTime yesterday = DateTime.now().minusDays(1);
+        return !(yesterday.getYear() == dateToCheck.getYear()  && yesterday.getDayOfYear() < dateToCheck.getDayOfYear() );
+    }
 
     public static SessionWorking getNewSessionWorking(){
         SessionWorking session = SessionWorking.newInstance();

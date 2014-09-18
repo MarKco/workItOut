@@ -87,10 +87,17 @@ public class CounterWorkingTime {
         }
 
         int hours = seconds / 3600;
-        int minutes = (seconds - hours*60) / 60;
-        seconds = (seconds - minutes * 60);
+        int minutes = (seconds - hours*3600) / 60;
+        seconds = seconds - (hours*3600) - (minutes*60);
 
-        return ((currentMillis < 0)?"-":"") + ((hours<10)?"0":"") + hours +":"+ ((minutes<10)?"0":"") + minutes +":"+ ((seconds<10)?"0":"") + seconds;
+        return ((millis < 0)?"-":"") + pad(hours) +":"+ pad(minutes) +":"+ pad(seconds);
+    }
+
+    private String pad( int n ){
+        if( n < 10 ){
+            return "0"+ n;
+        }
+        return ""+ n;
     }
 
     private Handler mHandler = new Handler() {
