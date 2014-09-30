@@ -1,105 +1,167 @@
 package com.ilsecondodasinistra.workitout.utils;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
+import com.ilsecondodasinistra.workitout.database.PauseWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorking;
+import com.ilsecondodasinistra.workitout.database.SessionWorkingDao;
 
-import com.ilsecondodasinistra.workitout.NotificationService;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 
-import java.util.Calendar;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import it.lucichkevin.cip.Utils;
+import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 
 /**
- * Created by kevin on 03/09/2014.
+ *  @author     Kevin Lucich (03/09/2014).
  */
 public class BadgeHelper {
 
-    //  init => set all vars to the correct (se sono già entrato allora le setto all'ultimo valore, altrimenti cancello tutto)
-    //  -   Se modifico l'ora di entrata e la differenza tra quella vecchia e quella nuova è superiore a X ore, prendo come se fosse un giorno nuovo
-
-    private static Date entranceTime = new Date();          //  Where we'll be saving entrance time
-    private static Date lunchInTime = new Date();
-    private static Date lunchOutTime = new Date();
-    private static Date exitTime = new Date();				//  Time you declare you're leaving
-    private static Date estimatedExitTime = new Date();		//  Hour of the day you should leave the office
-    private static Date extraTime = new Date();				//  Extra time elapsed, or to pass before end of the day
-    private static boolean extraTimeSign = false;			//  true -> extratime positive ; false -> extratime negative
     private static boolean isTimerMarching = true;
+    private static SessionWorking CURRENT_SESSION = null;
+
+    //  Così da non dover ricalcorare OGNI SECONDO (timer per l'uscita/straordinari) il tempo che lavoro ogni giorno
+    private static Long WORK_TIME_CACHE = null;
+
+
 
     ////////////////////////////////////////////////////
     //  Helpers
 
-    private static boolean isYesterday( Date dateToCheck ){
-        Calendar c1 = Calendar.getInstance(); // today
-        c1.add(Calendar.DAY_OF_YEAR, -1); // yesterday
+    /**
+     * Check if date provided is yesterday
+     * @returns true if it's yesterday (or before), false otherwise
+     */
+    public static boolean isYesterday( DateTime dateToCheck ){
 
-        Calendar c2 = Calendar.getInstance();
-        c2.setTime(dateToCheck); // your date
-
-        return !(c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) && c1.get(Calendar.DAY_OF_YEAR) < c2.get(Calendar.DAY_OF_YEAR));
+        DateTime yesterday = DateTime.now().minusDays(1);
+        return !(yesterday.getYear() == dateToCheck.getYear()  && yesterday.getDayOfYear() < dateToCheck.getDayOfYear() );
     }
 
-    private static void removeAlarm(){
-        Intent i = new Intent( Utils.getContext(), NotificationService.class);
-        PendingIntent pi = PendingIntent.getService(Utils.getContext(), 0, i, 0);
-        AlarmManager mAlarm = (AlarmManager) Utils.getContext().getSystemService(Context.ALARM_SERVICE);
+    public static SessionWorking getNewSessionWorking(){
+        SessionWorking session = SessionWorking.newInstance();
 
-        mAlarm.cancel(pi);
-        pi.cancel();
+        //  Insert new new session into the database
+        DatabaseHelper.getDaoSession().getSessionWorkingDao().insert(session);
+
+        //  Do something... init?
+        return session;
     }
 
+    //  Finchè non memorizziamo i dati nel Database non possiamo salvare più di una sessione alla volta
+    public static SessionWorking getLastSessionWorking(){
 
-    public static void updateEstimatedTimeOfExit(){
+        //  This is first run
+        if( PreferencesManager.isFirstRun() ){
+            return getNewSessionWorking();
+        }
 
-        Date work_time = SettingsWorkitout.getWorkTime();
+        SessionWorkingDao sessionDao = DatabaseHelper.getDaoSession().getSessionWorkingDao();
 
-        Calendar cal = Calendar.getInstance(); // creates calendar
-        cal.setTime(new Date( BadgeHelper.getEntranceTime().getTime() )); // sets calendar time/date
-        cal.add(Calendar.HOUR_OF_DAY, work_time.getHours()); // adds one hour
-        cal.add(Calendar.MINUTE, work_time.getMinutes() );
-        cal.add(Calendar.HOUR_OF_DAY, BadgeHelper.getLunchInTime().getHours());
-        cal.add(Calendar.MINUTE, BadgeHelper.getLunchInTime().getMinutes());
-        cal.add(Calendar.HOUR_OF_DAY, -(BadgeHelper.getLunchOutTime().getHours()));
-        cal.add(Calendar.MINUTE, -(BadgeHelper.getLunchOutTime().getMinutes()));
+        List<SessionWorking> sessions = sessionDao.queryBuilder().orderDesc(SessionWorkingDao.Properties.Id).limit(1).list();
 
-        Utils.logger("updateEstimatedTimeOfExit() = "+ cal.get(Calendar.HOUR_OF_DAY) +" ore e "+ cal.get(Calendar.MINUTE) +" minuti", Utils.LOG_DEBUG );
-        BadgeHelper.setEstimatedExitTime(cal.getTime());    // returns new date object, one hour in the future
+        SessionWorking last = sessions.get(0);
+
+        if( last.getPauses() == null ){
+            last.setPauses( new ArrayList<PauseWorking>() );
+        }
+
+        //  Get last row of sessionWoriking
+        return last;
+    }
+
+    //  Now the session must build manually (vars there are in SettingsWorkitout: SharedPreferences), in the future this will be get from the SQLite
+    public static SessionWorking getCurrentSessionWorking(){
+
+        if( CURRENT_SESSION == null ){
+            CURRENT_SESSION = getLastSessionWorking();
+        }
+
+        return CURRENT_SESSION;
     }
 
     public static void clearAllInput(){
+        CURRENT_SESSION = getNewSessionWorking();
+    }
 
-        Date date = new Date(0);
+    //  Quando tocco una qualsiasi variabile di una mia sessione lavorativa (SessionWorking), aggiorno la sorgente (SQLite o SharedPreferences)
+    public static void saveCurrentSession() {
+        //  Save pauses
+        DatabaseHelper.getDaoSession().getPauseWorkingDao().updateInTx(CURRENT_SESSION.getPauses());
 
-        BadgeHelper.setEstimatedExitTime(date);
-        BadgeHelper.setEntranceTime(date);
-        BadgeHelper.setLunchInTime(date);
-        BadgeHelper.setLunchOutTime(date);
-        BadgeHelper.setExitTime(date);
+        //  Save Session
+        DatabaseHelper.getDaoSession().getSessionWorkingDao().update(CURRENT_SESSION);
+    }
 
-//        SettingsWorkitout.setEntraceTime(0);
-//        SettingsWorkitout.setLunchInTime(0);
-//        SettingsWorkitout.setLunchOutTime(0);
-//        SettingsWorkitout.setExitTime(0);
-//        SettingsWorkitout.setExtraTimeHours(-1);
-//        SettingsWorkitout.setExtraTimeMinutes(-1);
-//        SettingsWorkitout.setExtraTimeSeconds(-1);
+    public static long getWorkTimeInMillis() {
+        if( BadgeHelper.WORK_TIME_CACHE == null ){
+            BadgeHelper.WORK_TIME_CACHE = SettingsWorkitout.getWorkTime().getMillis();
+        }
+        return BadgeHelper.WORK_TIME_CACHE;
+    }
+
+    public static void setWorkTime( Duration duration ){
+        SettingsWorkitout.setWorkTime(duration);
+        BadgeHelper.WORK_TIME_CACHE = null;
     }
 
 
     /////////////////////
     //  Getters and Setters
 
-    public static Date getEntranceTime() {
-        return entranceTime;
-//        return new Date(SettingsWorkitout.getEntraceTime());
+    public static PauseWorking getPauseOfLunch(){
+        return getCurrentSessionWorking().getPauseOfLunch();
     }
-    public static void setEntranceTime( Date entranceTime ){
-        BadgeHelper.entranceTime = entranceTime;
-//        SettingsWorkitout.setEntraceTime(entranceTime.getTime());
+
+    public static DateTime getEntranceTime() {
+        return new DateTime(getCurrentSessionWorking().getEntranceDate());
     }
+    public static void setEntranceTime( DateTime entranceTime ){
+        BadgeHelper.setEntranceTime(entranceTime.getMillis());
+    }
+    public static void setEntranceTime( long entranceTimeInMillis ){
+        CURRENT_SESSION.setEntranceDate(entranceTimeInMillis);
+    }
+
+    public static DateTime getLunchInTime() {
+        return new DateTime(getPauseOfLunch().getEndDate());
+    }
+    public static void setLunchInTime( DateTime lunchInTime ){
+        BadgeHelper.setLunchInTime( lunchInTime.getMillis() ) ;
+    }
+    public static void setLunchInTime( long lunchInTimeInMillis ){
+        PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
+        lunchPause.setEndDate( lunchInTimeInMillis );
+        CURRENT_SESSION.setPauseOfLunch( lunchPause );
+    }
+
+    public static DateTime getLunchOutTime() {
+        return new DateTime(getPauseOfLunch().getStartDate());
+    }
+    public static void setLunchOutTime( DateTime lunchOutTime ){
+        BadgeHelper.setLunchOutTime(lunchOutTime.getMillis());
+    }
+    public static void setLunchOutTime( long lunchOutTimeInMillis ){
+        PauseWorking lunchPause = CURRENT_SESSION.getPauseOfLunch();
+        lunchPause.setStartDate( lunchOutTimeInMillis );
+        CURRENT_SESSION.setPauseOfLunch(lunchPause);
+    }
+
+    public static DateTime getExitTime() {
+        return new DateTime(getCurrentSessionWorking().getExitDate());
+    }
+    public static void setExitTime( DateTime exitTime ){
+        BadgeHelper.setExitTime(exitTime.getMillis());
+    }
+    public static void setExitTime( long exitTimeInMillis ){
+        CURRENT_SESSION.setExitDate( exitTimeInMillis );
+    }
+
 
     public static boolean isTimerMarching() {
         return isTimerMarching;
@@ -108,54 +170,18 @@ public class BadgeHelper {
         BadgeHelper.isTimerMarching = isTimerMarching;
     }
 
-    public static Date getLunchInTime() {
-        return lunchInTime;
-//        return new Date(SettingsWorkitout.getLunchInTime());
+    public static void addPause( DateTime start ){
+        long pauseInMillis = SettingsWorkitout.getPauseDuration() * 60000;  //   break duration
+        BadgeHelper.addPause( start, new DateTime(start.getMillis() + pauseInMillis) );
     }
-    public static void setLunchInTime( Date lunchInTime ){
-        BadgeHelper.lunchInTime = lunchInTime;
-//        SettingsWorkitout.setLunchInTime(lunchInTime.getTime());
+    public static void addPause( DateTime start, DateTime end ){
+        PauseWorking pause = PauseWorking.newInstance();
+        pause.setStartDate( start.getMillis() );
+        pause.setEndDate( end.getMillis() );
+        BadgeHelper.addPause(pause);
     }
-
-    public static Date getLunchOutTime() {
-        return lunchOutTime;
-//        return new Date(SettingsWorkitout.getLunchOutTime());
-    }
-    public static void setLunchOutTime(Date lunchOutTime) {
-        BadgeHelper.lunchOutTime = lunchOutTime;
-//        SettingsWorkitout.setLunchOutTime(lunchOutTime.getTime());
-    }
-
-    public static Date getExitTime() {
-        return BadgeHelper.exitTime;
-//        return new Date(SettingsWorkitout.getExitTime());
-    }
-    public static void setExitTime(Date exitTime) {
-        BadgeHelper.exitTime = exitTime;
-//        SettingsWorkitout.setExitTime(exitTime.getTime());
-    }
-
-    public static Date getEstimatedExitTime() {
-        return estimatedExitTime;
-    }
-    public static void setEstimatedExitTime(Date estimatedExitTime) {
-        BadgeHelper.estimatedExitTime = estimatedExitTime;
-    }
-
-    public static Date getExtraTime() {
-        return extraTime;
-    }
-    public static void setExtraTime(Date extraTime) {
-        BadgeHelper.extraTime = extraTime;
-    }
-
-    public static boolean isExtraTimeSign() {
-        return BadgeHelper.extraTimeSign;
-//        return SettingsWorkitout.isExtraTimeSign();
-    }
-    public static void setExtraTimeSign( boolean extraTimeSign ){
-        BadgeHelper.extraTimeSign = extraTimeSign;
-//        SettingsWorkitout.isExtraTimeSign(extraTimeSign);
+    public static void addPause( PauseWorking pause ){
+        CURRENT_SESSION.addPause(pause);
     }
 
 }

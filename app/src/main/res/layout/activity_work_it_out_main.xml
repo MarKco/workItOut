@@ -163,6 +163,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/row_time_to_leave"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dip"
@@ -207,12 +208,13 @@
                     android:textSize="16dip" />
 
                 <TextView
-                    android:id="@+id/extra_time"
+                    android:id="@+id/chrono_working_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="left"
-                    android:textSize="16dip"
+                    android:gravity="start"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
+
             </LinearLayout>
 
             <LinearLayout
@@ -229,7 +231,7 @@
                 <TextView
                     android:layout_width="200dip"
                     android:layout_height="wrap_content"
-                    android:gravity="right"
+                    android:gravity="end"
                     android:paddingRight="10dip"
                     android:text="@string/workday_length_label"
                     android:textSize="18dip" />
@@ -238,9 +240,10 @@
                     android:id="@+id/workday_length"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="left"
+                    android:gravity="start"
                     android:textSize="18dip"
                     android:textStyle="bold" />
+
             </LinearLayout>
             
             <LinearLayout
@@ -257,13 +260,14 @@
                 </Button>
                 
             </LinearLayout>
-
+<!--
             <Button
                 android:id="@+id/clear"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/clearButtonLabel"
                 android:visibility="gone" />
+-->
         </LinearLayout>
 
         <!-- DRAWER LAYOUT - MENU -->
