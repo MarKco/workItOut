@@ -6,8 +6,12 @@ import android.preference.Preference;
 
 import com.ilsecondodasinistra.workitout.R;
 import com.ilsecondodasinistra.workitout.WorkItOutMain;
+import com.ilsecondodasinistra.workitout.utils.BadgeHelper;
 import com.ilsecondodasinistra.workitout.utils.SettingsWorkitout;
 
+import org.joda.time.Duration;
+
+import it.lucichkevin.cip.Utils;
 import it.lucichkevin.cip.preferencesmanager.activity.AbstractPreferencesListActivity;
 import it.lucichkevin.cip.preferencesmanager.activity.ItemPreference;
 
@@ -33,7 +37,9 @@ public class PreferencesActivity extends AbstractPreferencesListActivity {
         ip.setOnPreferenceChangeListener(onPreferenceChangeListener);
         items.add(ip);
 
-        items.add(new ItemPreference( SettingsWorkitout.NOTIFICATIONS_ENABLED, R.string.setting_notifications_enabled, R.string.change_minimum_break_time_desc, ItemPreference.TYPE_SWITCH, true ));
+        ip = new ItemPreference( SettingsWorkitout.NOTIFICATIONS_ENABLED, R.string.setting_notifications_enabled, R.string.change_minimum_break_time_desc, ItemPreference.TYPE_SWITCH, true );
+        ip.setOnPreferenceChangeListener(onPreferenceChangeListener);
+        items.add(ip);
 
         ip = new ItemPreference( SettingsWorkitout.MINIMUM_PAUSE_DURATION, R.string.change_minimum_break_time, R.string.change_minimum_break_time_desc, ItemPreference.TYPE_TIMEPICKER, 0 );
         ip.setOnPreferenceChangeListener(onPreferenceChangeListener);
@@ -48,11 +54,17 @@ public class PreferencesActivity extends AbstractPreferencesListActivity {
     private Preference.OnPreferenceChangeListener onPreferenceChangeListener = new Preference.OnPreferenceChangeListener(){
         @Override
         public boolean onPreferenceChange( Preference preference, Object newValue ){
+
             if( activity_main != null ) {
+                if( preference.getKey().equals(SettingsWorkitout.WORK_TIME) ){
+                    BadgeHelper.setWorkTime( new Duration( ((Integer) newValue)*60000 ) );
+                }
+
                 ((WorkItOutMain) activity_main).triggerResumeFragments();
                 ((WorkItOutMain) activity_main).updateWorkDayLength();
                 ((WorkItOutMain) activity_main).updateEstimatedTimeOfExit();
             }
+
             return true;
         }
     };
