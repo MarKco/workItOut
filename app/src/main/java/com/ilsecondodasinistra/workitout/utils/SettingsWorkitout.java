@@ -2,7 +2,6 @@ package com.ilsecondodasinistra.workitout.utils;
 
 import org.joda.time.Duration;
 
-import it.lucichkevin.cip.Utils;
 import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 
 /**
@@ -21,7 +20,7 @@ public class SettingsWorkitout extends PreferencesManager {
     public static final String PAUSE_DURATION = "pause_duration";  //  Minutes
     public static final String MINIMUM_PAUSE_DURATION = "minimum_pause_duration";  //  Minutes
     public static final String NOTIFICATIONS_ENABLED = "notifications_enabled";
-    public static final String PAUSE_COUNTED_FOR_EXIT = "notifications_enabled";
+    public static final String PAUSE_COUNTED_FOR_EXIT = "pause_counted_for_exit";
 
     public static int getPauseDuration( int default_name ){
         return getPreferences().getInt(PAUSE_DURATION, default_name );
@@ -31,8 +30,8 @@ public class SettingsWorkitout extends PreferencesManager {
     }
 
     public static void setWorkTime( Duration work_time_duration ){
-        //  Save in milliseconds
-        setPreferences(WORK_TIME, work_time_duration.getMillis() );
+        //  Save in minutes
+        setPreferences(WORK_TIME, ((int) work_time_duration.getMillis()/60000) );
     }
     public static Duration getWorkTime( int default_value ){
         int minutes = getPreferences().getInt(WORK_TIME, default_value );
@@ -61,10 +60,10 @@ public class SettingsWorkitout extends PreferencesManager {
         return isNotificationsEnabled(true);
     }
 
-    public static boolean isPausesCounted( boolean default_value ){
+    public static boolean isPauseCounted( boolean default_value ){
         return getPreferences().getBoolean( PAUSE_COUNTED_FOR_EXIT, default_value );
     }
-    public static boolean isPausesCounted(){
+    public static boolean isPauseCounted(){
         return isNotificationsEnabled(false);
     }
 
