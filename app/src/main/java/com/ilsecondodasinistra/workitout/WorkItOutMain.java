@@ -57,7 +57,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     //How long a work day lasts
     Date workTime;
     /*
-     * Elements for app Drawer
+     * Elements for app Drawer - but does it work anymore?
      */
     private String[] mPlanetTitles;
     private ListView mDrawerList;
