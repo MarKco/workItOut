@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">workItOut</string>
-    <string name="action_settings">Opzioni</string>
+    <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="entranceButtonLabel">Entrata</string>
     <string name="lunchOutButtonLabel">A pranzo</string>

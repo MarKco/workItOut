@@ -13,7 +13,7 @@ import de.greenrobot.dao.internal.DaoConfig;
 
 /**
  * {@inheritDoc}
- *
+ * 
  * @see de.greenrobot.dao.AbstractDaoSession
  */
 public class DaoSession extends AbstractDaoSession {
@@ -40,7 +40,7 @@ public class DaoSession extends AbstractDaoSession {
         registerDao(PauseWorking.class, pauseWorkingDao);
         registerDao(SessionWorking.class, sessionWorkingDao);
     }
-
+    
     public void clear() {
         pauseWorkingDaoConfig.getIdentityScope().clear();
         sessionWorkingDaoConfig.getIdentityScope().clear();
