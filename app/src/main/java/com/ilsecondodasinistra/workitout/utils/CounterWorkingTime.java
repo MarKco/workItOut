@@ -9,13 +9,10 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import it.lucichkevin.cip.Utils;
 
 
 /**
- *  @author     Kevin Lucich (11/09/14)
+ * @author Kevin Lucich (11/09/14)
  */
 public class CounterWorkingTime {
 
@@ -28,34 +25,34 @@ public class CounterWorkingTime {
     private TextView textView;
     private Long currentMillis;
 
-    public CounterWorkingTime( TextView textView ){
+    public CounterWorkingTime(TextView textView) {
         this.textView = textView;
     }
 
-    public void calculateMillis(){
+    public void calculateMillis() {
 //        stop();
         Long time = BadgeHelper.getCurrentSessionWorking().calcExitTime();
-        if( time == null ){
+        if (time == null) {
             currentMillis = null;
             return;
         }
         currentMillis = DateTime.now(DateTimeZone.UTC).getMillis() - time;
     }
 
-    public void restart(){
+    public void restart() {
         stop();
         start();
     }
 
     public synchronized final CounterWorkingTime start() {
 
-        if( STARTED ){
+        if (STARTED) {
             return this;
         }
 
         calculateMillis();
 
-        if( currentMillis == null ){
+        if (currentMillis == null) {
             return this;
         }
 
@@ -65,8 +62,8 @@ public class CounterWorkingTime {
         return this;
     }
 
-    public CounterWorkingTime stop(){
-        if( !STARTED ){
+    public CounterWorkingTime stop() {
+        if (!STARTED) {
             return this;
         }
         STARTED = false;
@@ -74,30 +71,30 @@ public class CounterWorkingTime {
         return this;
     }
 
-    public void onTick( long millis ){
-        textView.setText( format(millis) );
+    public void onTick(long millis) {
+        textView.setText(format(millis));
     }
 
-    private String format( long millis ){
+    private String format(long millis) {
 
         int seconds = (int) millis / 1000;
 
-        if( seconds < 0 ){
+        if (seconds < 0) {
             seconds *= -1;
         }
 
         int hours = seconds / 3600;
-        int minutes = (seconds - hours*3600) / 60;
-        seconds = seconds - (hours*3600) - (minutes*60);
+        int minutes = (seconds - hours * 3600) / 60;
+        seconds = seconds - (hours * 3600) - (minutes * 60);
 
-        return ((millis < 0)?"-":"") + pad(hours) +":"+ pad(minutes) +":"+ pad(seconds);
+        return ((millis < 0) ? "-" : "") + pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
     }
 
-    private String pad( int n ){
-        if( n < 10 ){
-            return "0"+ n;
+    private String pad(int n) {
+        if (n < 10) {
+            return "0" + n;
         }
-        return ""+ n;
+        return "" + n;
     }
 
     private Handler mHandler = new Handler() {
@@ -116,7 +113,7 @@ public class CounterWorkingTime {
 
             // special case: user's onTick took more than interval to
             // complete, skip to next interval
-            while( delay < 0 ){
+            while (delay < 0) {
                 delay += interval;
             }
 
@@ -129,7 +126,7 @@ public class CounterWorkingTime {
     ///////////////////////////
     //  Getters and Setter
 
-    public TextView getTextView(){
+    public TextView getTextView() {
         return textView;
     }
 
