@@ -5,4 +5,8 @@
     <!-- ACRA -->
     <string name="ACRACrash">ACRA Crash</string>
 
+    <!-- Notifications -->
+    <string name="longTextForPause">End of break in 2 minutes, time to go back to work!</string>
+    <string name="notificationPauseTitle">End of break</string>
+    <string name="notificationPauseMessage">The break is over</string>
 </resources>

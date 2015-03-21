@@ -2,23 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ilsecondodasinistra.workitout"
     android:installLocation="auto" >
-<!--
-    <uses-sdk
-        android:minSdkVersion="10"
-        android:targetSdkVersion="17" />
--->
 
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-sdk
+        android:minSdkVersion="9"
+        android:targetSdkVersion="17" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/workitout_icon"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Sherlock.Light"
-        android:name="MyApplication">
-
+        android:theme="@style/Theme.Sherlock.Light" android:name="MyApplication">
         <activity
             android:name="com.ilsecondodasinistra.workitout.WorkItOutMain"
             android:label="@string/app_name" >
@@ -29,8 +22,18 @@
             </intent-filter>
         </activity>
 
-        <service android:name="com.ilsecondodasinistra.workitout.NotificationService" />
-        <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" />
+        <service android:name="com.ilsecondodasinistra.workitout.NotificationService" >
+        </service>
+        <service android:name="com.ilsecondodasinistra.workitout.PauseNotificationService" >
+        </service>
+
+        <activity android:name="com.ilsecondodasinistra.workitout.PrefActivity"
+            android:label="Settings"
+            android:enabled="true" >
+            <intent-filter>
+                <category android:name="android.intent.category.PREFERENCE" />
+            </intent-filter>
+        </activity>
 
         <receiver android:name="com.ilsecondodasinistra.workitout.MyWidgetProvider" >
             <intent-filter>
@@ -43,20 +46,21 @@
         </receiver>
 
         <activity
+            android:name="com.ilsecondodasinistra.workitout.DrawerFragment"
+            android:label="@string/title_activity_drawer_fragment"
+            android:parentActivityName="com.actionbarsherlock.app.SherlockFragmentActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.actionbarsherlock.app.SherlockFragmentActivity" />
+        </activity>
+        <activity
             android:name="com.ilsecondodasinistra.workitout.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>
-
-        <activity
-            android:name="com.ilsecondodasinistra.workitout.SessionWorkingsList"
-            android:label="@string/past_sessions_working" >
-        </activity>
-
-        <activity
-            android:name="com.ilsecondodasinistra.workitout.utils.preferences.PreferencesActivity"
-            android:label="@string/settings_title" >
-        </activity>
-
     </application>
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 </manifest>

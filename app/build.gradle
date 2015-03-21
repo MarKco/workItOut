@@ -1,30 +1,28 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22"
+    compileSdkVersion 20
+    buildToolsVersion "20.0.0"
 
     defaultConfig {
         applicationId "com.ilsecondodasinistra.workitout"
-        minSdkVersion 11
-        targetSdkVersion 22
+        minSdkVersion 10
+        targetSdkVersion 20
         versionCode 37
         versionName "2.7"
     }
     buildTypes {
         release {
-            //runProguard false
-            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
-    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
-    compile 'it.lucichkevin:cip-library:0.5.6@aar'
-    compile 'com.android.support:support-v4:22.0.0'
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.google.code.gson:gson:2.2.+'
     compile "joda-time:joda-time:2.3"
-
+    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
+    compile "com.android.support:support-v4:18.0.+"
 }

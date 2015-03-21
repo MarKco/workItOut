@@ -9,10 +9,10 @@ import android.widget.TextView;
 
 public class AboutActivity extends Activity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_about);
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_about);
 
         PackageInfo pInfo = null;
         try {
@@ -21,18 +21,18 @@ public class AboutActivity extends Activity {
             e.printStackTrace();
         }
 
-        TextView appNameTextView = (TextView) findViewById(R.id.app_name_and_version);
+        TextView appNameTextView = (TextView)findViewById(R.id.app_name_and_version);
         appNameTextView.setText(getResources().getText(R.string.app_name) + " - " + pInfo.versionName);
-
-        TextView emailTextView = (TextView) findViewById(R.id.authorEmailTV);
-        emailTextView.setMovementMethod(LinkMovementMethod.getInstance());
-
-        TextView appInfoTextView = (TextView) findViewById(R.id.appInfoTV);
-        appInfoTextView.setMovementMethod(LinkMovementMethod.getInstance());
-
-        TextView appAuthorTextView = (TextView) findViewById(R.id.appAuthorTV);
-        appAuthorTextView.setMovementMethod(LinkMovementMethod.getInstance());
-
-    }
+		
+		TextView emailTextView = (TextView)findViewById(R.id.authorEmailTV);
+		emailTextView.setMovementMethod(LinkMovementMethod.getInstance());
+		
+		TextView appInfoTextView = (TextView)findViewById(R.id.appInfoTV);
+		appInfoTextView.setMovementMethod(LinkMovementMethod.getInstance());
+		
+		TextView appAuthorTextView = (TextView)findViewById(R.id.appAuthorTV);
+		appAuthorTextView.setMovementMethod(LinkMovementMethod.getInstance());		
+		
+	}
 
 }
