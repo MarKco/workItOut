@@ -12,26 +12,22 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import it.lucichkevin.cip.Utils;
-
 /**
  * Created by kevin on 01/09/2014.
- *
+ * <p/>
  * IMPORTANTE: COSA FARE DOPO AVER MODIFICATO LE CLASSI DI GreenDAO:
  * 1) Commentare le varie variabili all'inizio di ogni entity creata! :D
- *
  */
 public class SuperSessionWorking {
 
-//    protected transient long id_sessionworking;
+    //    protected transient long id_sessionworking;
     protected Long id;
     protected long entranceDate;
     protected long exitDate;
     protected List<PauseWorking> pauses;
 
 
-
-    public static SessionWorking newInstance(){
+    public static SessionWorking newInstance() {
         SessionWorking session = new SessionWorking();
         session.setEntranceDate(0);
         session.setExitDate(0);
@@ -40,11 +36,11 @@ public class SuperSessionWorking {
         return session;
     }
 
-    public PauseWorking getPauseOfLunch(){
+    public PauseWorking getPauseOfLunch() {
 
         int indexOfLunchPause = getIndexOfPauseOfLunch();
 
-        if( indexOfLunchPause == -1 ){
+        if (indexOfLunchPause == -1) {
             PauseWorking pause = PauseWorking.newInstance(this.getId(), true);
             pauses.add(pause);
             return pause;
@@ -53,12 +49,12 @@ public class SuperSessionWorking {
         return getPauses().get(indexOfLunchPause);
     }
 
-    public void setPauseOfLunch( PauseWorking pauseOfLunch ){
+    public void setPauseOfLunch(PauseWorking pauseOfLunch) {
 
         int indexOfLunchPause = getIndexOfPauseOfLunch();
 
         //  Don't exists the pause of lunch
-        if( indexOfLunchPause == -1 ){
+        if (indexOfLunchPause == -1) {
             pauses.add(pauseOfLunch);
             return;
         }
@@ -68,15 +64,15 @@ public class SuperSessionWorking {
     }
 
 
-    public int getIndexOfPauseOfLunch(){
+    public int getIndexOfPauseOfLunch() {
 
-        if( pauses == null ){
+        if (pauses == null) {
             pauses = new ArrayList<PauseWorking>();
             return -1;
         }
 
         int size = pauses.size();
-        for( int i=0; i<size; i++ ) {
+        for (int i = 0; i < size; i++) {
             if (pauses.get(i).isLunch()) {
                 return i;
             }
@@ -88,37 +84,38 @@ public class SuperSessionWorking {
 //        pauses.set( location, pause );
 //    }
 
-    public void setPauses( ArrayList<PauseWorking> pauses ){
+    public void setPauses(ArrayList<PauseWorking> pauses) {
         this.pauses = pauses;
     }
 
-    public void addPause( PauseWorking pause ){
+    public void addPause(PauseWorking pause) {
         pauses.add(pause);
     }
 
-    public Period getTimeWorked(){
-        return new Duration( getExitDate() - getEntranceDate() ).toPeriod();
+    public Period getTimeWorked() {
+        return new Duration(getExitDate() - getEntranceDate()).toPeriod();
     }
 
 
-    public Period getAllPausesDuration(){
+    public Period getAllPausesDuration() {
 
         Duration duration = new Duration(0);
 
-        for( PauseWorking pause : getPauses() ){
-            duration = duration.plus( pause.getDurationInMillis() );
+        for (PauseWorking pause : getPauses()) {
+            duration = duration.plus(pause.getDurationInMillis());
         }
 
         return duration.toPeriod();
     }
 
     /**
-     *  Return the millis of exit time or the overtime
-     *  @return     Long    number of millis or NULL
+     * Return the millis of exit time or the overtime
+     *
+     * @return Long    number of millis or NULL
      */
-    public Long calcExitTime(){
+    public Long calcExitTime() {
 
-        if( entranceDate == 0 ){
+        if (entranceDate == 0) {
             return null;
         }
 
@@ -138,12 +135,12 @@ public class SuperSessionWorking {
     /*
      *   Ritorno una stringa - HH:MM:SS oppure senza "-" se è straordinario
     */
-    public String getReadableCountdownExitTime(){
+    public String getReadableCountdownExitTime() {
 
         long millisOfExit = calcExitTime();
 
         //  Tempo di uscita è maggiore di adesso
-        boolean isStraordinario = ( (new Date()).getTime() > millisOfExit );
+        boolean isStraordinario = ((new Date()).getTime() > millisOfExit);
 
         //  Se il tempo del CountDown
         String sign = (isStraordinario) ? "" : "-";
@@ -159,13 +156,15 @@ public class SuperSessionWorking {
     public Long getId() {
         return id;
     }
-    public void setId( Long id ){
+
+    public void setId(Long id) {
         this.id = id;
     }
 
     public long getEntranceDate() {
         return entranceDate;
     }
+
     public void setEntranceDate(long entranceDate) {
         this.entranceDate = entranceDate;
     }
@@ -173,16 +172,18 @@ public class SuperSessionWorking {
     public long getExitDate() {
         return exitDate;
     }
+
     public void setExitDate(long exitDate) {
         this.exitDate = exitDate;
     }
 
     public List<PauseWorking> getPauses() {
-        if( pauses == null ){
+        if (pauses == null) {
             pauses = new ArrayList<PauseWorking>();
         }
         return pauses;
     }
+
     public void setPauses(List<PauseWorking> pauses) {
         this.pauses = pauses;
     }
