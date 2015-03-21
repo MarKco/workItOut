@@ -31,7 +31,7 @@ import org.joda.time.MutableDateTime;
 
 import it.lucichkevin.cip.Utils;
 import it.lucichkevin.cip.dialogs.pickers.TimePickerDialog;
-import it.lucichkevin.cip.navigationdrawermenu.DrawerLayoutHelper;
+import it.lucichkevin.cip.navigationdrawermenu.support.v4.DrawerLayoutHelper;
 import it.lucichkevin.cip.navigationdrawermenu.ItemDrawerMenu;
 import it.lucichkevin.cip.preferencesmanager.PreferencesManager;
 //import com.google.analytics.tracking.android.EasyTracker;
@@ -282,7 +282,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
                     long now = DateTime.now().getMillis();
 					long pauseInMillis = SettingsWorkitout.getPauseDuration() * 60000; //   break duration - in millis
 
-                    if( SettingsWorkitout.isPausesCounted() ) {
+                    if( SettingsWorkitout.isPauseCounted() ) {
                         PauseWorking pause = PauseWorking.newInstance();
                         pause.setStartDate(now);
                         pause.setEndDate(now + pauseInMillis);
@@ -323,7 +323,7 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	private void entranceActions() {
 
 		entranceText.setTextColor(Color.BLACK);
-		
+
 		//  Blanks out all previous entrance and exit timings, if timings are yesterday ones
 		if( BadgeHelper.isYesterday(BadgeHelper.getLunchInTime()) ){
 //            lunchInTime.setTime(0);
@@ -484,9 +484,9 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 	/*
 	 * Updates workday length by calling a helper function
 	 */
-	public void updateWorkDayLength(){
+    public void updateWorkDayLength(){
         workdayLength.setText( BadgeHelperFormat.formatPeriod(BadgeHelper.getWorkTimeInMillis()) );
-	}
+    }
 
     public void triggerResumeFragments(){
         onResumeFragments();
@@ -513,7 +513,6 @@ public class WorkItOutMain extends SherlockFragmentActivity {
 		setTextColor( entranceText, BadgeHelper.getEntranceTime() );
 		setTextColor( lunchInText, BadgeHelper.getLunchInTime() );
 		setTextColor( lunchOutText, BadgeHelper.getLunchOutTime() );
-		
 	}
 
 	/*
