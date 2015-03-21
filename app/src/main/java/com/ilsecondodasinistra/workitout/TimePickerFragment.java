@@ -10,8 +10,7 @@ import com.actionbarsherlock.app.SherlockDialogFragment;
 
 import java.util.Calendar;
 
-public class TimePickerFragment extends SherlockDialogFragment implements TimePickerDialog.OnTimeSetListener
-{
+public class TimePickerFragment extends SherlockDialogFragment implements TimePickerDialog.OnTimeSetListener {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -24,10 +23,10 @@ public class TimePickerFragment extends SherlockDialogFragment implements TimePi
         return new TimePickerDialog(getActivity(), this, hour, minute,
                 DateFormat.is24HourFormat(getActivity()));
     }
-	
-	@Override
-	public void onTimeSet(TimePicker arg0, int arg1, int arg2) {
 
-	}
+    @Override
+    public void onTimeSet(TimePicker arg0, int arg1, int arg2) {
+
+    }
 
 }
