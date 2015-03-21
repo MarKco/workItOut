@@ -2,10 +2,14 @@ package com.ilsecondodasinistra.workitout.utils;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 
 import com.ilsecondodasinistra.workitout.database.DaoMaster;
 import com.ilsecondodasinistra.workitout.database.DaoSession;
 
+import java.lang.reflect.Field;
+
+import de.greenrobot.dao.AbstractDaoMaster;
 import it.lucichkevin.cip.Utils;
 
 /**
@@ -16,11 +20,11 @@ public class DatabaseHelper {
     private static SQLiteDatabase db = null;
     private static DaoSession daoSession = null;
 
-    public static SQLiteDatabase getDatabase(Context context) {
-        if (db == null) {
-            DaoMaster.OpenHelper helper = new DaoMaster.OpenHelper(context, "workitout", null) {
+    public static SQLiteDatabase getDatabase( Context context ){
+        if( db == null ){
+            DaoMaster.OpenHelper helper = new DaoMaster.OpenHelper( context, "workitout", null) {
                 @Override
-                public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+                public void onUpgrade( SQLiteDatabase db, int oldVersion, int newVersion ){
                     //  Do nothing...
 //                    DaoMaster.dropAllTables(db, true);
 //                    onCreate(db);
@@ -32,22 +36,22 @@ public class DatabaseHelper {
         return db;
     }
 
-    public static SQLiteDatabase getDatabase() {
-        if (db == null) {
-            return getDatabase(Utils.getContext());
+    public static SQLiteDatabase getDatabase(){
+        if( db == null ){
+            return getDatabase( Utils.getContext() );
         }
         return db;
     }
 
-    public static DaoSession getDaoSession() {
+    public static DaoSession getDaoSession(){
         return getDaoSession(false);
     }
 
-    public static DaoSession getDaoSession(boolean reliable_session) {
+    public static DaoSession getDaoSession( boolean reliable_session ){
 
-        if (daoSession == null || reliable_session) {
+        if( daoSession == null || reliable_session ){
             // Construct the DaoMaster which brokers DAOs for the Domain Objects
-            DaoMaster daoMaster = new DaoMaster(getDatabase());
+            DaoMaster daoMaster = new DaoMaster( getDatabase() );
             daoSession = daoMaster.newSession();
         }
 

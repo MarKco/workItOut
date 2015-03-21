@@ -19,13 +19,12 @@ public class PrefActivity extends PreferenceActivity {
 
     /**
      * Checks to see if using new v11+ way of handling PrefsFragments.
-     *
      * @return Returns false pre-v11, else checks to see if using headers.
      */
     public boolean isNewV11Prefs() {
-        if (mHasHeaders != null && mLoadHeaders != null) {
+        if (mHasHeaders!=null && mLoadHeaders!=null) {
             try {
-                return (Boolean) mHasHeaders.invoke(this);
+                return (Boolean)mHasHeaders.invoke(this);
             } catch (IllegalArgumentException e) {
             } catch (IllegalAccessException e) {
             } catch (InvocationTargetException e) {
@@ -38,7 +37,7 @@ public class PrefActivity extends PreferenceActivity {
     public void onCreate(Bundle aSavedState) {
         //onBuildHeaders() will be called during super.onCreate()
         try {
-            mLoadHeaders = getClass().getMethod("loadHeadersFromResource", int.class, List.class);
+            mLoadHeaders = getClass().getMethod("loadHeadersFromResource", int.class, List.class );
             mHasHeaders = getClass().getMethod("hasHeaders");
         } catch (NoSuchMethodException e) {
         }
@@ -51,7 +50,7 @@ public class PrefActivity extends PreferenceActivity {
     @Override
     public void onBuildHeaders(List<Header> aTarget) {
         try {
-            mLoadHeaders.invoke(this, new Object[]{R.xml.pref_headers, aTarget});
+            mLoadHeaders.invoke(this,new Object[]{R.xml.pref_headers,aTarget});
         } catch (IllegalArgumentException e) {
         } catch (IllegalAccessException e) {
         } catch (InvocationTargetException e) {
@@ -59,8 +58,9 @@ public class PrefActivity extends PreferenceActivity {
     }
 
     @Override
-    protected boolean isValidFragment(String fragmentName) {
-        if (PrefsFragment.class.getName().equals(fragmentName))
+    protected boolean isValidFragment (String fragmentName)
+    {
+        if(PrefsFragment.class.getName().equals(fragmentName))
             return true;
         return false;
 
@@ -72,7 +72,7 @@ public class PrefActivity extends PreferenceActivity {
             super.onCreate(aSavedState);
             Context anAct = getActivity().getApplicationContext();
             int thePrefRes = anAct.getResources().getIdentifier(getArguments().getString("pref-resource"),
-                    "xml", anAct.getPackageName());
+                    "xml",anAct.getPackageName());
             addPreferencesFromResource(thePrefRes);
         }
     }
