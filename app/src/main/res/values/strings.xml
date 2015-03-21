@@ -34,14 +34,20 @@
     <string name="changelog_title">Changelog</string>
     <string name="change_break_time">Change break time</string>
     <string name="empty_string"/>
+    <string name="drawer_open">Open</string>
+    <string name="drawer_close">Closed</string>
+    <string name="change_minimum_break_time_desc">How long should the break be before a notification pops up</string>
     <string name="past_sessions_working">Past sessions working</string>
 
-
+    <!-- Notifications -->
+    <string name="longTextForPause">La pausa finirà tra 2 minuti, è il tempo di tornare al lavoro!</string>
+    <string name="notificationPauseTitle">Fine della pausa</string>
+    <string name="notificationPauseMessage">La pausa è finita</string>
+    <string name="change_minimum_break_time">Cambia la durata minima della pausa pranzo</string>
 
     <!--    NOT USED    -->
 
     <string name="extraTimeLabel">Overtime:</string>
-    <string name="yes">Yes</string>
     <string name="title_activity_drawer_fragment">DrawerFragment</string>
     <string name="settings_title">Settings</string>
     <string name="email_extra_time">Overtime: </string>
@@ -51,9 +57,6 @@
     <string name="workday_hours">workday_hours</string>
     <string name="clearButtonLabel">Delete</string>
     <string name="hello_world">Hello world!</string>
-    <string name="change_minimum_break_time">Duration of lunch time</string>
-    <string name="change_minimum_break_time_desc">Change minimum duration of lunch time</string>
-    <string name="setting_notifications_enabled">Notifications enabled</string>
     <string name="setting_pauses_count_for_exit">Pauses are counted</string>
     <string name="setting_pauses_count_for_exit_desc">The pauses are counted for exit time</string>
 
