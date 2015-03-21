@@ -11,7 +11,6 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -32,6 +31,8 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.gson.Gson;
 
+import org.joda.time.Period;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,15 +40,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Vector;
-//import com.google.analytics.tracking.android.EasyTracker;
 
+//import com.google.analytics.tracking.android.EasyTracker;
 /** Joda-Time **/
-import org.joda.time.DateTime;
-import org.joda.time.Interval;
-import org.joda.time.Period;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 

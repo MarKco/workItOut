@@ -1,11 +1,11 @@
 package com.ilsecondodasinistra.workitout;
 
+import android.app.Application;
+
 import org.acra.ACRA;
 import org.acra.ReportField;
 import org.acra.ReportingInteractionMode;
 import org.acra.annotation.ReportsCrashes;
-
-import android.app.Application;
 
 @ReportsCrashes(formKey = "", // will not be used
 mailTo = "ilsecondodasinistra@gmail.com", //

@@ -1,0 +1,62 @@
+<<<<<<< HEAD
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22"
+
+    defaultConfig {
+        applicationId "com.ilsecondodasinistra.workitout"
+        minSdkVersion 11
+        targetSdkVersion 22
+        versionCode 37
+        versionName "2.7"
+    }
+    buildTypes {
+        release {
+            //runProguard false
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
+    compile 'it.lucichkevin:cip-library:0.5.6@aar'
+    compile 'com.android.support:support-v4:22.0.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.google.code.gson:gson:2.2.+'
+    compile "joda-time:joda-time:2.3"
+
+}
+=======
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "21.1.2"
+
+    defaultConfig {
+        applicationId "com.ilsecondodasinistra.workitout"
+        minSdkVersion 11
+        targetSdkVersion 21
+        versionCode 36
+        versionName "2.6"
+    }
+
+    buildTypes {
+        release {
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
+    compile 'it.lucichkevin:cip-library:0.6.2@aar'
+//    compile 'it.lucichkevin:cip-library:0.6.2.1-ALPHA@aar'
+    compile 'com.android.support:support-v4:21.0.3'
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+>>>>>>> 0bfe7a93dfc7f6f7ddbfab8f1a0677913dbec852
