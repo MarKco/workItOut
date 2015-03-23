@@ -45,7 +45,10 @@ import java.util.Observer;
 /** Joda-Time **/
 
 //import com.google.analytics.tracking.android.EasyTracker;
-/** Joda-Time **/
+
+/**
+ * Joda-Time *
+ */
 
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 
@@ -68,11 +71,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     private DrawerLayoutHelper drawerLayoutHelper;
     private ArrayList<Double> listOfDurations = new ArrayList<Double>();
     private TextView timeToLeave;
-    private Button entranceButton;
-    private Button lunchInButton;
-    private Button lunchOutButton;
-    private Button exitButton;
-    private Button pauseButton;
     private EditText entranceText;
     private EditText lunchInText;
     private EditText lunchOutText;
@@ -126,14 +124,14 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 
 		/*
-		 * Initializations
+         * Initializations
 		 */
         timeToLeave = (TextView) findViewById(R.id.time_to_leave);
-        entranceButton = (Button) findViewById(R.id.entrance_button);
-        lunchInButton = (Button) findViewById(R.id.lunch_in_button);
-        lunchOutButton = (Button) findViewById(R.id.lunch_out_button);
-        exitButton = (Button) findViewById(R.id.exit_button);
-        pauseButton = (Button) findViewById(R.id.pause_button);
+        Button entranceButton = (Button) findViewById(R.id.entrance_button);
+        Button lunchInButton = (Button) findViewById(R.id.lunch_in_button);
+        Button lunchOutButton = (Button) findViewById(R.id.lunch_out_button);
+        Button exitButton = (Button) findViewById(R.id.exit_button);
+        Button pauseButton = (Button) findViewById(R.id.pause_button);
 
         entranceText = (EditText) findViewById(R.id.entrance_text);
         lunchInText = (EditText) findViewById(R.id.lunch_in_text);
@@ -493,6 +491,34 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         updateEstimatedTimeOfExit();
 
         extraTimeLayout.setVisibility(View.GONE);
+    }
+
+    private void lunchInActions() {
+        //Ricalcola l'orario di uscita
+        updateEstimatedTimeOfExit();
+
+        timeToLeave.setVisibility(View.VISIBLE);
+        extraTimeLayout.setVisibility(View.VISIBLE);
+
+        lunchInText.setTextColor(Color.BLACK);
+
+        //Set up notification for proper time
+        if (estimatedExitTime.after(new Date())) {
+            Intent i = new Intent(getBaseContext(), NotificationService.class);
+            PendingIntent pi = PendingIntent.getService(getBaseContext(), 0, i, 0);
+            AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
+
+		/*
+		 * Debug: the line below allows to set notification to 5 seconds in future.
+		 */
+//		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
+            mAlarm.set(AlarmManager.RTC_WAKEUP, estimatedExitTime.getTime(), pi);
+
+            Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(estimatedExitTime), Toast.LENGTH_LONG).show();
+
+        }
+
+        startCountForExtraTime();
     }    TimePickerDialog.OnTimeSetListener timePickerListener = new TimePickerDialog.OnTimeSetListener() {
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
@@ -548,34 +574,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 //		}
 //		return null;
 //	}
-
-    private void lunchInActions() {
-        //Ricalcola l'orario di uscita
-        updateEstimatedTimeOfExit();
-
-        timeToLeave.setVisibility(View.VISIBLE);
-        extraTimeLayout.setVisibility(View.VISIBLE);
-
-        lunchInText.setTextColor(Color.BLACK);
-
-        //Set up notification for proper time
-        if (estimatedExitTime.after(new Date())) {
-            Intent i = new Intent(getBaseContext(), NotificationService.class);
-            PendingIntent pi = PendingIntent.getService(getBaseContext(), 0, i, 0);
-            AlarmManager mAlarm = (AlarmManager) getBaseContext().getSystemService(Context.ALARM_SERVICE);
-
-		/*
-		 * Debug: the line below allows to set notification to 5 seconds in future.
-		 */
-//		mAlarm.set(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()+(10*1000)), pi);
-            mAlarm.set(AlarmManager.RTC_WAKEUP, estimatedExitTime.getTime(), pi);
-
-            Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(estimatedExitTime), Toast.LENGTH_LONG).show();
-
-        }
-
-        startCountForExtraTime();
-    }
 
     public void chooseTime(int hours, int minutes) {
 
@@ -719,14 +717,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 //		EasyTracker.getInstance().activityStop(this); // Add this method.
     }
 
-//	@Override
-//	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
-//		// Inflate the menu; this adds items to the action bar if it is present.
-//		MenuInflater inflater = getSupportMenuInflater();
-//		inflater.inflate(R.menu.work_it_out_main, menu);
-//		return true;
-//	}
-
     /*
      * Questa funzione pulisce tutte le caselle di testo
      * e resetta le date a mezzanotte. Annulla anche tutte
@@ -764,6 +754,14 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
         removeAlarm();
     }
+
+//	@Override
+//	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
+//		// Inflate the menu; this adds items to the action bar if it is present.
+//		MenuInflater inflater = getSupportMenuInflater();
+//		inflater.inflate(R.menu.work_it_out_main, menu);
+//		return true;
+//	}
 
     /*
      * (non-Javadoc)
@@ -822,19 +820,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 //		logIt(dateFormatter.format(estimatedExitTime));
 
         timeToLeave.setText(hhmmFormatter.format(estimatedExitTime));
-    }    private Runnable updateExtraTime = new Runnable() {
-        public void run() {
-            try {
-
-                updateExtraTimeFields();
-
-                handler.removeCallbacks(updateExtraTime);
-                handler.postDelayed(updateExtraTime, 1000);
-            } catch (Exception e) {
-                logIt(e.getStackTrace().toString());
-            }
-        }
-    };
+    }
 
     private void updateExtraTimeFields() {
         Date exitDateTime = new Date();
@@ -866,8 +852,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             cal.add(Calendar.SECOND, -estimatedExitTime.getSeconds());
             extraTime = cal.getTime();
 
-//			Toast.makeText(getBaseContext(), hhmmssFormatter.format(exitDateTime) + " " 
-//					+ hhmmssFormatter.format(estimatedExitTime) + " " 
+//			Toast.makeText(getBaseContext(), hhmmssFormatter.format(exitDateTime) + " "
+//					+ hhmmssFormatter.format(estimatedExitTime) + " "
 //					+ hhmmssFormatter.format(extraTime), 2).show();
 
             extraTimeSign = true;    //Dev'essere stampato come orario positivo
@@ -892,7 +878,19 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             inputText.setTextColor(Color.BLACK);
             exitText.setTextColor(Color.BLACK);
         }
-    }
+    }    private Runnable updateExtraTime = new Runnable() {
+        public void run() {
+            try {
+
+                updateExtraTimeFields();
+
+                handler.removeCallbacks(updateExtraTime);
+                handler.postDelayed(updateExtraTime, 1000);
+            } catch (Exception e) {
+                logIt(e.getStackTrace().toString());
+            }
+        }
+    };
 
     /*
      * Check if date provided is yesterday
@@ -1019,6 +1017,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         return returnString;
 
     }
+
+
 
 
 

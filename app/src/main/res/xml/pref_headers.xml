@@ -14,6 +14,12 @@
         android:summary="link to BITS blog">
         <intent android:action="android.intent.action.VIEW"
             android:data="http://www.blackmoonit.com/2012/07/all_api_prefsactivity/" />
-    </header>
+    </header><header
+        android:fragment="com.ilsecondodasinistra.workitout.SettingsActivity$GeneralPreferenceFragment"
+        android:title="@string/pref_header_general" /><header
+        android:fragment="com.ilsecondodasinistra.workitout.SettingsActivity$NotificationPreferenceFragment"
+        android:title="@string/pref_header_notifications" /><header
+        android:fragment="com.ilsecondodasinistra.workitout.SettingsActivity$DataSyncPreferenceFragment"
+        android:title="@string/pref_header_data_sync" />
 
 </preference-headers>

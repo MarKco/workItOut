@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.ilsecondodasinistra.workitout"
-        minSdkVersion 10
+        minSdkVersion 15
         targetSdkVersion 22
         versionCode 37
         versionName "2.7"
@@ -22,7 +22,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.google.code.gson:gson:2.3'
-    compile "joda-time:joda-time:2.3"
+    compile 'joda-time:joda-time:2.3'
     compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
     compile 'com.android.support:support-v4:22.0.0'
 }

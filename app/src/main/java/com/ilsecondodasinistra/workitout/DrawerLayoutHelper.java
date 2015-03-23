@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 
@@ -126,7 +127,7 @@ public class DrawerLayoutHelper {
                 this.activity.sendMail();
                 break;
             case 3:
-                this.activity.startActivity(new Intent(this.activity, PrefActivity.class));
+                this.activity.startActivity(new Intent(this.activity, SettingsActivity.class));
                 break;
             case 4:
                 Intent aboutIntent = new Intent(this.activity, AboutActivity.class);

@@ -1,16 +1,18 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory android:title="PreferenceCategory A">
+    <PreferenceCategory android:title="@string/prefs_interface_settings">
 
-        <SwitchPreference
-            android:key="show_average"
-            android:title="Show average length of work day"
-            android:summary="Display the calculated average in the app title" />
+    <SwitchPreference
+        android:key="show_average"
+        android:title="Show average length of work day"
+        android:defaultValue="false"
+        android:summary="Display the calculated average in the app title" />
 
     <EditTextPreference
         android:key="edittext_preference"
-        android:title="title_edittext_preference"
+        android:title="@string/workday_duration_prefs_title"
         android:summary="summary_edittext_preference"
+        android:defaultValue="8"
         android:dialogTitle="dialog_title_edittext_preference" />
 
     </PreferenceCategory>

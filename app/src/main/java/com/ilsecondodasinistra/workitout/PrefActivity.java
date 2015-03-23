@@ -51,7 +51,7 @@ public class PrefActivity extends PreferenceActivity {
     @Override
     public void onBuildHeaders(List<Header> aTarget) {
         try {
-            mLoadHeaders.invoke(this, new Object[]{R.xml.pref_headers, aTarget});
+            mLoadHeaders.invoke(this, new Object[]{R.xml.app_preferences, aTarget});
         } catch (IllegalArgumentException e) {
         } catch (IllegalAccessException e) {
         } catch (InvocationTargetException e) {

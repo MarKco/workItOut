@@ -77,7 +77,7 @@ public class PauseNotificationService extends Service {
             mNotificationManager.notify(generator2.nextInt(), mNotification);
 
 	        /*
-	         * Riga commentata in modo da avere le notifiche cancellabili
+             * Riga commentata in modo da avere le notifiche cancellabili
 	         */
             //        mNotification.flags |= Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE | Notification.DEFAULT_LIGHTS;
         } else {
