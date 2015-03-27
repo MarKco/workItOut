@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" 
-    android:theme="@style/Theme.Sherlock.Light">
+    android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
     <TimePicker
         android:id="@+id/prefTimePicker"
@@ -18,7 +18,7 @@
         android:weightSum="2" >
 
         <Button
-            style="@style/Widget.Sherlock.ActionButton"
+            style="@style/Base.Widget.AppCompat.Button"
             android:id="@+id/dialogButtonCancel"
             android:layout_weight="1"
             android:layout_width="0dip"
@@ -28,7 +28,7 @@
             android:text=" Cancel " />
 
         <Button
-            style="@style/Widget.Sherlock.ActionButton"
+            style="@style/Base.Widget.AppCompat.Button"
             android:id="@+id/dialogButtonOK"
             android:layout_weight="1"
             android:layout_width="0dip"

@@ -8,4 +8,7 @@
     <color name="lightRedCustom">#119966FF</color>
     <color name="lightYellowCustom">#44ffffcc</color>
 
+    <color name="ColorPrimary">#FF920D</color>
+    <color name="ColorPrimaryDark">#FF8C00</color>
+
 </resources>

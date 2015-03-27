@@ -9,12 +9,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.media.audiofx.BassBoost;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -26,9 +32,6 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.MenuItem;
 import com.google.gson.Gson;
 import com.ilsecondodasinistra.workitout.helpers.PreferenceHelper;
 
@@ -47,7 +50,7 @@ import java.util.Observer;
 
 //import com.google.analytics.tracking.android.EasyTracker;
 
-public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
+public class WorkItOutMain extends ActionBarActivity implements Observer {
 
     static final int TIME_DIALOG_ID = 999;
     final Handler handler = new Handler();
@@ -89,6 +92,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     private boolean isTimerMarching = true;
     private int optionSelected = 0;
     PreferenceHelper preferenceHelper;
+    private Toolbar toolbar; // Declaring the Toolbar Object
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +103,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
         setContentView(R.layout.activity_work_it_out_main);
 
-        actionBar = getSupportActionBar();
+        toolbar = (Toolbar) findViewById(R.id.tool_bar); // Attaching the layout to the toolbar object
+        setSupportActionBar(toolbar);
 
 		/*
          * Initializations
@@ -327,7 +333,8 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		/*
          * Toggles handler for application drawer
 		 */
-        drawerLayoutHelper = new DrawerLayoutHelper(WorkItOutMain.this, actionBar);
+        //TODO: Decommenta
+//        drawerLayoutHelper = new DrawerLayoutHelper(WorkItOutMain.this, actionBar);
 
 		/*
 		 * If application drawer was never opened manually,
@@ -363,6 +370,38 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                 Toast.makeText(getBaseContext(), getString(R.string.alarm_activated) + " " + hhmmFormatter.format(now.getTime()), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.drawer, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+            drawerLayoutHelper.toggle();
+            return true;
+        }
+
+        switch (id) {
+            case R.id.action_settings:
+                Intent settingIntent = new Intent(WorkItOutMain.this, SettingsActivity.class);
+                startActivity(settingIntent);
+                return true;
+            case R.id.action_share:
+                sendMail();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void toggleCountForExtraTime() {
@@ -674,21 +713,21 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
      * @see com.actionbarsherlock.app.SherlockActivity#onOptionsItemSelected(android.view.MenuItem)
      * Cosa succede se l'utente seleziona una voce di menu o dell'action bar?
      */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            drawerLayoutHelper.toggle();
-            return true;
-        }
-
-        switch (item.getItemId()) {
-            case R.id.send_email:
-                sendMail();
-                return true;
-            default:
-                return false;
-        }
-    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (item.getItemId() == android.R.id.home) {
+//            drawerLayoutHelper.toggle();
+//            return true;
+//        }
+//
+//        switch (item.getItemId()) {
+//            case R.id.send_email:
+//                sendMail();
+//                return true;
+//            default:
+//                return false;
+//        }
+//    }
 
 //	@Override
 //	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
@@ -859,13 +898,13 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        drawerLayoutHelper.getDrawerToggle().syncState();
+//        drawerLayoutHelper.getDrawerToggle().syncState();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        drawerLayoutHelper.getDrawerToggle().onConfigurationChanged(newConfig);
+//        drawerLayoutHelper.getDrawerToggle().onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -953,10 +992,11 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                 sum += duration;
             }
             averageDuration = sum / listOfDurations.size();
-
-            actionBar.setTitle(getString(R.string.app_name) + " - " + formatMillis((long) averageDuration));   //Sets the title of the app to the name + the average, if chosen
+                //TODO: Decommenta
+//            actionBar.setTitle(getString(R.string.app_name) + " - " + formatMillis((long) averageDuration));   //Sets the title of the app to the name + the average, if chosen
         } else {
-            actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
+            //TODO: Decommenta
+//            actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
         }
 
     }

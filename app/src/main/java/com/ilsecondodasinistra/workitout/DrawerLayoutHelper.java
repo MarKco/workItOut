@@ -4,12 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
-import com.actionbarsherlock.app.ActionBar;
 
 public class DrawerLayoutHelper {
 
@@ -97,9 +96,11 @@ public class DrawerLayoutHelper {
 
     private void restoreActionBar() {
         actionBar.setCustomView(null);
+        //TODO: Decommenta
 //        actionBar.setDisplayOptions(defaul<tActionBarDisplay); //Removes the three dots on the left. I like them!
         actionBar.setHomeButtonEnabled(true);
         actionBar.setNavigationMode(defaultNavigationMode);
+        //TODO: Decommenta
 //        actionBar.setTitle(defaultTitle); //Commented out because each activity is probably going to choose what to have written on the Actionbar
     }
 

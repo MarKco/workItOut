@@ -1,14 +1,13 @@
 package com.ilsecondodasinistra.workitout;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.actionbarsherlock.app.SherlockFragment;
-
-public class DrawerFragment extends SherlockFragment {
+public class DrawerFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -29,7 +28,7 @@ public class DrawerFragment extends SherlockFragment {
         tv.setText(elements[position]);
 
         // Updating the action bar title
-        getSherlockActivity().getSupportActionBar().setTitle(elements[position]);
+        getActivity().getActionBar().setTitle(elements[position]);
 
         return v;
     }
