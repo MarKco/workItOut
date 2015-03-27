@@ -5,15 +5,16 @@
     <SwitchPreference
         android:key="show_average"
         android:title="Show average length of work day"
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:summary="Display the calculated average in the app title" />
 
-    <EditTextPreference
-        android:key="edittext_preference"
+    <com.ilsecondodasinistra.workitout.helpers.TimePickerPreference
+        android:key="workday_length"
         android:title="@string/workday_duration_prefs_title"
-        android:summary="summary_edittext_preference"
-        android:defaultValue="8"
-        android:dialogTitle="dialog_title_edittext_preference" />
+        android:summary="@string/workday_length_label"
+        android:numeric="integer"
+        android:defaultValue="8:00"
+        android:dialogTitle="@string/prefs_choose_workday_length" />
 
     </PreferenceCategory>
 </PreferenceScreen>

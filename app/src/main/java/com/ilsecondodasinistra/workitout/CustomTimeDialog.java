@@ -13,6 +13,7 @@ import android.widget.TimePicker;
  * Custom preference for time selection. Hour and minute are persistent and
  * stored separately as ints in the underlying shared preferences under keys
  * KEY.hour and KEY.minute, where KEY is the preference's key.
+ * This is CRAPPY! This whole class does only exist for the "Workday length" setting!
  */
 public class CustomTimeDialog extends Dialog implements View.OnClickListener {
 
@@ -94,7 +95,6 @@ public class CustomTimeDialog extends Dialog implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
-        // TODO Auto-generated method stub
         switch (v.getId()) {
             case R.id.dialogButtonOK:
                 CustomTimeDialog.this.saveData();

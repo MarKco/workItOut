@@ -30,6 +30,7 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.gson.Gson;
+import com.ilsecondodasinistra.workitout.helpers.PreferenceHelper;
 
 import org.joda.time.Period;
 
@@ -45,10 +46,6 @@ import java.util.Observer;
 /** Joda-Time **/
 
 //import com.google.analytics.tracking.android.EasyTracker;
-
-/**
- * Joda-Time *
- */
 
 public class WorkItOutMain extends SherlockFragmentActivity implements Observer {
 
@@ -91,37 +88,17 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     private SimpleDateFormat longDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     private boolean isTimerMarching = true;
     private int optionSelected = 0;
-
-    private static String pad(int c) {
-        if (c >= 10)
-            return String.valueOf(c);
-        else
-            return "0" + String.valueOf(c);
-    }
-
-    private static void setArrayListToPreferences(Context ctx, ArrayList obj) {
-        final SharedPreferences preferences = ctx.getSharedPreferences("WorkItOutMain", 0);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("COMPLEX_OBJECT", new Gson().toJson(obj));
-        editor.commit();
-    }
-
-    private static ArrayList getArrayListFromPreferneces(Context ctx) {
-        final SharedPreferences preferences = ctx.getSharedPreferences("WorkItOutMain", 0);
-        String sobj = preferences.getString("COMPLEX_OBJECT", "");
-        if (sobj.equals("")) return null;
-        else return new Gson().fromJson(sobj, ArrayList.class);
-    }
+    PreferenceHelper preferenceHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        preferenceHelper = PreferenceHelper.getInstance(this.getApplicationContext());
+
         setContentView(R.layout.activity_work_it_out_main);
 
         actionBar = getSupportActionBar();
-
-        //Preferences
-        final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 
 		/*
          * Initializations
@@ -152,18 +129,18 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
         try {
             //Initialization
-            if (settings.getLong("entranceTime", 0) == 0) {
+            if (preferenceHelper.getLongPrefs("entranceTime", 0) == 0) {
                 entranceTime = hhmmFormatter.parse("0:00");
             } else {
-                entranceTime = new Date(settings.getLong("entranceTime", 0));
+                entranceTime = new Date(preferenceHelper.getLongPrefs("entranceTime", 0));
                 entranceText.setText(hhmmFormatter.format(entranceTime));
                 setTextColor(entranceText, entranceTime);
             }
 
-            if (settings.getLong("lunchInTime", 0) == 0) {
+            if (preferenceHelper.getLongPrefs("lunchInTime", 0) == 0) {
                 lunchInTime = hhmmFormatter.parse("0:00");
             } else {
-                lunchInTime = new Date(settings.getLong("lunchInTime", 0));
+                lunchInTime = new Date(preferenceHelper.getLongPrefs("lunchInTime", 0));
                 lunchInText.setText(hhmmFormatter.format(lunchInTime));
                 setTextColor(entranceText, entranceTime);
                 if (!isYesterday(lunchInTime)) {
@@ -173,38 +150,21 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                 }
             }
 
-            listOfDurations = getArrayListFromPreferneces(getApplicationContext());
-            if (listOfDurations == null)
-                listOfDurations = new ArrayList<Double>();
-
-            double sum = 0;
-            double averageDuration = 0.0;
-
-            if (listOfDurations.size() > 0) {
-                for (Double duration : listOfDurations) {
-                    sum += duration;
-                }
-                averageDuration = sum / listOfDurations.size();
-
-                actionBar.setTitle(getString(R.string.app_name) + " - " + formatMillis((long) averageDuration));   //Sets the title of the app to the name + the average, if chosen
-            } else
-                actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
-
-            if (settings.getLong("lunchOutTime", 0) == 0) {
+            if (preferenceHelper.getLongPrefs("lunchOutTime", 0) == 0) {
                 lunchOutTime = hhmmFormatter.parse("0:00");
             } else {
-                lunchOutTime = new Date(settings.getLong("lunchOutTime", 0));
+                lunchOutTime = new Date(preferenceHelper.getLongPrefs("lunchOutTime", 0));
                 lunchOutText.setText(hhmmFormatter.format(lunchOutTime));
                 setTextColor(entranceText, entranceTime);
             }
 
-            if (!(settings.getLong("exitTime", 0) == 0)) {
-                exitTime = new Date(settings.getLong("exitTime", 0));
+            if (!(preferenceHelper.getLongPrefs("exitTime", 0) == 0)) {
+                exitTime = new Date(preferenceHelper.getLongPrefs("exitTime", 0));
                 exitText.setText(hhmmFormatter.format(exitTime));
                 setTextColor(exitText, exitTime);
             }
 
-            extraTimeSign = settings.getBoolean("exitTimeSign", false);
+            extraTimeSign = preferenceHelper.getBoolPref("exitTimeSign", false);
 
         } catch (ParseException e) {
             logIt(e.getStackTrace().toString());
@@ -218,9 +178,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             public boolean onLongClick(View arg0) {
                 entranceText.setText("");
                 entranceTime = new Date(0);
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putLong("entranceTime", 0);
-                editor.commit();
+                preferenceHelper.setLongPref("entranceTime", 0);
                 return true;
             }
         });
@@ -243,9 +201,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             public boolean onLongClick(View v) {
                 lunchOutText.setText("");
                 lunchOutTime = new Date(0);
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putLong("lunchOutTime", 0);
-                editor.commit();
+                preferenceHelper.setLongPref("lunchOutTime", 0);
                 return true;
             }
         });
@@ -268,9 +224,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             public boolean onLongClick(View v) {
                 lunchInText.setText("");
                 lunchInTime = new Date(0);
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putLong("lunchInTime", 0);
-                editor.commit();
+                preferenceHelper.setLongPref("lunchInTime", 0);
                 return true;
             }
         });
@@ -293,9 +247,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             public boolean onLongClick(View v) {
                 exitText.setText("");
                 exitTime = new Date(0);
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putLong("exitTime", 0);
-                editor.commit();
+                preferenceHelper.setLongPref("exitTime", 0);
                 startCountForExtraTime();
                 return true;
             }
@@ -354,16 +306,10 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
                 listOfDurations.add(duration);
 
-                //Preferences
-                final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
-                SharedPreferences.Editor editor = settings.edit();
-
-                editor.putLong("extraTimeHours", extraTime.getHours());
-                editor.putLong("extraTimeMinutes", extraTime.getMinutes());
-                editor.putLong("extraTimeSeconds", extraTime.getSeconds());
-                editor.putBoolean("exitTimeSign", extraTimeSign);
-
-                editor.commit();
+                preferenceHelper.setLongPref("extraTimeHours", extraTime.getHours());
+                preferenceHelper.setLongPref("extraTimeMinutes", extraTime.getMinutes());
+                preferenceHelper.setLongPref("extraTimeSeconds", extraTime.getSeconds());
+                preferenceHelper.setBoolPref("exitTimeSign", extraTimeSign);
 
                 removeAlarm();
             }
@@ -379,7 +325,7 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         });
 
 		/*
-		 * Toggles handler for application drawer
+         * Toggles handler for application drawer
 		 */
         drawerLayoutHelper = new DrawerLayoutHelper(WorkItOutMain.this, actionBar);
 
@@ -387,12 +333,10 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 		 * If application drawer was never opened manually,
 		 * automatically open it at first application run
 		 */
-        if (settings.getBoolean("drawerFirstOpening", true)) {
+        if (preferenceHelper.getBoolPref("drawerFirstOpening", true)) {
             drawerLayoutHelper.toggle();
 
-            SharedPreferences.Editor editor = settings.edit();
-            editor.putBoolean("drawerFirstOpening", false);
-            editor.commit();
+            preferenceHelper.setBoolPref("drawerFirstOpening", false);
         }
 
 		/*
@@ -422,9 +366,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     }
 
     private void toggleCountForExtraTime() {
-
-        //Preferences
-        final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
 
         if (isTimerMarching) {
             handler.removeCallbacks(updateExtraTime);
@@ -519,7 +460,22 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         }
 
         startCountForExtraTime();
-    }    TimePickerDialog.OnTimeSetListener timePickerListener = new TimePickerDialog.OnTimeSetListener() {
+    }
+
+    public void chooseTime(int hours, int minutes) {
+
+        //Per quando rifarai il comportamento del time picker
+//		DialogFragment timeFragment = new TimePickerFragment();
+//		timeFragment.show(getSupportFragmentManager(), "timePicker");
+
+        final TimePickerDialog dialogToShow = new TimePickerDialog(WorkItOutMain.this, timePickerListener,
+                hours,
+                minutes, true);
+
+        dialogToShow.show();
+    }
+
+    TimePickerDialog.OnTimeSetListener timePickerListener = new TimePickerDialog.OnTimeSetListener() {
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             if (!mIgnoreTimeSet) {
@@ -575,50 +531,16 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 //		return null;
 //	}
 
-    public void chooseTime(int hours, int minutes) {
-
-        //Per quando rifarai il comportamento del time picker
-//		DialogFragment timeFragment = new TimePickerFragment();
-//		timeFragment.show(getSupportFragmentManager(), "timePicker");
-
-        final TimePickerDialog dialogToShow = new TimePickerDialog(WorkItOutMain.this, timePickerListener,
-                hours,
-                minutes, true);
-
-        // Make the Set button
-//		dialogToShow.setButton(DialogInterface.BUTTON_POSITIVE, "Set", new DialogInterface.OnClickListener() {
-//			public void onClick(DialogInterface dialog, int which) {
-//				mIgnoreTimeSet = false;
-//				// only manually invoke OnTimeSetListener (through the dialog) on pre-ICS devices
-//				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) dialogToShow.onClick(dialog, which);
-//				Log.i("workitout", "Clicked on set");
-//			}
-//		});
-
-        // Set the Cancel button
-//		dialogToShow.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-//			public void onClick(DialogInterface dialog, int which) {
-//				mIgnoreTimeSet = true;
-//				dialog.cancel();
-//			}
-//		});
-
-        dialogToShow.show();
-    }
-
     /*
      * Updates workday length by calling a helper function
      */
     private void updateWorkDayLength() {
-        //Preferences
-        final SharedPreferences sharedSettings = getSharedPreferences("WorkItOutMain", 0);
 
-        int workHours = sharedSettings.getInt(getString(R.string.workday_hours) + ".hour", 8);
-        int workMinutes = sharedSettings.getInt(getString(R.string.workday_hours) + ".minute", 0);
+        String time = preferenceHelper.getStringPref("workday_length");
 
         try {
-            workTime = hhmmFormatter.parse(String.valueOf(workHours) + ":" + String.valueOf(workMinutes));
-            logIt(getString(R.string.workday_length_1) + workHours + getString(R.string.workday_length_2) + workMinutes + getString(R.string.workday_length_3));
+            workTime = hhmmFormatter.parse(time);
+            logIt(getString(R.string.workday_length_1) + time + getString(R.string.workday_length_3));
             workdayLength.setText(hhmmFormatter.format(workTime));
         } catch (NumberFormatException e) {
             workTime = new Date();
@@ -634,17 +556,14 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         // TODO Auto-generated method stub
         super.onResumeFragments();
 
-        //Preferences
-        final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
-
-        SharedPreferences.Editor editor = settings.edit();
-
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.cancelAll(); //When application is open all its notifications must be deleted
 
+        updateWorkDayLength(); //Because maybe we are coming back here after having changed the settings
+        setHeaderText();       //Because of the same reason
 //		EasyTracker.getInstance().activityStart(this); // Add this method.
 
-        if (settings.getBoolean("isTimerMarching", false)) {
+        if (preferenceHelper.getBoolPref("isTimerMarching", false)) {
             //Se avevamo chiuso l'app con il timer acceso
             extraTimeLayout.setVisibility(View.VISIBLE);
             isTimerMarching = true;
@@ -657,11 +576,11 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 			 */
             isTimerMarching = false;
 
-            if (settings.getLong("extraTimeSeconds", -1) != -1) {
+            if (preferenceHelper.getLongPrefs("extraTimeSeconds", -1) != -1) {
                 extraTime = new Date();
-                extraTime.setHours((int) settings.getLong("extraTimeHours", 0));
-                extraTime.setMinutes((int) settings.getLong("extraTimeMinutes", -1));
-                extraTime.setSeconds((int) settings.getLong("extraTimeSeconds", -1));
+                extraTime.setHours((int) preferenceHelper.getLongPrefs("extraTimeHours", 0));
+                extraTime.setMinutes((int) preferenceHelper.getLongPrefs("extraTimeMinutes", -1));
+                extraTime.setSeconds((int) preferenceHelper.getLongPrefs("extraTimeSeconds", -1));
                 extraTimeLayout.setVisibility(View.VISIBLE);
 
                 if (extraTimeSign) {
@@ -690,25 +609,20 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
     protected void onPause() {
         super.onPause();
 
-        setArrayListToPreferences(getApplicationContext(), listOfDurations);    //Append duration (in millis) to ArrayList and saves it
+        preferenceHelper.setArrayListToPreferences(getApplicationContext(), listOfDurations);    //Append duration (in millis) to ArrayList and saves it
 
-        //Preferences
-        final SharedPreferences settings = getSharedPreferences("WorkItOutMain", 0);
-        SharedPreferences.Editor editor = settings.edit();
-
-        editor.putBoolean("isTimerMarching", isTimerMarching);
+        preferenceHelper.setBoolPref("isTimerMarching", isTimerMarching);
         if (isTimerMarching) {
-            editor.putLong("extraTimeHours", extraTime.getHours());
-            editor.putLong("extraTimeMinutes", extraTime.getMinutes());
-            editor.putLong("extraTimeSeconds", extraTime.getSeconds());
-            editor.putBoolean("exitTimeSign", extraTimeSign);
+            preferenceHelper.setLongPref("extraTimeHours", extraTime.getHours());
+            preferenceHelper.setLongPref("extraTimeMinutes", extraTime.getMinutes());
+            preferenceHelper.setLongPref("extraTimeSeconds", extraTime.getSeconds());
+            preferenceHelper.setBoolPref("exitTimeSign", extraTimeSign);
         }
-        editor.putLong("entranceTime", entranceTime.getTime());
-        editor.putLong("lunchOutTime", lunchOutTime.getTime());
-        editor.putLong("exitTime", exitTime.getTime());
-        editor.putLong("lunchInTime", lunchInTime.getTime());
+        preferenceHelper.setLongPref("entranceTime", entranceTime.getTime());
+        preferenceHelper.setLongPref("lunchOutTime", lunchOutTime.getTime());
+        preferenceHelper.setLongPref("exitTime", exitTime.getTime());
+        preferenceHelper.setLongPref("lunchInTime", lunchInTime.getTime());
 
-        editor.commit();
     }
 
     @Override
@@ -755,14 +669,6 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         removeAlarm();
     }
 
-//	@Override
-//	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
-//		// Inflate the menu; this adds items to the action bar if it is present.
-//		MenuInflater inflater = getSupportMenuInflater();
-//		inflater.inflate(R.menu.work_it_out_main, menu);
-//		return true;
-//	}
-
     /*
      * (non-Javadoc)
      * @see com.actionbarsherlock.app.SherlockActivity#onOptionsItemSelected(android.view.MenuItem)
@@ -783,6 +689,14 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
                 return false;
         }
     }
+
+//	@Override
+//	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
+//		// Inflate the menu; this adds items to the action bar if it is present.
+//		MenuInflater inflater = getSupportMenuInflater();
+//		inflater.inflate(R.menu.work_it_out_main, menu);
+//		return true;
+//	}
 
     private Date setActualTime(TextView textToChange, Date dateToChange) {
         //Prepara il timestamp
@@ -878,25 +792,13 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
             inputText.setTextColor(Color.BLACK);
             exitText.setTextColor(Color.BLACK);
         }
-    }    private Runnable updateExtraTime = new Runnable() {
-        public void run() {
-            try {
-
-                updateExtraTimeFields();
-
-                handler.removeCallbacks(updateExtraTime);
-                handler.postDelayed(updateExtraTime, 1000);
-            } catch (Exception e) {
-                logIt(e.getStackTrace().toString());
-            }
-        }
-    };
+    }
 
     /*
-     * Check if date provided is yesterday
-     * @returns true if it's yesterday (or before)
-     * @returns false otherwise
-     */
+ * Check if date provided is yesterday
+ * @returns true if it's yesterday (or before)
+ * @returns false otherwise
+ */
     private boolean isYesterday(Date dateToCheck) {
         Calendar c1 = Calendar.getInstance(); // today
         c1.add(Calendar.DAY_OF_YEAR, -1); // yesterday
@@ -920,6 +822,20 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
         mAlarm.cancel(pi);
         pi.cancel();
     }
+
+    private Runnable updateExtraTime = new Runnable() {
+        public void run() {
+            try {
+
+                updateExtraTimeFields();
+
+                handler.removeCallbacks(updateExtraTime);
+                handler.postDelayed(updateExtraTime, 1000);
+            } catch (Exception e) {
+                logIt(e.getStackTrace().toString());
+            }
+        }
+    };
 
     private void logIt(String message) {
         if (DEBUG) {
@@ -1018,9 +934,31 @@ public class WorkItOutMain extends SherlockFragmentActivity implements Observer 
 
     }
 
+    /**
+     * Checks the list of durations,
+     * the "show average workday length" in options
+     * and acts accordingly
+     */
+    private void setHeaderText() {
 
+        listOfDurations = preferenceHelper.getArrayListFromPreferneces(getApplicationContext());
+        if (listOfDurations == null)
+            listOfDurations = new ArrayList<Double>();
 
+        double sum = 0;
+        double averageDuration = 0.0;
 
+        if (preferenceHelper.getBoolPref("show_average", false) && listOfDurations.size() > 0) {
+            for (Double duration : listOfDurations) {
+                sum += duration;
+            }
+            averageDuration = sum / listOfDurations.size();
 
+            actionBar.setTitle(getString(R.string.app_name) + " - " + formatMillis((long) averageDuration));   //Sets the title of the app to the name + the average, if chosen
+        } else {
+            actionBar.setTitle(getString(R.string.app_name));   //Sets the title of the app to the name
+        }
+
+    }
 
 }

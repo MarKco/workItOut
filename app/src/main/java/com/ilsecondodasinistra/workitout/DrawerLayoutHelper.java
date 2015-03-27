@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 
@@ -101,35 +100,26 @@ public class DrawerLayoutHelper {
 //        actionBar.setDisplayOptions(defaul<tActionBarDisplay); //Removes the three dots on the left. I like them!
         actionBar.setHomeButtonEnabled(true);
         actionBar.setNavigationMode(defaultNavigationMode);
-        actionBar.setTitle(defaultTitle);
+//        actionBar.setTitle(defaultTitle); //Commented out because each activity is probably going to choose what to have written on the Actionbar
     }
 
     /**
      * Swaps fragments in the main content view
      */
     private void selectItem(int position) {
-        // Create a new fragment and specify the planet to show based on position
-//        Fragment fragment = new PlanetFragment();
         Bundle args = new Bundle();
-//        args.putInt(PlanetFragment.ARG_PLANET_NUMBER, position);
-//        fragment.setArguments(args);
 
         switch (position) {
             case 0:
-                final CustomTimeDialog dialog = new CustomTimeDialog(this.activity);
-                dialog.setContentView(R.layout.time_preference);
-                dialog.show();
-                break;
-            case 1:
                 activity.clearAllInput();
                 break;
-            case 2:
+            case 1:
                 this.activity.sendMail();
                 break;
-            case 3:
+            case 2:
                 this.activity.startActivity(new Intent(this.activity, SettingsActivity.class));
                 break;
-            case 4:
+            case 3:
                 Intent aboutIntent = new Intent(this.activity, AboutActivity.class);
                 this.activity.startActivity(aboutIntent);
                 break;

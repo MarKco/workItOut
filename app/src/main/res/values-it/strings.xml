@@ -14,7 +14,7 @@
     <string name="notificationMessage">E\' arrivata la fine della tua giornata di lavoro.</string>
     <string name="longTextForNotification">WorkItOut ha calcolato in base ai tuoi orari di entrata e uscita che è arrivata la fine della tua giornata lavorativa. Che dici, chiudiamo baracca e burattini?</string>
     <string name="extraTimeLabel">Oltre orario:</string>
-    <string name="workday_length_label">Ore di lavoro:</string>
+    <string name="workday_length_label">Ore di lavoro in un giorno o turno: </string>
     <string name="send_email">Invia orari via mail</string>
     <string name="workday_hours">workday_hours</string>
     <string name="exit_stop_counting">Uscita: conteggio straordinario fermato</string>

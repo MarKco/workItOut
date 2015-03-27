@@ -14,7 +14,7 @@
     <string name="notificationMessage">The end of your working time has come</string>
     <string name="longTextForNotification">WorkItOut calculated that, considering your entrance and lunch time, the end of your working time has come. What about shutting everything off and going outside?</string>
     <string name="extraTimeLabel">Overtime:</string>
-    <string name="workday_length_label">Work hours:</string>
+    <string name="workday_length_label">Work hours (day or shift): </string>
     <string name="send_email">Send timings by mail</string>
     <string name="workday_hours">workday_hours</string>
     <string name="exit_stop_counting">Exit: Overtime counting stopped</string>

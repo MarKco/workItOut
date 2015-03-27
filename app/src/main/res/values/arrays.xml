@@ -2,7 +2,6 @@
 <resources>
 
    <array name="drawer_items">
-       <item>@string/prefs_choose_workday_length</item>
        <item>@string/prefs_delete_timings</item>
 	   <item>@string/send_email</item>
        <item>@string/prefs_settings</item>
