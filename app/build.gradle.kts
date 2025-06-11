@@ -13,7 +13,7 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout" // Replace with your actual package
         minSdk = 24
         targetSdk = 36
-        versionCode = 35
+        versionCode = 36
         versionName = "3.0.0"
     }
 
@@ -61,4 +61,6 @@ dependencies {
     // Tooling for previews
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    implementation(libs.androidx.fragment.ktx) // Or just "androidx.fragment:fragment:YOUR_CURRENT_VERSION"
 }
