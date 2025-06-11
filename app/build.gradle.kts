@@ -13,7 +13,7 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout" // Replace with your actual package
         minSdk = 24
         targetSdk = 36
-        versionCode = 36
+        versionCode = 1001
         versionName = "3.0.0"
     }
 
