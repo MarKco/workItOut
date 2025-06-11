@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1054495989779",
+    "project_id": "workitout-c1495",
+    "storage_bucket": "workitout-c1495.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054495989779:android:bf402b4c4b2a4980545fe6",
+        "android_client_info": {
+          "package_name": "com.ilsecondodasinistra.workitout"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjgYbJRnoTVRvr6tfXVhxgES_BA0khB5Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

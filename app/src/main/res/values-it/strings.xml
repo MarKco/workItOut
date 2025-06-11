@@ -1,57 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="app_name">workItOut</string>
-    <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="entranceButtonLabel">Entrata</string>
-    <string name="lunchOutButtonLabel">A pranzo</string>
-    <string name="lunchInButtonLabel">Da pranzo</string>
-    <string name="exitButtonLabel">Uscita</string>
-    <string name="clearButtonLabel">Cancella</string>
-    <string name="estimatedTimeLabel">Ora di uscita:</string>
-    <string name="notificationTitle">E\' ora di uscire! Che dici, chiudiamo baracca e burattini?</string>
-    <string name="notificationMessage">E\' arrivata la fine della tua giornata di lavoro.</string>
-    <string name="longTextForNotification">WorkItOut ha calcolato in base ai tuoi orari di entrata e uscita che è arrivata la fine della tua giornata lavorativa. Che dici, chiudiamo baracca e burattini?</string>
-    <string name="extraTimeLabel">Oltre orario:</string>
-    <string name="workday_length_label">Ore di lavoro in un giorno o turno: </string>
-    <string name="send_email">Invia orari via mail</string>
-    <string name="workday_hours">workday_hours</string>
-    <string name="exit_stop_counting">Uscita: conteggio straordinario fermato</string>
-    <string name="restart_counting">Conteggio straordinario ripreso</string>
-    <string name="workday_length_1">Okay, la giornata dura </string>
-    <string name="workday_length_2"> ore e </string>
-    <string name="workday_length_3"> minuti</string>
-    <string name="email_subject">WorkItOut: orari del giorno </string>
-    <string name="email_in_time">Orario di entrata: </string>
-    <string name="email_lunch_time">Orario di pranzo: </string>
-    <string name="email_back_from_lunch">Orario di rientro: </string>
-    <string name="email_exit_time">Orario di uscita: </string>
-    <string name="email_total_time">Tempo totale lavorato: </string>
-    <string name="email_extra_time">Straordinario: </string>
-    <string name="no_email_client">Nessun client email installato.</string>
-    <string name="workday_duration_prefs_title">Durata della giornata</string>
-    <string name="settings_title">Impostazioni</string>
-    <string name="alarm_activated">Allarme attivato per le ore </string>
-    <string name="drawer_open">Aperto</string>
-    <string name="drawer_close">Chiuso</string>
-    <string name="title_activity_drawer_fragment">DrawerFragment</string>
-
-    <string name="prefs_delete_timings">Cancella gli orari</string>
-    <string name="prefs_about">Info su WorkItOut</string>
-    <string name="prefs_settings">Impostazioni</string>
-    <string name="prefs_interface_settings">Preferenze di visualizzazione</string>
-
-    <string name="title_activity_about">Informazioni su WorkItOut</string>
-    <string name="app_author"><a href="http://www.marcozanetti.it">Marco Zanetti</a></string>
-    <string name="author_email">Scrivimi: <a href="mailto:ilsecondodasinistra@gmail.com">ilsecondodasinistra@gmail.com</a></string>
-    <string name="app_info">Lavori otto ore al giorno ed hai il tuo bel cartellino da timbrare. Peccato però che il tuo orario di arrivo non sia sempre lo stesso: a volte arrivi un minuto prima, a volte due minuti prima, più spesso 7, 11, 13 minuti dopo. Anche la pausa pranzo è variabile: a volte mangi in dieci minuti un\'insalata da fare invidia a Kate Moss, altre volte impieghi quarantatre minuti ad ingurgitare la peperonata che la mamma ti ha amorevolmente preparato la sera prima.\nCome fare a sapere con esattezza quando finiscono le otto ore? Fino a ieri occorreva fare delle complicate somme con numeri magari DISPARI e in base SESSANTA! Ma quei tempi disgraziati sono finiti, perché Work It Out farà d\'ora in poi i conti al posto tuo!\nL\'uso è molto semplice: devi solo ricordarti quando entri, quando esci a pranzo e quando rientri di fare tap sul pulsante corrispondente nell\'app. Al resto ci pensa lei e ti dice in diretta qual è l\'orario di uscita corretto. Se poi sei una brava persona e vuoi regalare qualche minuto in più al tuo capo, beh, chi siamo noi per condannarti?\n\nBuon lavoro, e buona uscita con Work It Out, la soluzione ai mal di testa davanti al timbracartellini!\n\nP.S. L\'app è ancora in fase sperimentale pertanto non tutte le caratteristiche che vi aspettate sono presenti: le notifiche, ad esempio, non sono per ora disabilitabili e non è possibile esportare i dati giornalieri. Queste ed altre feature arriveranno nelle future versioni, speriamo non accompagnate da altrettanto numerosi bachi.\n\nTi piace WorkItOut? Vorresti collaborare per le versioni future e contemporaneamente testare le nuove feature prima di chiunque altro? Unisciti a noi nel gruppo dei beta tester: <a href="https://plus.google.com/communities/102279844132952268019">https://plus.google.com/communities/102279844132952268019</a>\n\nWorkItOut è software libero! Puoi trovare il codice su <a href="https://github.com/MarKco/workItOut">https://github.com/MarKco/workItOut</a>. Sentiti libero di unirti e collaborare a rendere l\'app ancora più bella e funzionale!</string>
-    <string name="app_changelog">Versione 2.2.1\n- Aggiunta la traduzione in inglese, ora WorkItOut è disponibile in tutto il mondo.\n\nVersione 2.2\n- Possibilità di condivisione degli orari del giorno via email\n- Impostazione personalizzata della lunghezza della giornata lavorativa\n- Tenendo premuto a lungo su un orario esso viene cancellato\n\nVersione 2.0\n- Modifica degli orari anche dopo averli inseriti\n- Timbratura di uscita per fermare il conteggio dell\'eventuale straordinario</string>
-    <string name="changelog_title">Changelog</string>
-
-    <!-- Notifications -->
-    <string name="longTextForPause">End of break in 2 minutes, time to go back to work!</string>
-    <string name="notificationPauseTitle">End of break</string>
-    <string name="notificationPauseMessage">The break is over</string>
-
+    <string name="app_name">WorkItOut</string>
+    <string name="settings">Impostazioni</string>
 </resources>
