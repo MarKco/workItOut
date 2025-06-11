@@ -4,6 +4,7 @@ agp = "8.10.1"
 composeBomVersion = "2025.06.00"
 coreKtxVersion = "1.16.0"
 firebaseBom = "33.15.0"
+fragmentKtx = "1.8.8"
 kotlin = "2.1.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -20,6 +21,7 @@ androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose"
 androidx-compose-bom-v20230800 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-ktx-v1131 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-lifecycle-runtime-ktx-v281 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
