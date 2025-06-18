@@ -28,18 +28,19 @@ fun TimeButton(
     time: String,
     buttonColor: Color,
     onClick: () -> Unit,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    enabled: Boolean = true, // Optional parameter to enable/disable the button
 ) {
     Row {
         Button(
-            onClick = onClick,
+            onClick = { if (enabled) onClick() }, // Only call onClick if enabled
             modifier =
                 Modifier
                     .padding(start = 40.dp) // Padding to align with the icon
-                    .width(160.dp) // Fixed width for consistent sizing
+                    .width(180.dp) // Fixed width for consistent sizing
                     .height(100.dp),
             // Fixed height
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            colors = if (enabled) ButtonDefaults.buttonColors(containerColor = buttonColor) else ButtonDefaults.buttonColors(containerColor = Color.Gray),
             shape = RoundedCornerShape(16.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
         ) {
@@ -59,7 +60,11 @@ fun TimeButton(
                     .padding(start = 16.dp)
                     .width(32.dp)
                     .height(32.dp)
-                    .clickable(onClick = onEditClick),
+                    .clickable {
+                        if (enabled) {
+                            onEditClick()
+                        }
+                    },
             tint = Color(0xFF9A4616),
         )
     }

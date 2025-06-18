@@ -13,8 +13,8 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout" // Replace with your actual package
         minSdk = 24
         targetSdk = 36
-        versionCode = 1001
-        versionName = "3.0.0"
+        versionCode = 1002
+        versionName = "3.1.0"
     }
 
     buildFeatures {
@@ -49,14 +49,6 @@ dependencies {
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.core)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.firestore.ktx)
-
-    // Coroutines for Firebase
-    implementation(libs.kotlinx.coroutines.play.services)
 
     // Tooling for previews
     debugImplementation(libs.ui.tooling)

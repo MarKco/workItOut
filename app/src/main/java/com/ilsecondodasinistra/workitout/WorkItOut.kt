@@ -28,16 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.firestore.FirebaseFirestore
 import com.ilsecondodasinistra.workitout.ui.HomeScreen
 import com.ilsecondodasinistra.workitout.ui.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkItOut(
-    db: FirebaseFirestore,
-    userId: String,
-    appId: String,
     requestNotificationPermission: () -> Unit,
 ) {
     var currentPage by remember { mutableStateOf("home") } // 'home' or 'settings'
@@ -105,11 +101,9 @@ fun WorkItOut(
                         .padding(16.dp),
             ) {
                 if (currentPage == "home") {
-                    db?.let {
-                        HomeScreen(it, userId, appId)
-                    }
+                    HomeScreen()
                 } else {
-                    SettingsScreen(db, userId, appId)
+                    SettingsScreen()
                 }
             }
         }
@@ -120,9 +114,6 @@ fun WorkItOut(
 @Composable
 fun WorkItOutPreview() {
     WorkItOut(
-        db = FirebaseFirestore.getInstance(),
-        userId = "testUser",
-        appId = "testApp",
         requestNotificationPermission = { /* No-op for preview */ },
     )
 }

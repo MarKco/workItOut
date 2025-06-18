@@ -1,34 +1,16 @@
 package com.ilsecondodasinistra.workitout.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,45 +23,49 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
-import com.ilsecondodasinistra.workitout.await
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+// Constants for SharedPreferences (ensure these are consistent with SettingsScreen)
+private const val PREFS_NAME = "workitout_settings_prefs"
+private const val KEY_DAILY_HOURS = "daily_hours"
+private const val KEY_CURRENT_DAY_PREFIX = "current_day_"
+private const val KEY_ENTER_TIME = "enter_time"
+private const val KEY_TO_LUNCH_TIME = "to_lunch_time"
+private const val KEY_FROM_LUNCH_TIME = "from_lunch_time"
+// No need to save exit_time for current day, as exiting completes it.
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    db: FirebaseFirestore,
-    userId: String,
-    appId: String,
-) {
-    Log.d("HomeScreen", "Initializing HomeScreen")
+fun HomeScreen() {
+    Log.d("HomeScreen", "Initializing HomeScreen (Local Storage Version)")
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val sharedPreferences = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
+    // State for the current day's activities
     var enterTime by remember { mutableStateOf<Date?>(null) }
     var toLunchTime by remember { mutableStateOf<Date?>(null) }
     var fromLunchTime by remember { mutableStateOf<Date?>(null) }
-    var exitTime by remember { mutableStateOf<Date?>(null) }
+    var exitTime by remember { mutableStateOf<Date?>(null) } // This will be set on exit, then record is saved
     var calculatedExitTime by remember { mutableStateOf<Date?>(null) }
-    var totalWorkedTime by remember { mutableStateOf<String?>(null) }
+    var totalWorkedTime by remember { mutableStateOf<String?>(null) } // For the current day
     var dailyHours by remember { mutableDoubleStateOf(8.0) }
     var message by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+
 
     val timePickerState = rememberTimePickerState(
         initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
         initialMinute = Calendar.getInstance().get(Calendar.MINUTE),
         is24Hour = true,
     )
-
     val timePickerStateDialog = remember {
         mutableStateOf(
             TimePickerDialogState(
@@ -90,295 +76,273 @@ fun HomeScreen(
         )
     }
 
-    // Helper function to format a Date object to a readable time string
+    // --- Helper Functions (mostly unchanged) ---
     val formatTime: (Date?) -> String = { date ->
         date?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A"
     }
 
-    // Helper function to format a Date object to YYYY-MM-DD string
-    val formatDateForDocId: (Date) -> String = { date ->
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-    }
-
-    // Show a local notification
     val showLocalNotification: (String, String) -> Unit = { title, body ->
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val builder =
-                NotificationCompat
-                    .Builder(context, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Simple icon
-                    .setContentTitle(title)
-                    .setContentText(body)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
+            val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             with(NotificationManagerCompat.from(context)) {
                 notify(NOTIFICATION_ID, builder.build())
             }
         } else {
-            message = "🔔 Notifica: $body" // Fallback to in-app message
-            // Ask for notification permission if not granted
+            message = "🔔 Notifica: $body"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ActivityCompat.requestPermissions(
-                    context as androidx.activity.ComponentActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    0,
-                )
+                // Consider a more user-friendly way to request this, perhaps a dedicated button
+                (context as? androidx.activity.ComponentActivity)?.let { activity ->
+                    ActivityCompat.requestPermissions(
+                        activity,
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        0,
+                    )
+                }
+
             } else {
                 Log.w("Notification", "POST_NOTIFICATIONS permission not granted.")
             }
         }
     }
 
-    // Calculate the expected exit time
     val calculateExpectedExitTime: () -> Unit = {
         if (enterTime != null && dailyHours > 0) {
             val enterMs = enterTime!!.time
             val totalWorkMilliseconds = (dailyHours * 60 * 60 * 1000).toLong()
             var lunchBreakMilliseconds = 0L
 
-            if (toLunchTime != null && fromLunchTime != null) {
+            if (toLunchTime != null && fromLunchTime != null && fromLunchTime!!.after(toLunchTime!!)) {
                 lunchBreakMilliseconds = fromLunchTime!!.time - toLunchTime!!.time
             } else if (toLunchTime != null && fromLunchTime == null) {
-                // Assume 1 hour lunch if "To Lunch" is pressed but not "From Lunch"
-                lunchBreakMilliseconds = 60 * 60 * 1000L
+                // Assume 1 hour default if "To Lunch" is pressed but not "From Lunch" when calculating
+                // This could be configurable or removed if strict "From Lunch" is required.
+                // lunchBreakMilliseconds = 60 * 60 * 1000L // Let's remove this assumption for now
             }
 
             val newCalculatedExitMs = enterMs + totalWorkMilliseconds + lunchBreakMilliseconds
-            val newCalculatedExitTime = Date(newCalculatedExitMs)
-            calculatedExitTime = newCalculatedExitTime
+            calculatedExitTime = Date(newCalculatedExitMs)
 
-            if (newCalculatedExitTime.time <= System.currentTimeMillis()) {
-                showLocalNotification("Ora di uscire!", "Il tuo orario previsto di uscita è ${formatTime(newCalculatedExitTime)}.")
-            }
+            // Notification for calculated exit time is handled by the polling LaunchedEffect
         } else {
             calculatedExitTime = null
         }
     }
 
-    // Calculate total worked time
-    val calculateTotalWorkedTime: () -> Unit = {
-        if (enterTime != null && exitTime != null) {
+    val calculateTotalWorkedTime: () -> String? = { // Returns String? to be assigned
+        if (enterTime != null && exitTime != null && exitTime!!.after(enterTime!!)) {
             var totalMs = exitTime!!.time - enterTime!!.time
             var lunchMs = 0L
 
-            if (toLunchTime != null && fromLunchTime != null) {
+            if (toLunchTime != null && fromLunchTime != null && fromLunchTime!!.after(toLunchTime!!)) {
                 lunchMs = fromLunchTime!!.time - toLunchTime!!.time
             }
             totalMs -= lunchMs
+            if (totalMs < 0) totalMs = 0 // Ensure non-negative
 
             val totalHours = TimeUnit.MILLISECONDS.toHours(totalMs)
             val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMs) % 60
-            val totalSeconds = TimeUnit.MILLISECONDS.toSeconds(totalMs) % 60
+            // val totalSeconds = TimeUnit.MILLISECONDS.toSeconds(totalMs) % 60 // Usually not needed for total
 
-            totalWorkedTime = "${totalHours}h ${totalMinutes}m ${totalSeconds}s"
+            "${totalHours}h ${totalMinutes}m" // Return the formatted string
         } else {
-            totalWorkedTime = null
+            null // Return null if conditions not met
         }
     }
 
-    // Load today's data and daily hours from Firestore
-    LaunchedEffect(db, userId, appId) {
-        val todayDocId = formatDateForDocId(Date())
-        val dailyRecordRef =
-            db?.collection("artifacts")
-                ?.document(appId)
-                ?.collection("users")
-                ?.document(userId)
-                ?.collection("dailyRecords")
-                ?.document(todayDocId)
+    // --- Data Loading and Saving Logic (Local) ---
 
-        val settingsDocRef =
-            db
-                ?.collection(
-                    "artifacts",
+    // Function to save current day's progress (except exit)
+    fun saveCurrentDayProgress() {
+        with(sharedPreferences.edit()) {
+            enterTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", it.time) } ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME")
+            toLunchTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", it.time) } ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
+            fromLunchTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", it.time) } ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
+            apply()
+        }
+        Log.d("HomeScreen", "Current day progress saved to SharedPreferences.")
+    }
+
+    // Function to clear current day's progress (e.g., after saving to history)
+    fun clearCurrentDayProgressFromPrefs() {
+        with(sharedPreferences.edit()) {
+            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME")
+            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
+            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
+            apply()
+        }
+        Log.d("HomeScreen", "Current day progress cleared from SharedPreferences.")
+    }
+
+
+    // Load daily hours from SharedPreferences and potentially resume today's state
+    LaunchedEffect(Unit) { // Run once on init
+        dailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
+        Log.d("HomeScreen", "Loaded dailyHours: $dailyHours")
+
+        // Attempt to load current day's progress
+        val savedEnterTime = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", -1L)
+        val savedToLunchTime = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", -1L)
+        val savedFromLunchTime = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", -1L)
+
+        if (savedEnterTime != -1L) {
+            enterTime = Date(savedEnterTime)
+            if (savedToLunchTime != -1L) toLunchTime = Date(savedToLunchTime)
+            if (savedFromLunchTime != -1L) fromLunchTime = Date(savedFromLunchTime)
+//            message = "Giorno lavorativo ripreso."
+            Log.d("HomeScreen", "Resumed day: Enter=$enterTime, ToLunch=$toLunchTime, FromLunch=$fromLunchTime")
+        }
+
+
+        calculateExpectedExitTime()
+        // totalWorkedTime is only calculated when exitTime is set
+    }
+
+
+    // Polling for exit time notification
+    LaunchedEffect(calculatedExitTime) { // Re-run if calculatedExitTime changes
+        if (calculatedExitTime == null) return@LaunchedEffect // Stop if no exit time
+
+        var notified = false // Prevent multiple notifications for the same exit time
+        while (isActive && calculatedExitTime != null && !notified) { // Use isActive from CoroutineScope
+            if (System.currentTimeMillis() >= calculatedExitTime!!.time) {
+                showLocalNotification(
+                    "Ora di uscire!",
+                    "Il tuo orario di uscita previsto è ${formatTime(calculatedExitTime)}."
                 )
-                ?.document(appId)
-                ?.collection("users")
-                ?.document(userId)
-                ?.collection("settings")
-                ?.document("dailyHours")
-
-        // Listen for daily record changes
-        dailyRecordRef?.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                Log.w("Firestore", "Listen failed.", e)
-                return@addSnapshotListener
+                notified = true // Mark as notified
+                // Optionally, clear calculatedExitTime here if you don't want it to persist visually after notification
+                // calculatedExitTime = null
             }
-
-            if (snapshot != null && snapshot.exists()) {
-                val data = snapshot.data
-                enterTime = (data?.get("enterTime") as? Timestamp)?.toDate()
-                toLunchTime = (data?.get("toLunchTime") as? Timestamp)?.toDate()
-                fromLunchTime = (data?.get("fromLunchTime") as? Timestamp)?.toDate()
-                exitTime = (data?.get("exitTime") as? Timestamp)?.toDate()
-                calculatedExitTime = (data?.get("calculatedExitTime") as? Timestamp)?.toDate()
-                totalWorkedTime = data?.get("totalWorkedTime") as? String
-            } else {
-                Log.d("Firestore", "Current daily record: null")
-                // Reset states if no record for today
-                enterTime = null
-                toLunchTime = null
-                fromLunchTime = null
-                exitTime = null
-                calculatedExitTime = null
-                totalWorkedTime = null
-            }
-            calculateExpectedExitTime() // Recalculate after data load
-            calculateTotalWorkedTime()
-        }
-
-        // Listen for settings changes (daily hours)
-        settingsDocRef?.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                Log.w("Firestore", "Listen failed.", e)
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null && snapshot.exists()) {
-                dailyHours = snapshot.getDouble("value") ?: 8.0
-            } else {
-                dailyHours = 8.0 // Default if not set
-            }
-            calculateExpectedExitTime() // Recalculate if daily hours change
-        }
-
-        // Polling to check for exit time notification every second
-        while (true) {
-            delay(1000L) // Wait for 1 second
-            if (calculatedExitTime != null && calculatedExitTime!!.time <= System.currentTimeMillis()) {
-                showLocalNotification("Ora di uscire!", "Il tuo orario di uscita è ${formatTime(calculatedExitTime)}.")
-                calculatedExitTime = null // To prevent repeated notifications
-            }
+            delay(10000L) // Check every 10 seconds to reduce frequency
         }
     }
+
 
     // Effect to recalculate when dependencies change
     LaunchedEffect(enterTime, toLunchTime, fromLunchTime, exitTime, dailyHours) {
         calculateExpectedExitTime()
-        calculateTotalWorkedTime()
+        if (exitTime != null) { // Only calculate total if exitTime is set
+            totalWorkedTime = calculateTotalWorkedTime()
+        } else {
+            totalWorkedTime = null // Clear if exitTime is not set
+        }
+        // Save progress whenever these key times change (except exit, which completes the day)
+        if (exitTime == null) { // Don't save if exiting, as that's a separate "complete day" logic
+            saveCurrentDayProgress()
+        }
+    }
+
+    // Function to save timings to SharedPreferences (for history)
+    fun saveTimings(finalTotalWorked: String) {
+        // Save to LocalHistoryRepository
+        val record = mapOf(
+            "enterTime" to enterTime?.time, // Store as Long
+            "toLunchTime" to toLunchTime?.time,
+            "fromLunchTime" to fromLunchTime?.time,
+            "exitTime" to exitTime?.time,
+            "totalWorkedTime" to finalTotalWorked,
+            "dailyHours" to dailyHours
+            // 'id' will be generated by LocalHistoryRepository
+        )
+        LocalHistoryRepository.addRecord(record)
+        Log.d("HomeScreen", "Day record saved to LocalHistoryRepository: $record")
+
+//        // Clear current day's state after successful exit and save
+//        enterTime = null
+//        toLunchTime = null
+//        fromLunchTime = null
+//        exitTime = null
+//        // totalWorkedTime is already set for display, will clear on next entry
+//        calculatedExitTime = null // Clear calculated as well
     }
 
     val handleButtonPress: (ButtonType, Date) -> Unit = { buttonType, dateTime ->
         message = "" // Clear previous messages
 
-        val todayDocId = formatDateForDocId(dateTime)
-        val dailyRecordRef =
-            db
-                ?.collection(
-                    "artifacts",
-                )
-                ?.document(appId)
-                ?.collection("users")
-                ?.document(userId)
-                ?.collection("dailyRecords")
-                ?.document(todayDocId)
-
-        coroutineScope.launch {
-            try {
-                // Get current data to merge correctly
-                val currentData = dailyRecordRef?.get()?.await()?.data ?: mutableMapOf()
-
-                when (buttonType) {
-                    ButtonType.Enter -> {
-                        currentData["enterTime"] = dateTime
-                        currentData["exitTime"] = null // Reset exit time if re-entering
-                        currentData["fromLunchTime"] = null // Reset exit time if re-entering
-                        currentData["toLunchTime"] = null // Reset exit time if re-entering
-                        currentData["totalWorkedTime"] = null // Reset total worked time
-                        message = "Entered work."
-                    }
-
-                    ButtonType.ToLunch -> {
-                        if (enterTime == null) {
-                            message = "Devi prima entrare in servizio!"
-                            return@launch
-                        }
-                        currentData["toLunchTime"] = dateTime
-                        message = "A pranzo."
-                    }
-
-                    ButtonType.FromLunch -> {
-                        if (toLunchTime == null) {
-                            message = "Ricordati di premere prima \"In pausa\"!"
-                            return@launch
-                        }
-                        currentData["fromLunchTime"] = dateTime
-                        message = "Ritorno dalla pausa."
-                    }
-
-                    ButtonType.Exit -> {
-                        if (enterTime == null) {
-                            message = "Devi prima entrare in servizio!"
-                            return@launch
-                        }
-                        currentData["exitTime"] = dateTime
-                    }
-                }
-
-                // Update calculatedExitTime and totalWorkedTime just before saving if relevant
-                // These are recalculated in the LaunchedEffect based on the loaded state,
-                // but setting them here ensures they are part of the transaction.
-                calculatedExitTime?.let { currentData["calculatedExitTime"] = it }
-                totalWorkedTime?.let { currentData["totalWorkedTime"] = it }
-
-                dailyRecordRef?.set(currentData) // Use set with merge implicitly
-//                message = "Dati salvati con successo!"
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error saving data: ${e.message}", e)
-                message = "Errore nel salvataggio: ${e.message}"
-            }
-        }
-    }
-
-    val handleEditClick: (ButtonType) -> Unit = { editKey ->
-        when (editKey) {
+        when (buttonType) {
             ButtonType.Enter -> {
-                timePickerState.minute = enterTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.MINUTE) } ?: 0
-                timePickerState.hour = enterTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.HOUR_OF_DAY) } ?: 0
-                timePickerStateDialog.value = TimePickerDialogState(
-                    state = timePickerState,
-                    type = ButtonType.Enter,
-                    isVisible = true,
-                )
+                // If already entered and not exited, perhaps ask for confirmation to reset?
+                // For now, allow reset.
+                clearCurrentDayProgressFromPrefs() // Clear from SharedPreferences
+                enterTime = dateTime
+                toLunchTime = null
+                fromLunchTime = null
+                exitTime = null
+                totalWorkedTime = null
+                message = "Ingresso registrato: ${formatTime(enterTime)}"
             }
 
             ButtonType.ToLunch -> {
-                timePickerState.minute = toLunchTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.MINUTE) } ?: 0
-                timePickerState.hour = toLunchTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.HOUR_OF_DAY) } ?: 0
-                timePickerStateDialog.value = TimePickerDialogState(
-                    state = timePickerState,
-                    type = ButtonType.ToLunch,
-                    isVisible = true,
-                )
+                if (enterTime == null) {
+                    message = "Devi prima registrare l'ingresso!"
+
+                } else if (toLunchTime != null && fromLunchTime == null) {
+                    message = "Sei già in pausa. Registra il rientro."
+                }
+                toLunchTime = dateTime
+                message = "Inizio pausa: ${formatTime(toLunchTime)}"
             }
 
             ButtonType.FromLunch -> {
-                timePickerState.minute = fromLunchTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.MINUTE) } ?: 0
-                timePickerState.hour = fromLunchTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.HOUR_OF_DAY) } ?: 0
-                timePickerStateDialog.value = TimePickerDialogState(
-                    state = timePickerState,
-                    type = ButtonType.FromLunch,
-                    isVisible = true,
-                )
+                if (toLunchTime == null) {
+                    message = "Devi prima registrare l'inizio della pausa!"
+                } else if (dateTime.before(toLunchTime)) {
+                    message = "Il rientro non può essere prima dell'inizio pausa!"
+                }
+                fromLunchTime = dateTime
+                message = "Fine pausa: ${formatTime(fromLunchTime)}"
             }
 
             ButtonType.Exit -> {
-                timePickerState.minute = exitTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.MINUTE) } ?: 0
-                timePickerState.hour = exitTime?.let { Calendar.getInstance().apply { time = it }.get(Calendar.HOUR_OF_DAY) } ?: 0
-                timePickerStateDialog.value = TimePickerDialogState(
-                    state = timePickerState,
-                    type = ButtonType.Exit,
-                    isVisible = true,
-                )
+                if (enterTime == null) {
+                    message = "Devi prima registrare l'ingresso!"
+                } else {
+                    exitTime = dateTime
+                    val finalTotalWorked = calculateTotalWorkedTime() // Calculate one last time
+                    totalWorkedTime = finalTotalWorked
+                    message = "Uscita registrata: ${formatTime(exitTime)}. Totale: $finalTotalWorked"
+
+                    finalTotalWorked?.let {
+                        saveTimings(it)
+                    }
+                }
             }
         }
+        // Calculations are handled by LaunchedEffect
     }
 
-    Box {
+    val handleEditClick: (ButtonType) -> Unit = { buttonType ->
+        val calendar = Calendar.getInstance()
+        val timeToEdit: Date? = when (buttonType) {
+            ButtonType.Enter -> enterTime
+            ButtonType.ToLunch -> toLunchTime
+            ButtonType.FromLunch -> fromLunchTime
+            ButtonType.Exit -> exitTime
+        }
+
+        timeToEdit?.let { calendar.time = it }
+        // If null, use current time as default for picker
+        timePickerState.hour = calendar.get(Calendar.HOUR_OF_DAY)
+        timePickerState.minute = calendar.get(Calendar.MINUTE)
+
+        timePickerStateDialog.value = TimePickerDialogState(
+            state = timePickerState,
+            type = buttonType,
+            isVisible = true
+        )
+    }
+
+
+    // --- UI (Largely Unchanged) ---
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -386,9 +350,10 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .wrapContentWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .padding(top = 8.dp, bottom = 8.dp), // Added padding
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceAround,
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 TimeButton(
                     text = ButtonType.Enter.text,
@@ -403,6 +368,7 @@ fun HomeScreen(
                     buttonColor = Color(0xFFFFC107), // Yellow-500
                     onClick = { handleButtonPress(ButtonType.ToLunch, Date()) },
                     onEditClick = { handleEditClick(ButtonType.ToLunch) },
+                    enabled = enterTime != null // Enable only if entered
                 )
                 TimeButton(
                     text = ButtonType.FromLunch.text,
@@ -410,6 +376,7 @@ fun HomeScreen(
                     buttonColor = Color(0xFF2196F3), // Blue-500
                     onClick = { handleButtonPress(ButtonType.FromLunch, Date()) },
                     onEditClick = { handleEditClick(ButtonType.FromLunch) },
+                    enabled = toLunchTime != null // Enable only if on lunch
                 )
                 TimeButton(
                     text = ButtonType.Exit.text,
@@ -417,135 +384,116 @@ fun HomeScreen(
                     buttonColor = Color(0xFFF44336), // Red-500
                     onClick = { handleButtonPress(ButtonType.Exit, Date()) },
                     onEditClick = { handleEditClick(ButtonType.Exit) },
+                    enabled = enterTime != null // Enable only if entered
                 )
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // Info display
             Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.30f))
-                        .padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp) // Added horizontal padding
+                    .clip(RoundedCornerShape(16.dp)) // Increased rounding
+                    .background(Color.White.copy(alpha = 0.30f))
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "Orario giornaliero: ${dailyHours}h",
+                    text = "Ore giornaliere: ${"%.1f".format(dailyHours)}h", // Format to 1 decimal
                     color = Color(0xFF9A4616),
-                    fontSize = 20.sp,
+                    fontSize = 18.sp, // Adjusted size
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
-                    text = "Orario di uscita stimato: ${formatTime(calculatedExitTime)}",
+                    text = "Uscita stimata: ${formatTime(calculatedExitTime)}",
                     color = Color(0xFF9A4616),
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
-                    text = "Totale ore di oggi: ${totalWorkedTime ?: "N/A"}",
+                    text = "Totale oggi: ${totalWorkedTime ?: "N/A"}",
                     color = Color(0xFF9A4616),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold, // Made bold for emphasis
                 )
             }
-
+            Spacer(Modifier.height(16.dp)) // Spacer at the bottom
         }
 
         if (timePickerStateDialog.value.isVisible) {
+            val currentDialogType = timePickerStateDialog.value.type
             TimePickerDialog(
-                onDismiss = {
-                    timePickerStateDialog.value = TimePickerDialogState(
-                        state = timePickerState,
-                        isVisible = false
-                    )
-                },
+                onDismiss = { timePickerStateDialog.value = timePickerStateDialog.value.copy(isVisible = false) },
                 onConfirm = {
-                    when (timePickerStateDialog.value.type) {
-                        ButtonType.Enter -> {
-                            val calendar = Calendar.getInstance()
-                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                            calendar.set(Calendar.MINUTE, timePickerState.minute)
-                            enterTime = calendar.time
-                            message = "Orario di ingresso aggiornato a ${formatTime(enterTime)}."
-                            enterTime?.let {
-                                handleButtonPress(ButtonType.Enter, it) // Save the updated time
-                            }
-                            timePickerStateDialog.value = TimePickerDialogState(
-                                state = timePickerState,
-                                isVisible = false
-                            )
-                        }
+                    val calendar = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                        set(Calendar.MINUTE, timePickerState.minute)
+                        set(Calendar.SECOND, 0) // Reset seconds for consistency
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    val selectedDate = calendar.time
 
+                    when (currentDialogType) {
+                        ButtonType.Enter -> enterTime = selectedDate
                         ButtonType.ToLunch -> {
-                            val calendar = Calendar.getInstance()
-                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                            calendar.set(Calendar.MINUTE, timePickerState.minute)
-                            toLunchTime = calendar.time
-                            message = "Orario di inizio pausa aggiornato a ${formatTime(toLunchTime)}."
-                            enterTime?.let {
-                                handleButtonPress(ButtonType.ToLunch, it) // Save the updated time
+                            if (enterTime != null && selectedDate.before(enterTime)) {
+                                message = "L'inizio pausa non può essere prima dell'ingresso."
+                            } else {
+                                toLunchTime = selectedDate
                             }
-                            timePickerStateDialog.value = TimePickerDialogState(
-                                state = timePickerState,
-                                isVisible = false
-                            )
                         }
 
                         ButtonType.FromLunch -> {
-                            val calendar = Calendar.getInstance()
-                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                            calendar.set(Calendar.MINUTE, timePickerState.minute)
-                            fromLunchTime = calendar.time
-                            message = "Orario di fine pausa aggiornato a ${formatTime(fromLunchTime)}."
-                            enterTime?.let {
-                                handleButtonPress(ButtonType.FromLunch, it) // Save the updated time
+                            if (toLunchTime != null && selectedDate.before(toLunchTime)) {
+                                message = "Il rientro dalla pausa non può essere prima dell'inizio."
+                            } else {
+                                fromLunchTime = selectedDate
                             }
-                            timePickerStateDialog.value = TimePickerDialogState(
-                                state = timePickerState,
-                                isVisible = false
-                            )
                         }
 
                         ButtonType.Exit -> {
-                            val calendar = Calendar.getInstance()
-                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                            calendar.set(Calendar.MINUTE, timePickerState.minute)
-                            exitTime = calendar.time
-                            message = "Orario di uscita aggiornato a ${formatTime(enterTime)}."
-                            enterTime?.let {
-                                handleButtonPress(ButtonType.Exit, it) // Save the updated time
+                            if (enterTime != null && selectedDate.before(enterTime)) {
+                                message = "L'uscita non può essere prima dell'ingresso."
+                            } else {
+                                // For exit, we only update the state. The main "Exit" button logic handles saving.
+                                exitTime = selectedDate // Update the state for immediate UI feedback
+                                totalWorkedTime = calculateTotalWorkedTime() // Recalculate for display
+                                totalWorkedTime?.let {
+                                    saveTimings(it)
+                                }
                             }
-                            timePickerStateDialog.value = TimePickerDialogState(
-                                state = timePickerState,
-                                isVisible = false
-                            )
                         }
 
-                        else -> {
-                            Log.w("TimePicker", "Unknown button type: ${timePickerStateDialog.value.type}")
-                        }
+                        null -> {}
                     }
+                    // The LaunchedEffect will pick up these changes and save progress if needed
+                    timePickerStateDialog.value = timePickerStateDialog.value.copy(isVisible = false)
                 }
             ) {
-                TimePicker(
-                    state = timePickerState,
-                )
+                TimePicker(state = timePickerState)
             }
         }
 
-        // If message is not empty, display it as a Toast
-        if (message.isNotEmpty()) {
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        // Display messages using Toast
+        // LaunchedEffect to show Toast only when message changes and is not empty
+        LaunchedEffect(message) {
+            if (message.isNotEmpty()) {
+
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                // Optionally clear message after showing, or let it be overwritten
+                // delay(3500) // Keep message on screen for a bit if needed for other UI updates
+                // message = ""
+            }
         }
     }
 }
 
-private class TimePickerDialogState @OptIn(ExperimentalMaterial3Api::class) constructor(
+// Sealed class ButtonType and TimePickerDialogState (ensure these are accessible or defined in the same file)
+// If they are in another file, import them. For this example, I'll assume they are defined here or copied.
+private data class TimePickerDialogState @OptIn(ExperimentalMaterial3Api::class) constructor(
     val state: TimePickerState,
     val type: ButtonType? = null,
     val isVisible: Boolean,
@@ -553,17 +501,15 @@ private class TimePickerDialogState @OptIn(ExperimentalMaterial3Api::class) cons
 
 sealed class ButtonType(val text: String) {
     object Enter : ButtonType("Ingresso")
-    object ToLunch : ButtonType("In pausa")
-    object FromLunch : ButtonType("Fine pausa")
+    object ToLunch : ButtonType("In Pausa")
+    object FromLunch : ButtonType("Fine Pausa")
     object Exit : ButtonType("Uscita")
 }
 
-@Preview
+@Preview(showBackground = true, backgroundColor = 0xFFE0F2F1)
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(
-        userId = "testUser",
-        appId = "testApp",
-        db = FirebaseFirestore.getInstance()
-    )
+    MaterialTheme { // Wrap preview in MaterialTheme
+        HomeScreen()
+    }
 }

@@ -15,16 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.tasks.Task
-import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 // Define Firebase configuration and app ID globals (these would typically be managed in
 // build.gradle or as string resources in a real Android app, not directly here)
@@ -44,11 +34,6 @@ const val NOTIFICATION_CHANNEL_ID = "work_tracker_channel"
 const val NOTIFICATION_ID = 101
 
 class MainActivity : ComponentActivity() {
-    private lateinit var auth: FirebaseAuth
-    private lateinit var db: FirebaseFirestore
-    private lateinit var userId: String
-    private var appId: String = "default-app-id" // Replace with your actual app ID
-
     // Request notification permission for Android 13+
     private val requestPermissionLauncher =
         registerForActivityResult(
@@ -64,66 +49,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize Firebase
-        FirebaseApp.initializeApp(this)
-        auth = Firebase.auth
-        db = Firebase.firestore
-
         // Check for custom auth token from Canvas environment (if applicable)
         // In a real Android app, you'd handle user authentication directly,
         // e.g., with email/password, Google Sign-In, or anonymous sign-in.
         // The __initial_auth_token is a Canvas-specific variable.
-        val initialAuthToken = intent.getStringExtra("initial_auth_token") // Simulate passing token
 
-        auth.addAuthStateListener { firebaseAuth ->
-            val user = firebaseAuth.currentUser
-            if (user != null) {
-                userId = user.uid
-                Log.d("Auth", "User ID: $userId")
-                setContent {
-                    WorkItOut(db, userId, appId) { requestNotificationPermission() }
-                }
-            } else {
-                // Sign in anonymously if no user is logged in
-                if (!initialAuthToken.isNullOrEmpty()) {
-                    auth.signInWithCustomToken(initialAuthToken).addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            userId = auth.currentUser!!.uid
-                            Log.d("Auth", "Signed in with custom token. User ID: $userId")
-                            setContent {
-                                WorkItOut(db, userId, appId) { requestNotificationPermission() }
-                            }
-                        } else {
-                            Log.e("Auth", "Custom token sign-in failed", task.exception)
-                            auth.signInAnonymously().addOnCompleteListener(this) { anonTask ->
-                                if (anonTask.isSuccessful) {
-                                    userId = auth.currentUser!!.uid
-                                    Log.d("Auth", "Signed in anonymously. User ID: $userId")
-                                    setContent {
-                                        WorkItOut(db, userId, appId) { requestNotificationPermission() }
-                                    }
-                                } else {
-                                    Log.e("Auth", "Anonymous sign-in failed", anonTask.exception)
-                                    // Handle sign-in failure, e.g., show an error message
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    auth.signInAnonymously().addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            userId = auth.currentUser!!.uid
-                            Log.d("Auth", "Signed in anonymously. User ID: $userId")
-                            setContent {
-                                WorkItOut(db, userId, appId) { requestNotificationPermission() }
-                            }
-                        } else {
-                            Log.e("Auth", "Anonymous sign-in failed", task.exception)
-                            // Handle sign-in failure, e.g., show an error message
-                        }
-                    }
-                }
-            }
+        setContent {
+            Log.d("HomeScreen", "Setting content")
+            WorkItOut { requestNotificationPermission() }
         }
 
         createNotificationChannel()
@@ -156,15 +89,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-suspend fun <T> Task<T>.await(): T =
-    suspendCoroutine { continuation ->
-        addOnSuccessListener { result ->
-            continuation.resume(result)
-        }
-        addOnFailureListener { exception ->
-            continuation.resumeWithException(exception)
-        }
-    }
 
 // You would typically have a dedicated theme file for your app
 // For simplicity, defining a basic preview here.
@@ -181,7 +105,7 @@ fun PreviewWorkItOut() {
     // takes mock data/dependencies.
     // For now, it will just show the structure.
     LocalContext.current
-    Firebase.auth
-    val db = Firebase.firestore
-    WorkItOut(db, "preview_user_id", "preview_app_id") { /* No-op for preview */ }
+    WorkItOut(
+        { }
+    )
 }
