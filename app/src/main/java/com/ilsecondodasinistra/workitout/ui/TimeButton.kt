@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,7 +58,8 @@ fun TimeButton(
                     .align(Alignment.CenterVertically)
                     .padding(start = 16.dp)
                     .width(32.dp)
-                    .height(32.dp),
+                    .height(32.dp)
+                    .clickable(onClick = onEditClick),
             tint = Color(0xFF9A4616),
         )
     }
@@ -71,5 +73,6 @@ fun TimeButtonPreview() {
         time = "30 min",
         buttonColor = Color(0xFF6200EE), // Example color
         onClick = { /* Do something */ },
+        onEditClick = { /* Do something */ }
     )
 }

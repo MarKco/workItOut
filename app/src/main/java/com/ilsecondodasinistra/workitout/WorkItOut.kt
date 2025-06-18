@@ -4,10 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,7 +35,7 @@ import com.ilsecondodasinistra.workitout.ui.SettingsScreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkItOut(
-    db: FirebaseFirestore?,
+    db: FirebaseFirestore,
     userId: String,
     appId: String,
     requestNotificationPermission: () -> Unit,
@@ -107,7 +105,9 @@ fun WorkItOut(
                         .padding(16.dp),
             ) {
                 if (currentPage == "home") {
-                    HomeScreen( db, userId, appId)
+                    db?.let {
+                        HomeScreen(it, userId, appId)
+                    }
                 } else {
                     SettingsScreen(db, userId, appId)
                 }
@@ -120,7 +120,7 @@ fun WorkItOut(
 @Composable
 fun WorkItOutPreview() {
     WorkItOut(
-        db = null,
+        db = FirebaseFirestore.getInstance(),
         userId = "testUser",
         appId = "testApp",
         requestNotificationPermission = { /* No-op for preview */ },

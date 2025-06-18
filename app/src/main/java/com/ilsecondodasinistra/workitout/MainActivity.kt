@@ -182,6 +182,6 @@ fun PreviewWorkItOut() {
     // For now, it will just show the structure.
     LocalContext.current
     Firebase.auth
-//    val db = Firebase.firestore
-    WorkItOut(null, "preview_user_id", "preview_app_id") { /* No-op for preview */ }
+    val db = Firebase.firestore
+    WorkItOut(db, "preview_user_id", "preview_app_id") { /* No-op for preview */ }
 }
