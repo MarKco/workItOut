@@ -219,7 +219,7 @@ fun SettingsScreen(
             Column(Modifier.padding(16.dp)) {
                 Text(
                     text = "Ore di lavoro totali:",
-                    color = Color.White,
+                    color = Color(0xFF9A4616),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -240,13 +240,13 @@ fun SettingsScreen(
                             .padding(end = 8.dp),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White.copy(alpha = 0.8f),
+                            focusedTextColor = Color(0xFF9A4616),
+                            unfocusedTextColor = Color(0xFF9A4616).copy(alpha = 0.8f),
                             focusedBorderColor = Color(0xFFA03D00), // Purple-500
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                            cursorColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF9A4616).copy(alpha = 0.5f),
+                            focusedLabelColor = Color(0xFF9A4616),
+                            unfocusedLabelColor = Color(0xFF9A4616).copy(alpha = 0.7f),
+                            cursorColor = Color(0xFF9A4616),
                         ),
                     )
                     Button(
@@ -301,13 +301,13 @@ fun SettingsScreen(
         ) {
             Text(
                 text = message,
-                color = Color.White,
+                color = Color(0xFF9A4616),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.2f))
+                    .background(Color(0xFF9A4616).copy(alpha = 0.2f))
                     .padding(12.dp)
                     .wrapContentWidth(Alignment.CenterHorizontally),
             )
@@ -324,7 +324,7 @@ fun SettingsScreen(
             Column(Modifier.padding(16.dp)) {
                 Text(
                     text = "Storico",
-                    color = Color.White,
+                    color = Color(0xFF9A4616),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -332,7 +332,7 @@ fun SettingsScreen(
                 if (history.isEmpty()) {
                     Text(
                         text = "Nessuno storico disponibile.",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = Color(0xFF9A4616).copy(alpha = 0.7f),
                         fontSize = 16.sp,
                     )
                 } else {
@@ -344,44 +344,44 @@ fun SettingsScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF9A4616).copy(alpha = 0.15f)),
                             ) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(
                                         text = "Data: ${record["id"]}",
-                                        color = Color.White,
+                                        color = Color(0xFF9A4616),
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(bottom = 4.dp),
                                     )
                                     Text(
                                         text = "Ingresso: ${formatFirestoreTimestamp(record["enterTime"] as? Timestamp)}",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                     Text(
                                         text = "In pausa: ${formatFirestoreTimestamp(record["toLunchTime"] as? Timestamp)}",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                     Text(
                                         text = "Fine pausa: ${formatFirestoreTimestamp(record["fromLunchTime"] as? Timestamp)}",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                     Text(
                                         text = "Uscita: ${formatFirestoreTimestamp(record["exitTime"] as? Timestamp)}",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                     Text(
                                         text = "Ore lavorate totali: ${record["totalWorkedTime"] ?: "N/A"}",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                     Text(
                                         text = "Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h",
-                                        color = Color.White.copy(alpha = 0.8f),
+                                        color = Color(0xFF9A4616).copy(alpha = 0.8f),
                                         fontSize = 14.sp,
                                     )
                                 }

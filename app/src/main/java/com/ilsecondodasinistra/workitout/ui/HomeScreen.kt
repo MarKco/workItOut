@@ -352,27 +352,6 @@ fun HomeScreen(
             )
         }
 
-        // Message display
-        AnimatedVisibility(
-            visible = message.isNotBlank(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            Text(
-                text = message,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .padding(12.dp)
-                        .wrapContentWidth(Alignment.CenterHorizontally),
-            )
-        }
-
         Spacer(Modifier.height(16.dp))
 
         // Info display

@@ -58,11 +58,11 @@ fun WorkItOut(
                         text = "Workitout",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF9A4616),
+                        color = Color.White,
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F0EB)), // Purple-700
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFFF6825)), // Purple-700
                 actions = {
                     Button(
                         onClick = {

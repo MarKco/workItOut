@@ -1,11 +1,16 @@
 package com.ilsecondodasinistra.workitout.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,21 +28,36 @@ fun TimeButton(
     buttonColor: Color,
     onClick: () -> Unit,
 ) {
-    Button(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .width(160.dp) // Fixed width for consistent sizing
-                .height(100.dp),
-        // Fixed height
-        colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-        shape = RoundedCornerShape(16.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = text, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(text = time, fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
+    Row {
+        Button(
+            onClick = onClick,
+            modifier =
+                Modifier
+                    .width(160.dp) // Fixed width for consistent sizing
+                    .height(100.dp),
+            // Fixed height
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            shape = RoundedCornerShape(16.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = text, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = time, fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
+            }
         }
+        // The icon of a pencil, tappable in order to edit the time
+        Icon(
+            imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+            contentDescription = "Edit Time",
+            modifier =
+                Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 16.dp)
+                    .width(32.dp)
+                    .height(32.dp),
+            tint = Color(0xFF9A4616),
+        )
     }
 }
 
