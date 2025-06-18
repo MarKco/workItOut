@@ -483,9 +483,6 @@ fun HomeScreen() {
             if (message.isNotEmpty()) {
 
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                // Optionally clear message after showing, or let it be overwritten
-                // delay(3500) // Keep message on screen for a bit if needed for other UI updates
-                // message = ""
             }
         }
     }
