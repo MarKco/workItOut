@@ -27,12 +27,14 @@ fun TimeButton(
     time: String,
     buttonColor: Color,
     onClick: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Row {
         Button(
             onClick = onClick,
             modifier =
                 Modifier
+                    .padding(start = 40.dp) // Padding to align with the icon
                     .width(160.dp) // Fixed width for consistent sizing
                     .height(100.dp),
             // Fixed height

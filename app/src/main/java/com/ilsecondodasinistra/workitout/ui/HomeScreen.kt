@@ -4,20 +4,14 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -331,24 +325,28 @@ fun HomeScreen(
                 time = formatTime(enterTime),
                 buttonColor = Color(0xFF4CAF50), // Green-500
                 onClick = { handleButtonPress("Ingresso") },
+                onEditClick = { handleEditClick("Ingresso") },
             )
             TimeButton(
                 text = "In pausa",
                 time = formatTime(toLunchTime),
                 buttonColor = Color(0xFFFFC107), // Yellow-500
                 onClick = { handleButtonPress("In pausa") },
+                onEditClick = { handleEditClick("In pausa") },
             )
             TimeButton(
                 text = "Fine pausa",
                 time = formatTime(fromLunchTime),
                 buttonColor = Color(0xFF2196F3), // Blue-500
                 onClick = { handleButtonPress("Fine pausa") },
+                onEditClick = { handleEditClick("Fine pausa") },
             )
             TimeButton(
                 text = "Uscita",
                 time = formatTime(exitTime),
                 buttonColor = Color(0xFFF44336), // Red-500
                 onClick = { handleButtonPress("Uscita") },
+                onEditClick = { handleEditClick("Uscita") },
             )
         }
 
