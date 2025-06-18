@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.Timestamp
@@ -53,7 +54,7 @@ import java.util.Locale
 
 @Composable
 fun SettingsScreen(
-    db: FirebaseFirestore,
+    db: FirebaseFirestore?,
     userId: String,
     appId: String,
 ) {
@@ -70,11 +71,11 @@ fun SettingsScreen(
 
     // Load daily hours from Firestore
     LaunchedEffect(db, userId, appId) {
-        val settingsDocRef = db.collection(
-                "artifacts",
-            ).document(appId).collection("users").document(userId).collection("settings").document("dailyHours")
+        val settingsDocRef = db?.collection(
+            "artifacts",
+        )?.document(appId)?.collection("users")?.document(userId)?.collection("settings")?.document("dailyHours")
 
-        settingsDocRef.addSnapshotListener { snapshot, e ->
+        settingsDocRef?.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.w("Firestore", "Listen failed.", e)
                 return@addSnapshotListener
@@ -89,12 +90,12 @@ fun SettingsScreen(
 
     // Load history from Firestore
     LaunchedEffect(db, userId, appId) {
-        val historyCollectionRef = db.collection(
-                "artifacts",
-            ).document(appId).collection("users").document(userId).collection("dailyRecords")
+        val historyCollectionRef = db?.collection(
+            "artifacts",
+        )?.document(appId)?.collection("users")?.document(userId)?.collection("dailyRecords")
 
         // Order by enterTime descending
-        historyCollectionRef.orderBy("enterTime", Query.Direction.DESCENDING).addSnapshotListener { snapshot, e ->
+        historyCollectionRef?.orderBy("enterTime", Query.Direction.DESCENDING)?.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.w("Firestore", "Listen failed.", e)
                 return@addSnapshotListener
@@ -113,10 +114,10 @@ fun SettingsScreen(
     val handleDailyHoursChange: () -> Unit = {
         coroutineScope.launch {
             try {
-                val settingsDocRef = db.collection(
-                        "artifacts",
-                    ).document(appId).collection("users").document(userId).collection("settings").document("dailyHours")
-                settingsDocRef.set(mapOf("value" to dailyHoursInput))
+                val settingsDocRef = db?.collection(
+                    "artifacts",
+                )?.document(appId)?.collection("users")?.document(userId)?.collection("settings")?.document("dailyHours")
+                settingsDocRef?.set(mapOf("value" to dailyHoursInput))
                 message = "Daily hours updated successfully!"
             } catch (e: Exception) {
                 Log.e("Firestore", "Error updating daily hours: ${e.message}", e)
@@ -149,14 +150,14 @@ fun SettingsScreen(
         coroutineScope.launch {
             showConfirmationDialog("Pulisci lo storico", "Sei sicuro di voler cancellare lo storico?") {
                 try {
-                    val historyCollectionRef = db.collection(
-                            "artifacts",
-                        ).document(appId).collection("users").document(userId).collection("dailyRecords")
+                    val historyCollectionRef = db?.collection(
+                        "artifacts",
+                    )?.document(appId)?.collection("users")?.document(userId)?.collection("dailyRecords")
 
                     // Get all documents and delete them
                     coroutineScope.launch {
-                        val snapshot = historyCollectionRef.get().await()
-                        for (doc in snapshot.documents) {
+                        val snapshot = historyCollectionRef?.get()?.await()
+                        for (doc in snapshot?.documents?: emptyList()) {
                             doc.reference.delete().await()
                         }
                         message = "Storico ripulito con successo!"
@@ -391,4 +392,14 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun SettingsScreenPreview() {
+    SettingsScreen(
+        db = null, // Mock or provide a test instance
+        userId = "testUser",
+        appId = "testApp",
+    )
 }

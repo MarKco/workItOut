@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
                 userId = user.uid
                 Log.d("Auth", "User ID: $userId")
                 setContent {
-                    WorkTrackerApp(db, userId, appId) { requestNotificationPermission() }
+                    WorkItOut(db, userId, appId) { requestNotificationPermission() }
                 }
             } else {
                 // Sign in anonymously if no user is logged in
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                             userId = auth.currentUser!!.uid
                             Log.d("Auth", "Signed in with custom token. User ID: $userId")
                             setContent {
-                                WorkTrackerApp(db, userId, appId) { requestNotificationPermission() }
+                                WorkItOut(db, userId, appId) { requestNotificationPermission() }
                             }
                         } else {
                             Log.e("Auth", "Custom token sign-in failed", task.exception)
@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                                     userId = auth.currentUser!!.uid
                                     Log.d("Auth", "Signed in anonymously. User ID: $userId")
                                     setContent {
-                                        WorkTrackerApp(db, userId, appId) { requestNotificationPermission() }
+                                        WorkItOut(db, userId, appId) { requestNotificationPermission() }
                                     }
                                 } else {
                                     Log.e("Auth", "Anonymous sign-in failed", anonTask.exception)
@@ -115,7 +115,7 @@ class MainActivity : ComponentActivity() {
                             userId = auth.currentUser!!.uid
                             Log.d("Auth", "Signed in anonymously. User ID: $userId")
                             setContent {
-                                WorkTrackerApp(db, userId, appId) { requestNotificationPermission() }
+                                WorkItOut(db, userId, appId) { requestNotificationPermission() }
                             }
                         } else {
                             Log.e("Auth", "Anonymous sign-in failed", task.exception)
@@ -170,7 +170,7 @@ suspend fun <T> Task<T>.await(): T =
 // For simplicity, defining a basic preview here.
 @Preview(showBackground = true)
 @Composable
-fun PreviewWorkTrackerApp() {
+fun PreviewWorkItOut() {
     // This preview will not have Firebase initialized,
     // so it will show a loading state or a simplified UI.
     // In a real scenario, you'd mock Firebase or run on a device.
@@ -182,6 +182,6 @@ fun PreviewWorkTrackerApp() {
     // For now, it will just show the structure.
     LocalContext.current
     Firebase.auth
-    val db = Firebase.firestore
-    WorkTrackerApp(db, "preview_user_id", "preview_app_id") { /* No-op for preview */ }
+//    val db = Firebase.firestore
+    WorkItOut(null, "preview_user_id", "preview_app_id") { /* No-op for preview */ }
 }

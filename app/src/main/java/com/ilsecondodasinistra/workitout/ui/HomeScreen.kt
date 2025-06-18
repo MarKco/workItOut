@@ -10,13 +10,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -49,11 +51,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import kotlin.collections.set
 
 @Composable
 fun HomeScreen(
-    db: FirebaseFirestore,
+    db: FirebaseFirestore? = null,
     userId: String,
     appId: String,
 ) {
@@ -105,8 +106,7 @@ fun HomeScreen(
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                     0,
                 )
-            }
-            else {
+            } else {
                 Log.w("Notification", "POST_NOTIFICATIONS permission not granted.")
             }
         }
@@ -163,27 +163,26 @@ fun HomeScreen(
     LaunchedEffect(db, userId, appId) {
         val todayDocId = formatDateForDocId(Date())
         val dailyRecordRef =
-            db
-                .collection(
-                    "artifacts",
-                ).document(appId)
-                .collection("users")
-                .document(userId)
-                .collection("dailyRecords")
-                .document(todayDocId)
+            db?.collection("artifacts")
+                ?.document(appId)
+                ?.collection("users")
+                ?.document(userId)
+                ?.collection("dailyRecords")
+                ?.document(todayDocId)
 
         val settingsDocRef =
             db
-                .collection(
+                ?.collection(
                     "artifacts",
-                ).document(appId)
-                .collection("users")
-                .document(userId)
-                .collection("settings")
-                .document("dailyHours")
+                )
+                ?.document(appId)
+                ?.collection("users")
+                ?.document(userId)
+                ?.collection("settings")
+                ?.document("dailyHours")
 
         // Listen for daily record changes
-        dailyRecordRef.addSnapshotListener { snapshot, e ->
+        dailyRecordRef?.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.w("Firestore", "Listen failed.", e)
                 return@addSnapshotListener
@@ -212,7 +211,7 @@ fun HomeScreen(
         }
 
         // Listen for settings changes (daily hours)
-        settingsDocRef.addSnapshotListener { snapshot, e ->
+        settingsDocRef?.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.w("Firestore", "Listen failed.", e)
                 return@addSnapshotListener
@@ -249,18 +248,19 @@ fun HomeScreen(
         val todayDocId = formatDateForDocId(now)
         val dailyRecordRef =
             db
-                .collection(
+                ?.collection(
                     "artifacts",
-                ).document(appId)
-                .collection("users")
-                .document(userId)
-                .collection("dailyRecords")
-                .document(todayDocId)
+                )
+                ?.document(appId)
+                ?.collection("users")
+                ?.document(userId)
+                ?.collection("dailyRecords")
+                ?.document(todayDocId)
 
         coroutineScope.launch {
             try {
                 // Get current data to merge correctly
-                val currentData = dailyRecordRef.get().await().data ?: mutableMapOf()
+                val currentData = dailyRecordRef?.get()?.await()?.data ?: mutableMapOf()
 
                 when (buttonType) {
                     "Ingresso" -> {
@@ -306,7 +306,7 @@ fun HomeScreen(
                 calculatedExitTime?.let { currentData["calculatedExitTime"] = it }
                 totalWorkedTime?.let { currentData["totalWorkedTime"] = it }
 
-                dailyRecordRef.set(currentData) // Use set with merge implicitly
+                dailyRecordRef?.set(currentData) // Use set with merge implicitly
                 message = "Dati salvati con successo!"
             } catch (e: Exception) {
                 Log.e("Firestore", "Error saving data: ${e.message}", e)
@@ -318,59 +318,38 @@ fun HomeScreen(
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .wrapContentWidth()
+                .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceAround,
         ) {
-            // Buttons
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-            ) {
-                TimeButton(
-                    text = "Ingresso",
-                    time = formatTime(enterTime),
-                    buttonColor = Color(0xFF4CAF50), // Green-500
-                    onClick = { handleButtonPress("Ingresso") },
-                )
-                Spacer(Modifier.width(8.dp))
-                TimeButton(
-                    text = "In pausa",
-                    time = formatTime(toLunchTime),
-                    buttonColor = Color(0xFFFFC107), // Yellow-500
-                    onClick = { handleButtonPress("In pausa") },
-                )
-            }
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-            ) {
-                TimeButton(
-                    text = "Fine pausa",
-                    time = formatTime(fromLunchTime),
-                    buttonColor = Color(0xFF2196F3), // Blue-500
-                    onClick = { handleButtonPress("Fine pausa") },
-                )
-                Spacer(Modifier.width(8.dp))
-                TimeButton(
-                    text = "Uscita",
-                    time = formatTime(exitTime),
-                    buttonColor = Color(0xFFF44336), // Red-500
-                    onClick = { handleButtonPress("Uscita") },
-                )
-            }
+            TimeButton(
+                text = "Ingresso",
+                time = formatTime(enterTime),
+                buttonColor = Color(0xFF4CAF50), // Green-500
+                onClick = { handleButtonPress("Ingresso") },
+            )
+            TimeButton(
+                text = "In pausa",
+                time = formatTime(toLunchTime),
+                buttonColor = Color(0xFFFFC107), // Yellow-500
+                onClick = { handleButtonPress("In pausa") },
+            )
+            TimeButton(
+                text = "Fine pausa",
+                time = formatTime(fromLunchTime),
+                buttonColor = Color(0xFF2196F3), // Blue-500
+                onClick = { handleButtonPress("Fine pausa") },
+            )
+            TimeButton(
+                text = "Uscita",
+                time = formatTime(exitTime),
+                buttonColor = Color(0xFFF44336), // Red-500
+                onClick = { handleButtonPress("Uscita") },
+            )
         }
 
         // Message display
@@ -402,30 +381,39 @@ fun HomeScreen(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.15f))
+                    .background(Color.White.copy(alpha = 0.30f))
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "Orario giornaliero: ${dailyHours}h",
-                color = Color.White,
+                color = Color(0xFF9A4616),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             Text(
                 text = "Orario di uscita stimato: ${formatTime(calculatedExitTime)}",
-                color = Color.White,
+                color = Color(0xFF9A4616),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             Text(
                 text = "Totale ore di oggi: ${totalWorkedTime ?: "N/A"}",
-                color = Color.White,
+                color = Color(0xFF9A4616),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen(
+        userId = "testUser",
+        appId = "testApp",
+    )
 }

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,8 +36,8 @@ import com.ilsecondodasinistra.workitout.ui.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkTrackerApp(
-    db: FirebaseFirestore,
+fun WorkItOut(
+    db: FirebaseFirestore?,
     userId: String,
     appId: String,
     requestNotificationPermission: () -> Unit,
@@ -57,11 +58,11 @@ fun WorkTrackerApp(
                         text = "Workitout",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
+                        color = Color(0xFF9A4616),
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFFF7720)), // Purple-700
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F0EB)), // Purple-700
                 actions = {
                     Button(
                         onClick = {
@@ -82,29 +83,7 @@ fun WorkTrackerApp(
                 },
             )
         },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = Color(0xFFFA914D), // Darker Purple
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "User ID: $userId",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.7f),
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp),
-                )
-                Text(
-                    text = "App ID: $appId",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(end = 16.dp),
-                )
-            }
-        },
-        containerColor = Color(0xFFFF7720), // Purple-600
+        containerColor = Color(0xFFFFF0E7), // Purple-600
     ) { paddingValues ->
         Box(
             modifier =
@@ -113,7 +92,7 @@ fun WorkTrackerApp(
                     .background(
                         brush =
                             androidx.compose.ui.graphics.Brush.verticalGradient(
-                                colors = listOf(Color(0xFFFF924F), Color(0xFFFF6300)), // Purple-600 to Indigo-800
+                                colors = listOf(Color(0xFFF8F0EB), Color(0xFFFFC8AB)), // Purple-600 to Indigo-800
                             ),
                     )
                     .padding(paddingValues)
@@ -128,11 +107,22 @@ fun WorkTrackerApp(
                         .padding(16.dp),
             ) {
                 if (currentPage == "home") {
-                    HomeScreen(db, userId, appId)
+                    HomeScreen( db, userId, appId)
                 } else {
                     SettingsScreen(db, userId, appId)
                 }
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun WorkItOutPreview() {
+    WorkItOut(
+        db = null,
+        userId = "testUser",
+        appId = "testApp",
+        requestNotificationPermission = { /* No-op for preview */ },
+    )
 }

@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -38,4 +39,15 @@ fun TimeButton(
             Text(text = time, fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
         }
     }
+}
+
+@Preview
+@Composable
+fun TimeButtonPreview() {
+    TimeButton(
+        text = "Workout",
+        time = "30 min",
+        buttonColor = Color(0xFF6200EE), // Example color
+        onClick = { /* Do something */ },
+    )
 }
