@@ -1,9 +1,10 @@
 package com.ilsecondodasinistra.workitout.ui // Or a more appropriate data/repository package
 
+import android.util.Log // Added for logging
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
+// Removed UUID import as it's not used in the fix
 
 /**
  * A simple in-memory repository for storing and managing work history records.
@@ -12,59 +13,69 @@ import java.util.UUID
  */
 object LocalHistoryRepository {
 
-    // The history is a list of maps, where each map represents a day's record.
-    // Keys in the map could be: "id" (String, typically date), "enterTime" (Long),
-    // "toLunchTime" (Long), "fromLunchTime" (Long), "exitTime" (Long),
-    // "totalWorkedTime" (String), "dailyHours" (Double)
     private val _history = mutableListOf<Map<String, Any?>>()
     val history: List<Map<String, Any?>>
-        get() = _history.toList() // Expose an immutable copy
+        get() = _history.toList()
 
-    // Helper to format Date to a YYYY-MM-DD string for use as an ID
     private val dateFormatForId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    /**
-     * Adds a new record to the history.
-     * The record should be a map containing the day's details.
-     * It automatically assigns a date-based ID if not present.
-     */
     fun addRecord(record: Map<String, Any?>) {
         val newRecord = record.toMutableMap()
-        if (!newRecord.containsKey("id")) {
+        // Ensure an ID based on the date is present
+        if (!newRecord.containsKey("id") || newRecord["id"] == null) {
             // Use enterTime to derive the date for the ID, fallback to current date
             val dateForId = (newRecord["enterTime"] as? Long)?.let { Date(it) } ?: Date()
             newRecord["id"] = dateFormatForId.format(dateForId)
+            Log.d("LocalHistoryRepo", "Generated ID for new record: ${newRecord["id"]}")
+        } else {
+            Log.d("LocalHistoryRepo", "Using existing ID for record: ${newRecord["id"]}")
         }
-        // To prevent exact duplicate entries based on ID (date), you might want to remove existing first
-        // Or, allow multiple entries for the same date if that's a valid scenario (e.g., manual corrections)
-        // For simplicity here, we'll just add. If you want to replace by date ID:
-        // _history.removeAll { it["id"] == newRecord["id"] }
+
+        val recordId = newRecord["id"]?.toString() // Ensure it's a string for comparison
+        val recordEnterTime = newRecord["enterTime"] as? Long
+
+        // Remove existing records with the same date ID AND the same enterTime
+        // to prevent duplicate keys in LazyColumn.
+        if (recordId != null && recordEnterTime != null) {
+            val originalSize = _history.size
+            _history.removeAll {
+                val existingId = it["id"]?.toString()
+                val existingEnterTime = it["enterTime"] as? Long
+                existingId == recordId && existingEnterTime == recordEnterTime
+            }
+            val removedCount = originalSize - _history.size
+            if (removedCount > 0) {
+                Log.d("LocalHistoryRepo", "Removed $removedCount existing record(s) with same ID ($recordId) and enterTime ($recordEnterTime).")
+            }
+        } else {
+            Log.w("LocalHistoryRepo", "Cannot ensure uniqueness: recordId or recordEnterTime is null. ID: $recordId, EnterTime: $recordEnterTime")
+        }
+
         _history.add(newRecord)
         // Sort by date ID (descending) so newest entries appear first
-        _history.sortByDescending { it["id"] as? String }
+        // Then by enterTime (ascending) as a secondary sort if needed, though not strictly necessary for the fix
+        _history.sortWith(compareByDescending<Map<String, Any?>> { it["id"] as? String ?: "" }
+            .thenBy { it["enterTime"] as? Long ?: 0L })
+        Log.d("LocalHistoryRepo", "Record added. History size: ${_history.size}. New record details: ID=${newRecord["id"]}, EnterTime=${newRecord["enterTime"]}")
     }
 
-    /**
-     * Clears all records from the history.
-     */
     fun clearHistory() {
         _history.clear()
+        Log.d("LocalHistoryRepo", "History cleared.") // Added log
     }
 
-    /**
-     * (For Preview/Testing) Adds a dummy record to the history.
-     */
     fun addDummyRecord(enterTimeMs: Long, exitTimeMs: Long, totalWorked: String, dailyHoursSet: Double) {
         val dateForId = Date(enterTimeMs)
         val record = mapOf<String, Any?>(
             "id" to dateFormatForId.format(dateForId),
             "enterTime" to enterTimeMs,
-            "toLunchTime" to enterTimeMs + 3600000, // Dummy: 1 hour after entry
-            "fromLunchTime" to enterTimeMs + 7200000, // Dummy: 2 hours after entry
+            "toLunchTime" to enterTimeMs + 3600000,
+            "fromLunchTime" to enterTimeMs + 7200000,
             "exitTime" to exitTimeMs,
             "totalWorkedTime" to totalWorked,
             "dailyHours" to dailyHoursSet
         )
-        addRecord(record)
+        addRecord(record) // This will now use the updated addRecord logic
+        Log.d("LocalHistoryRepo", "Dummy record added with ID: ${record["id"]}") // Added log
     }
 }

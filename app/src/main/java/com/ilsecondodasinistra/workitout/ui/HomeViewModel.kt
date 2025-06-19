@@ -1,11 +1,11 @@
 package com.ilsecondodasinistra.workitout.ui
 
 import IHomeViewModel
-import android.app.Application // Or inject Context if not using AndroidViewModel
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel // Use AndroidViewModel if you need Application context directly
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
@@ -25,24 +25,25 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-// Constants for SharedPreferences (ensure these are consistent)
+// Constants for SharedPreferences
 private const val PREFS_NAME = "workitout_settings_prefs"
 private const val KEY_DAILY_HOURS = "daily_hours"
 private const val KEY_CURRENT_DAY_PREFIX = "current_day_"
 private const val KEY_ENTER_TIME = "enter_time"
 private const val KEY_TO_LUNCH_TIME = "to_lunch_time"
 private const val KEY_FROM_LUNCH_TIME = "from_lunch_time"
+private const val KEY_EXIT_TIME = "exit_time" // Added for persistent exit time
 
 data class HomeUiState(
     val enterTime: Date? = null,
     val toLunchTime: Date? = null,
     val fromLunchTime: Date? = null,
-    val exitTime: Date? = null, // Only set momentarily before saving to history
+    val exitTime: Date? = null, // Will now persist in UI after exit
     val calculatedExitTime: Date? = null,
     val totalWorkedTime: String? = null,
     val dailyHours: Double = 8.0,
     val message: String = "",
-    val timePickerEvent: TimePickerEvent? = null // For showing TimePickerDialog
+    val timePickerEvent: TimePickerEvent? = null
 )
 
 data class TimePickerEvent(
@@ -51,7 +52,6 @@ data class TimePickerEvent(
     val initialMinute: Int
 )
 
-// ButtonType sealed class (can be here or in a common file)
 sealed class ButtonType(val text: String) {
     object Enter : ButtonType("Ingresso")
     object ToLunch : ButtonType("In Pausa")
@@ -59,7 +59,7 @@ sealed class ButtonType(val text: String) {
     object Exit : ButtonType("Uscita")
 }
 
-class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver, IHomeViewModel { // Implement DefaultLifecycleObserver
+class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver, IHomeViewModel {
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -70,10 +70,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     private var notificationPollingJob: Job? = null
 
     init {
-        loadInitialData() // Loads current day progress and initial daily hours
+        loadInitialData()
     }
 
-    // This method will be called when HomeScreen resumes
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
         Log.d("HomeViewModel", "onResume called, reloading daily hours.")
@@ -81,13 +80,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     }
 
     private fun loadDailyHoursFromPrefs() {
-        viewModelScope.launch { // Ensure it runs in the ViewModel's scope
+        viewModelScope.launch {
             val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
             if (_uiState.value.dailyHours != loadedDailyHours) {
                 _uiState.update {
                     it.copy(dailyHours = loadedDailyHours)
                 }
-                // Important: After updating dailyHours, recalculate dependent values
                 recalculateAndUpdateUi()
                 Log.d("HomeViewModel", "Daily hours reloaded and UI updated: $loadedDailyHours")
             } else {
@@ -96,32 +94,32 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         }
     }
 
-
     private fun loadInitialData() {
         viewModelScope.launch {
-            // Load current day progress (enterTime, etc.) as before
             val savedEnterTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", -1L)
             val savedToLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", -1L)
             val savedFromLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", -1L)
+            val savedExitTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME", -1L) // Load saved exit time
 
             val initialEnterTime = if (savedEnterTimeMs != -1L) Date(savedEnterTimeMs) else null
             val initialToLunchTime = if (savedToLunchTimeMs != -1L) Date(savedToLunchTimeMs) else null
             val initialFromLunchTime = if (savedFromLunchTimeMs != -1L) Date(savedFromLunchTimeMs) else null
+            val initialExitTime = if (savedExitTimeMs != -1L) Date(savedExitTimeMs) else null // Assign loaded exit time
 
-            // Load daily hours initially
             val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
 
             _uiState.update {
                 it.copy(
-                    dailyHours = loadedDailyHours, // Set initial daily hours
+                    dailyHours = loadedDailyHours,
                     enterTime = initialEnterTime,
                     toLunchTime = initialToLunchTime,
                     fromLunchTime = initialFromLunchTime,
-                    message = if (initialEnterTime != null) "Giorno lavorativo ripreso." else ""
+                    exitTime = initialExitTime, // Set exitTime in UI state
+                    message = if (initialEnterTime != null && initialExitTime == null) "Giorno lavorativo ripreso." else if (initialExitTime != null) "Giorno precedente completato." else ""
                 )
             }
-            recalculateAndUpdateUi() // Calculate based on initial values
-            Log.d("HomeViewModel", "Initial data loaded. Daily Hours: $loadedDailyHours")
+            recalculateAndUpdateUi()
+            Log.d("HomeViewModel", "Initial data loaded. Daily Hours: $loadedDailyHours, Exit Time: ${initialExitTime?.let { formatTime(it) }}")
         }
     }
 
@@ -134,9 +132,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
             currentState.fromLunchTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", it.time) }
                 ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
+            currentState.exitTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME", it.time) } // Save exit time
+                ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME")
             apply()
         }
-        Log.d("HomeViewModel", "Current day progress saved.")
+        Log.d("HomeViewModel", "Current day progress saved. Exit Time: ${currentState.exitTime?.let { formatTime(it) }}")
     }
 
     private fun clearCurrentDayProgressFromPrefs() {
@@ -144,6 +144,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             remove("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME")
             remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
             remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
+            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME") // Clear exit time
             apply()
         }
         Log.d("HomeViewModel", "Current day progress cleared from prefs.")
@@ -194,12 +195,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private fun recalculateAndUpdateUi() {
         val current = _uiState.value
-        val newCalculatedExitTime = calculateExpectedExitTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.dailyHours)
-        val newTotalWorkedTime = if (current.exitTime != null) { // Only calculate if exitTime is set
-            calculateTotalWorkedTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.exitTime)
+        val newCalculatedExitTime = if (current.exitTime == null) { // Only calculate if day is not yet complete
+            calculateExpectedExitTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.dailyHours)
         } else {
-            null
+            null // If day is complete, no need for expected exit time
         }
+        val newTotalWorkedTime = calculateTotalWorkedTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.exitTime)
 
         _uiState.update {
             it.copy(
@@ -207,55 +208,63 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 totalWorkedTime = newTotalWorkedTime
             )
         }
-        // Save progress if the day hasn't ended
-        if (current.exitTime == null &&
-            (current.enterTime != null || current.toLunchTime != null || current.fromLunchTime != null) // Only save if there's progress
-        ) {
+        // Save progress if there's any relevant time set (day active or completed)
+        if (current.enterTime != null) {
             saveCurrentDayProgress()
         }
         startOrUpdateNotificationPolling(newCalculatedExitTime)
     }
 
     private fun startOrUpdateNotificationPolling(expectedExitTime: Date?) {
-        notificationPollingJob?.cancel() // Cancel previous job
+        notificationPollingJob?.cancel()
         if (expectedExitTime == null) return
 
         notificationPollingJob = viewModelScope.launch {
             var notified = false
             while (isActive && !notified) {
                 if (System.currentTimeMillis() >= expectedExitTime.time) {
-                    _uiState.update { it.copy(message = "NOTIFY_EXIT_TIME:${formatTime(expectedExitTime)}") } // Special message for UI to trigger notification
+                    _uiState.update { it.copy(message = "NOTIFY_EXIT_TIME:${formatTime(expectedExitTime)}") }
                     notified = true
                 }
-                delay(10000L) // Check every 10 seconds
+                delay(10000L)
             }
         }
     }
 
-
     override fun handleTimeButtonPress(buttonType: ButtonType) {
         val currentTime = Date()
-        var newEnterTime = _uiState.value.enterTime
-        var newToLunchTime = _uiState.value.toLunchTime
-        var newFromLunchTime = _uiState.value.fromLunchTime
-        var newExitTime: Date? = null // Reset for exit logic
+        var currentUiState = _uiState.value
+        var newEnterTime = currentUiState.enterTime
+        var newToLunchTime = currentUiState.toLunchTime
+        var newFromLunchTime = currentUiState.fromLunchTime
+        var newExitTime = currentUiState.exitTime // Preserve existing exit time
         var tempMessage = ""
 
         when (buttonType) {
             ButtonType.Enter -> {
-                newEnterTime = currentTime
-                newToLunchTime = null
-                newFromLunchTime = null
-                // newExitTime remains null
-                tempMessage = "Ingresso registrato: ${formatTime(newEnterTime)}"
+                // If a previous day was completed (exitTime is not null), or if it's a fresh app start (enterTime is null)
+                // then clear everything for the new day.
+                if (currentUiState.exitTime != null || currentUiState.enterTime == null) {
+                    clearCurrentDayProgressFromPrefs() // Clear all stored times
+                    newEnterTime = currentTime
+                    newToLunchTime = null
+                    newFromLunchTime = null
+                    newExitTime = null      // Explicitly null for a new day's start
+                    tempMessage = "Ingresso registrato: ${formatTime(newEnterTime)}"
+                } else { // Handle re-pressing "Ingresso" on an active day (overwrite)
+                    newEnterTime = currentTime
+                    newToLunchTime = null
+                    newFromLunchTime = null
+                    newExitTime = null // Clear exit if re-entering
+                    tempMessage = "Ingresso sovrascritto: ${formatTime(newEnterTime)}"
+                }
             }
             ButtonType.ToLunch -> {
                 if (newEnterTime == null) {
                     tempMessage = "Devi prima registrare l'ingresso!"
                 } else if (newToLunchTime != null && newFromLunchTime == null) {
                     tempMessage = "Sei già in pausa. Registra il rientro."
-                }
-                else {
+                } else {
                     newToLunchTime = currentTime
                     tempMessage = "Inizio pausa: ${formatTime(newToLunchTime)}"
                 }
@@ -274,7 +283,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 if (newEnterTime == null) {
                     tempMessage = "Devi prima registrare l'ingresso!"
                 } else {
-                    newExitTime = currentTime // Set exit time
+                    newExitTime = currentTime // Set current exit time
                     val finalTotalWorked = calculateTotalWorkedTime(newEnterTime, newToLunchTime, newFromLunchTime, newExitTime)
                     tempMessage = "Uscita registrata: ${formatTime(newExitTime)}. Totale: $finalTotalWorked"
 
@@ -289,16 +298,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         )
                         LocalHistoryRepository.addRecord(record)
                         Log.d("HomeViewModel", "Day record saved to LocalHistoryRepository.")
-
-                        // Reset state for next day
-                        newEnterTime = null
-                        newToLunchTime = null
-                        newFromLunchTime = null
-                        // newExitTime will be cleared by the update
-                        clearCurrentDayProgressFromPrefs()
+                        // DO NOT clear newEnterTime, newToLunchTime, newFromLunchTime
+                        // DO NOT call clearCurrentDayProgressFromPrefs() here.
+                        // saveCurrentDayProgress() will be called by recalculateAndUpdateUi with the new exitTime.
                     } else {
                         tempMessage = "Uscita registrata, ma impossibile calcolare il totale lavorato."
-                        newExitTime = null // Don't persist a problematic exit
+                        // Do not clear newExitTime here, let it be saved as is for transparency if calculation fails.
+                        // Or revert to previous newExitTime state (currentUiState.exitTime) if preferred.
                     }
                 }
             }
@@ -309,15 +315,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 enterTime = newEnterTime,
                 toLunchTime = newToLunchTime,
                 fromLunchTime = newFromLunchTime,
-                exitTime = if (buttonType == ButtonType.Exit && newExitTime != null) newExitTime else null, // Momentarily set for calculation then cleared
+                exitTime = newExitTime, // Persist exitTime in UI
                 message = tempMessage
             )
         }
-        if (buttonType == ButtonType.Exit && newExitTime != null && _uiState.value.totalWorkedTime != null) {
-            // If exit was successful and record saved, reset the UI for the next day
-            _uiState.update { it.copy(enterTime = null, toLunchTime = null, fromLunchTime = null, exitTime = null, totalWorkedTime = null, calculatedExitTime = null) }
-        }
-        recalculateAndUpdateUi()
+        // The specific reset block for ButtonType.Exit that was here is removed.
+        recalculateAndUpdateUi() // This will call saveCurrentDayProgress with the latest state
     }
 
     override fun handleTimeEditRequest(buttonType: ButtonType) {
@@ -327,7 +330,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             ButtonType.Enter -> current.enterTime
             ButtonType.ToLunch -> current.toLunchTime
             ButtonType.FromLunch -> current.fromLunchTime
-            ButtonType.Exit -> current.exitTime // Should be null or the last recorded exit
+            ButtonType.Exit -> current.exitTime
         }
         timeToEdit?.let { calendar.time = it }
 
@@ -351,13 +354,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         }
         val selectedDate = calendar.time
         var tempMessage = ""
+        var editedExitTime: Date? = _uiState.value.exitTime // Hold current exit time
 
         _uiState.update { current ->
             var newEnterTime = current.enterTime
             var newToLunchTime = current.toLunchTime
             var newFromLunchTime = current.fromLunchTime
-            // Note: Editing Exit time via dialog doesn't finalize the day,
-            // it just updates the value for recalculation. User still needs to press the main Exit button.
 
             when (buttonType) {
                 ButtonType.Enter -> {
@@ -381,21 +383,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     }
                 }
                 ButtonType.Exit -> {
-                    // This scenario is tricky. If we allow editing exit time directly to a past time,
-                    // it implies the day ended. For simplicity, let's assume editing exit time
-                    // via dialog just updates the value for calculation if user then presses the main exit button.
-                    // Or, if user edits exit, we could auto-trigger the exit logic.
-                    // For now, let's just update the state and message.
-                    if (newEnterTime != null && selectedDate.before(newEnterTime)) {
+                     if (newEnterTime != null && selectedDate.before(newEnterTime)) {
                         tempMessage = "L'orario di uscita non può essere prima dell'ingresso."
                     } else {
-                        // We are not setting uiState.exitTime here directly from dialog to complete the day.
-                        // We update the local variable and then call recalculate.
-                        // The main Exit button press is what finalizes.
-                        // This behavior might need refinement based on exact UX desired.
-                        tempMessage = "Orario di uscita (per calcolo) modificato: ${formatTime(selectedDate)}. Premi 'Uscita' per salvare."
-                        // To make this change affect calculatedExitTime immediately before pressing main Exit button:
-                        _uiState.value.copy(exitTime = selectedDate) // This is a temporary update for calculation
+                        editedExitTime = selectedDate // Update the local exit time
+                        tempMessage = "Orario di uscita modificato: ${formatTime(editedExitTime)}. Premi 'Uscita' per salvare le modifiche e completare il giorno."
                     }
                 }
             }
@@ -403,8 +395,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 enterTime = newEnterTime,
                 toLunchTime = newToLunchTime,
                 fromLunchTime = newFromLunchTime,
+                exitTime = if (buttonType == ButtonType.Exit) editedExitTime else current.exitTime, // Apply edited exit time
                 message = tempMessage,
-                timePickerEvent = null // Clear event after handling
+                timePickerEvent = null
             )
         }
         recalculateAndUpdateUi()
@@ -415,15 +408,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     }
 
     override fun clearMessage() {
-        // Debounce or delay message clearing if needed, or clear immediately.
-        // For Toast, it clears itself. For in-app messages, you might want this.
         if (_uiState.value.message.isNotEmpty() && !_uiState.value.message.startsWith("NOTIFY_")) {
-            // viewModelScope.launch { delay(3000); _uiState.update { it.copy(message = "") } }
-            _uiState.update { it.copy(message = "") } // Clear immediately for now
+            _uiState.update { it.copy(message = "") }
         }
     }
 
-    // Helper to be called from Composable for formatting
     override fun formatTimeToDisplay(date: Date?): String {
         return date?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A"
     }
