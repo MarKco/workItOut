@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services") // Google Services plugin
     id("org.jetbrains.kotlin.plugin.compose") // No version here, it's inherited
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1"
 }
 
 android {
@@ -53,6 +54,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx) // For lifecycleScope, collectAsStateWithLifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx) // For viewModelScope
+
+    // Room Persistence
+    val room_version = "2.6.1"
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp("androidx.room:room-compiler:$room_version") // Explicit KSP dependency
 
     // Tooling for previews
     debugImplementation(libs.ui.tooling)
