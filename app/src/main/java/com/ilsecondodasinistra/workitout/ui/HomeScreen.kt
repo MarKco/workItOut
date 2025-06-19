@@ -45,6 +45,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
 
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalLifecycleOwner // Import this
+import androidx.lifecycle.LifecycleEventObserver        // Import this
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -52,6 +56,24 @@ fun HomeScreen(
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current // Get the lifecycle owner
+
+    // Observe lifecycle events to call ViewModel's onResume
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // We only need to tell the ViewModel about the resume event,
+            // as it implements DefaultLifecycleObserver and will call its own onResume.
+            // However, to be explicit or if not using DefaultLifecycleObserver directly on VM:
+            // if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+            //     homeViewModel.someSpecificOnResumeFunction() // if you had one
+            // }
+        }
+        lifecycleOwner.lifecycle.addObserver(homeViewModel) // Add ViewModel as an observer
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(homeViewModel) // Clean up
+        }
+    }
 
     val timePickerState = rememberTimePickerState(is24Hour = true)
 
@@ -139,7 +161,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White.copy(alpha = 0.30f))
+                    .background(Color.White.copy(alpha = 0.90f))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

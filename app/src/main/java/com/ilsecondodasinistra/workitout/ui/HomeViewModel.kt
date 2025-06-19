@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel // Use AndroidViewModel if you need Application context directly
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID // Assuming this is accessible
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID     // Assuming this is accessible
@@ -56,7 +58,7 @@ sealed class ButtonType(val text: String) {
     object Exit : ButtonType("Uscita")
 }
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver { // Implement DefaultLifecycleObserver
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -67,12 +69,36 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private var notificationPollingJob: Job? = null
 
     init {
-        loadInitialData()
+        loadInitialData() // Loads current day progress and initial daily hours
     }
+
+    // This method will be called when HomeScreen resumes
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        Log.d("HomeViewModel", "onResume called, reloading daily hours.")
+        loadDailyHoursFromPrefs()
+    }
+
+    private fun loadDailyHoursFromPrefs() {
+        viewModelScope.launch { // Ensure it runs in the ViewModel's scope
+            val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
+            if (_uiState.value.dailyHours != loadedDailyHours) {
+                _uiState.update {
+                    it.copy(dailyHours = loadedDailyHours)
+                }
+                // Important: After updating dailyHours, recalculate dependent values
+                recalculateAndUpdateUi()
+                Log.d("HomeViewModel", "Daily hours reloaded and UI updated: $loadedDailyHours")
+            } else {
+                Log.d("HomeViewModel", "Daily hours unchanged: $loadedDailyHours")
+            }
+        }
+    }
+
 
     private fun loadInitialData() {
         viewModelScope.launch {
-            val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
+            // Load current day progress (enterTime, etc.) as before
             val savedEnterTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", -1L)
             val savedToLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", -1L)
             val savedFromLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", -1L)
@@ -81,16 +107,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val initialToLunchTime = if (savedToLunchTimeMs != -1L) Date(savedToLunchTimeMs) else null
             val initialFromLunchTime = if (savedFromLunchTimeMs != -1L) Date(savedFromLunchTimeMs) else null
 
+            // Load daily hours initially
+            val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
+
             _uiState.update {
                 it.copy(
-                    dailyHours = loadedDailyHours,
+                    dailyHours = loadedDailyHours, // Set initial daily hours
                     enterTime = initialEnterTime,
                     toLunchTime = initialToLunchTime,
                     fromLunchTime = initialFromLunchTime,
                     message = if (initialEnterTime != null) "Giorno lavorativo ripreso." else ""
                 )
             }
-            recalculateAndUpdateUi()
+            recalculateAndUpdateUi() // Calculate based on initial values
             Log.d("HomeViewModel", "Initial data loaded. Daily Hours: $loadedDailyHours")
         }
     }

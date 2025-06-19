@@ -95,10 +95,7 @@ fun WorkItOut(
             Column(
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White.copy(alpha = 0.1f))
-                        .padding(16.dp),
+                        .fillMaxSize(),
             ) {
                 if (currentPage == "home") {
                     HomeScreen()

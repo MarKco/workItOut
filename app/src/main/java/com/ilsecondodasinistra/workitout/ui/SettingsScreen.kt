@@ -2,8 +2,8 @@ package com.ilsecondodasinistra.workitout.ui
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,159 +14,60 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete // Added for Clear History Dialog
-import androidx.compose.material.icons.filled.Share // Added for Share History Dialog
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.isEmpty
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-// Constants for SharedPreferences
-private const val PREFS_NAME = "workitout_settings_prefs"
-private const val KEY_DAILY_HOURS = "daily_hours"
-
-// --- Mock Data for Preview and In-Memory History ---
-// In a real app, this would be managed by a ViewModel and potentially Room
-object LocalHistoryRepository {
-    private val _history = mutableStateListOf<Map<String, Any?>>()
-    val history: List<Map<String, Any?>> get() = _history.toList()
-
-    fun addRecord(record: Map<String, Any?>) {
-        // Add to the beginning to keep it sorted by most recent
-        _history.add(0, record.toMutableMap().apply { put("id", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(getTimestampFromRecord(record)))) })
-    }
-
-    fun clearHistory() {
-        _history.clear()
-    }
-
-    // Helper to get a consistent timestamp for sorting/ID from various potential time fields
-    private fun getTimestampFromRecord(record: Map<String, Any?>): Long {
-        return (record["enterTime"] as? Long)
-            ?: (record["toLunchTime"] as? Long)
-            ?: (record["fromLunchTime"] as? Long)
-            ?: (record["exitTime"] as? Long)
-            ?: System.currentTimeMillis()
-    }
-
-    // Example function to add some dummy data for testing
-    fun addDummyRecord(enterTime: Long, exitTime: Long, totalWorked: String, dailyHoursSet: Double) {
-        addRecord(
-            mapOf(
-                "enterTime" to enterTime,
-                "toLunchTime" to enterTime + 3600000, // +1 hour
-                "fromLunchTime" to enterTime + 7200000, // +2 hours
-                "exitTime" to exitTime,
-                "totalWorkedTime" to totalWorked,
-                "dailyHours" to dailyHoursSet
-            )
-        )
-    }
-}
-// --- End Mock Data ---
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    settingsViewModel: SettingsViewModel = viewModel()
+) {
+    val uiState by settingsViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val sharedPreferences = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
-    var dailyHoursInput by remember { mutableStateOf(sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()) }
-    var history by remember { mutableStateOf(LocalHistoryRepository.history) } // Use our local repo
-    var message by remember { mutableStateOf("") }
-    var showClearConfirmDialog by remember { mutableStateOf(false) } // For clear history confirmation
-
-    val coroutineScope = rememberCoroutineScope()
-
-    // Helper function to format Long Timestamp to readable time string
-    val formatLongTimestamp: (Long?) -> String = { timestamp ->
-        timestamp?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(it)) } ?: "N/A"
-    }
-
-    // Load daily hours initially (already done in remember initial value)
-    // and observe changes to history (which will be manual in this local version)
-
-    val handleDailyHoursChange: () -> Unit = {
-        coroutineScope.launch {
-            try {
-                with(sharedPreferences.edit()) {
-                    putFloat(KEY_DAILY_HOURS, dailyHoursInput.toFloat())
-                    apply()
-                }
-                message = "Daily hours updated successfully!"
-                Log.d("SettingsScreen", "Daily hours saved: $dailyHoursInput")
-            } catch (e: Exception) {
-                Log.e("SettingsScreen", "Error updating daily hours: ${e.message}", e)
-                message = "Error updating daily hours."
-            }
+    // Handle messages
+    LaunchedEffect(uiState.message) {
+        if (uiState.message.isNotEmpty()) {
+            Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+            settingsViewModel.clearMessage() // Clear message after showing
         }
     }
 
-    val clearHistoryAction: () -> Unit = {
-        coroutineScope.launch {
-            try {
-                LocalHistoryRepository.clearHistory()
-                history = LocalHistoryRepository.history // Refresh the local state
-                message = "Storico ripulito con successo!"
-                Log.d("SettingsScreen", "History cleared.")
-            } catch (e: Exception) {
-                Log.e("SettingsScreen", "Error clearing history: ${e.message}", e)
-                message = "Errore durante la pulizia dello storico."
-            }
-        }
-    }
-
-    val shareHistory: () -> Unit = {
-        if (history.isEmpty()) {
-            message = "Nessuno storico da condividere!"
-        }
-        else {
-            val shareTextBuilder = StringBuilder("Storico ore lavorate:\n\n")
-            history.forEach { record ->
-                // The 'id' for local history is the date string we generate in LocalHistoryRepository
-                shareTextBuilder.append("Data: ${record["id"]}\n")
-                shareTextBuilder.append("  Ingresso: ${formatLongTimestamp(record["enterTime"] as? Long)}\n")
-                shareTextBuilder.append("  In pausa: ${formatLongTimestamp(record["toLunchTime"] as? Long)}\n")
-                shareTextBuilder.append("  Fine pausa: ${formatLongTimestamp(record["fromLunchTime"] as? Long)}\n")
-                shareTextBuilder.append("  Uscita: ${formatLongTimestamp(record["exitTime"] as? Long)}\n")
-                shareTextBuilder.append("  Totale lavorato: ${record["totalWorkedTime"] ?: "N/A"}\n")
-                shareTextBuilder.append("  Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h\n\n")
-            }
-
-            message = "Contenuto dello storico: \n$shareTextBuilder" // Keep this for local log
-            Log.d("Condividi", shareTextBuilder.toString())
-
+    // Handle share intent event
+    LaunchedEffect(uiState.shareIntentEvent) {
+        uiState.shareIntentEvent?.let { event ->
             try {
                 val sendIntent: Intent = Intent().apply {
                     action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, shareTextBuilder.toString())
+                    putExtra(Intent.EXTRA_TEXT, event.textToShare)
                     type = "text/plain"
                 }
                 val shareIntent = Intent.createChooser(sendIntent, "Condividi storico tramite...")
                 context.startActivity(shareIntent)
-                message = "Lo storico è pronto per essere condiviso!"
             } catch (e: Exception) {
                 Log.e("SettingsScreen", "Error sharing history: ${e.message}", e)
-                message = "Impossibile avviare la condivisione."
+                Toast.makeText(context, "Impossibile avviare la condivisione.", Toast.LENGTH_SHORT).show()
             }
+            settingsViewModel.onShareIntentLaunched() // Reset the event
         }
     }
 
-    // --- UI Code (Mostly the same, with minor adjustments for local data) ---
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -195,31 +96,18 @@ fun SettingsScreen() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     OutlinedTextField(
-                        value = dailyHoursInput.toString(),
-                        onValueChange = { newValue ->
-                            // Allow up to one decimal place for hours like 7.5
-                            val cleanedValue = newValue.filter { it.isDigit() || it == '.' }
-                            if (cleanedValue.count { it == '.' } <= 1) {
-                                dailyHoursInput = cleanedValue.toDoubleOrNull() ?: 0.0
-                            }
-                        },
+                        value = uiState.dailyHoursInputString, // Bind directly to the String state
+                        onValueChange = { newValue -> settingsViewModel.onDailyHoursInputChange(newValue) },
+                        label = { Text("Ore (es. 7.5)") }, // Added a label for clarity
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF9A4616),
-                            unfocusedTextColor = Color(0xFF9A4616).copy(alpha = 0.8f),
-                            focusedBorderColor = Color(0xFFA03D00),
-                            unfocusedBorderColor = Color(0xFF9A4616).copy(alpha = 0.5f),
-                            focusedLabelColor = Color(0xFF9A4616),
-                            unfocusedLabelColor = Color(0xFF9A4616).copy(alpha = 0.7f),
-                            cursorColor = Color(0xFF9A4616),
-                        ),
+                        colors = OutlinedTextFieldDefaults.colors( /* ... your colors ... */ ),
                     )
                     Button(
-                        onClick = handleDailyHoursChange,
+                        onClick = { settingsViewModel.saveDailyHours() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF782F04)),
                         shape = RoundedCornerShape(8.dp),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
@@ -238,7 +126,7 @@ fun SettingsScreen() {
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
             Button(
-                onClick = shareHistory,
+                onClick = { settingsViewModel.shareHistory() },
                 modifier = Modifier
                     .weight(1f)
                     .height(60.dp),
@@ -252,7 +140,7 @@ fun SettingsScreen() {
             }
             Spacer(Modifier.width(16.dp))
             Button(
-                onClick = { showClearConfirmDialog = true }, // Show confirmation dialog
+                onClick = { settingsViewModel.requestClearHistory() },
                 modifier = Modifier
                     .weight(1f)
                     .height(60.dp),
@@ -266,37 +154,37 @@ fun SettingsScreen() {
             }
         }
 
-        // Message display
+        // Animated message display (from original code, slightly adapted)
         AnimatedVisibility(
-            visible = message.isNotBlank(),
+            visible = uiState.message.isNotBlank(), // Show if ViewModel message is set
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
             Text(
-                text = message,
-                color = if (message.startsWith("Error") || message.startsWith("Errore")) MaterialTheme.colorScheme.error else Color(
+                text = uiState.message,
+                color = if (uiState.message.startsWith("Error") || uiState.message.startsWith("Errore")) MaterialTheme.colorScheme.error else Color(
                     0xFF9A4616
                 ),
-                fontSize = 16.sp, // Reduced size for better fit
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        (if (message.startsWith("Error") || message.startsWith("Errore")) MaterialTheme.colorScheme.errorContainer else Color(
+                        (if (uiState.message.startsWith("Error") || uiState.message.startsWith("Errore")) MaterialTheme.colorScheme.errorContainer else Color(
                             0xFF9A4616
                         ).copy(alpha = 0.2f))
                     )
                     .padding(12.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
         }
-
         Spacer(Modifier.height(16.dp))
+
 
         // History List Card
         Card(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(), // Takes remaining space
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
         ) {
@@ -308,7 +196,7 @@ fun SettingsScreen() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
-                if (history.isEmpty()) {
+                if (uiState.history.isEmpty()) {
                     Text(
                         text = "Nessuno storico disponibile.",
                         color = Color(0xFF9A4616).copy(alpha = 0.7f),
@@ -319,7 +207,7 @@ fun SettingsScreen() {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) + (it["exitTime"] as? Long ?: 0L) }) { record -> // Added key for stability
+                        items(uiState.history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) }) { record ->
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
@@ -334,19 +222,19 @@ fun SettingsScreen() {
                                         modifier = Modifier.padding(bottom = 4.dp),
                                     )
                                     Text(
-                                        text = "Ingresso: ${formatLongTimestamp(record["enterTime"] as? Long)}",
+                                        text = "Ingresso: ${settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)}",
                                         color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
                                     )
                                     Text(
-                                        text = "In pausa: ${formatLongTimestamp(record["toLunchTime"] as? Long)}",
+                                        text = "In pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}",
                                         color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
                                     )
                                     Text(
-                                        text = "Fine pausa: ${formatLongTimestamp(record["fromLunchTime"] as? Long)}",
+                                        text = "Fine pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}",
                                         color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
                                     )
                                     Text(
-                                        text = "Uscita: ${formatLongTimestamp(record["exitTime"] as? Long)}",
+                                        text = "Uscita: ${settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)}",
                                         color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
                                     )
                                     Text(
@@ -367,48 +255,53 @@ fun SettingsScreen() {
     }
 
     // Confirmation Dialog for Clearing History
-    if (showClearConfirmDialog) {
+    if (uiState.showClearConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showClearConfirmDialog = false },
+            onDismissRequest = { settingsViewModel.cancelClearHistory() },
             title = { Text("Pulisci lo storico") },
             text = { Text("Sei sicuro di voler cancellare tutto lo storico? Questa azione non può essere annullata.") },
             confirmButton = {
                 Button(
-                    onClick = {
-                        clearHistoryAction()
-                        showClearConfirmDialog = false
-                    },
+                    onClick = { settingsViewModel.confirmClearHistory() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
                 ) { Text("Conferma", color = Color.White) }
             },
             dismissButton = {
-                Button(onClick = { showClearConfirmDialog = false }) { Text("Annulla") }
+                Button(onClick = { settingsViewModel.cancelClearHistory() }) { Text("Annulla") }
             }
         )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFF0EAE2) // Example background color for preview
+
+@Preview(showBackground = true, backgroundColor = 0xFFF0EAE2)
 @Composable
 fun SettingsScreenPreview() {
+    // For preview, we might need a way to inject a ViewModel with preview data
+    // or rely on the default ViewModel instantiation which will use the actual LocalHistoryRepository.
+    // To make previews more hermetic, you could have a factory for ViewModel that allows injecting
+    // a version with dummy data for previews.
+
     // Add some dummy data to the local repository for the preview
-    LaunchedEffect(Unit) { // Use LaunchedEffect to add data once for the preview
-        if (LocalHistoryRepository.history.isEmpty()) { // Add only if empty to avoid duplicates on recomposition
+    // This will be picked up by the default ViewModel if LocalHistoryRepository is an object
+    LaunchedEffect(Unit) {
+        if (LocalHistoryRepository.history.isEmpty()) {
             LocalHistoryRepository.addDummyRecord(
-                System.currentTimeMillis() - 86400000 * 2, // 2 days ago
-                System.currentTimeMillis() - (86400000 * 2 - 8 * 3600000), // ~8 hours later
+                System.currentTimeMillis() - 86400000 * 2,
+                System.currentTimeMillis() - (86400000 * 2 - 8 * 3600000),
                 "7h 45m",
                 8.0
             )
             LocalHistoryRepository.addDummyRecord(
-                System.currentTimeMillis() - 86400000, // yesterday
-                System.currentTimeMillis() - (86400000 - 7.5 * 3600000).toLong(), // ~7.5 hours later
+                System.currentTimeMillis() - 86400000,
+                System.currentTimeMillis() - (86400000 - 7.5 * 3600000).toLong(),
                 "7h 30m",
                 7.5
             )
         }
     }
-    MaterialTheme { // Wrap in MaterialTheme for previews to get default styling
+
+    MaterialTheme {
         SettingsScreen()
     }
 }
