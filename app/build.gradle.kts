@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.gms.google-services") // Google Services plugin
     id("org.jetbrains.kotlin.plugin.compose") // No version here, it's inherited
     id("com.google.devtools.ksp") version "2.1.21-2.0.1"
 }

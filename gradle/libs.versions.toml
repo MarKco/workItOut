@@ -3,7 +3,6 @@ activityComposeVersion = "1.10.1"
 agp = "8.10.1"
 composeBomVersion = "2025.06.00"
 coreKtxVersion = "1.16.0"
-firebaseBom = "33.15.0"
 fragmentKtx = "1.8.8"
 kotlin = "2.1.21"
 coreKtx = "1.16.0"
@@ -34,9 +33,6 @@ androidx-material-icons-core = { module = "androidx.compose.material:material-ic
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
