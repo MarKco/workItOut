@@ -16,6 +16,7 @@ lifecycle = "2.7.0"
 activityCompose = "1.10.1"
 composeBom = "2025.06.00"
 lifecycleRuntimeKtxVersion = "2.9.1"
+accompanistPermissions = "0.37.3"
 
 [libraries]
 androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -50,6 +51,7 @@ ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+ui-accompanist-user-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

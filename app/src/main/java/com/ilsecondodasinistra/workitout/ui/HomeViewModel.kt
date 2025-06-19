@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import IHomeViewModel
 import android.app.Application // Or inject Context if not using AndroidViewModel
 import android.content.Context
 import android.content.SharedPreferences
@@ -58,13 +59,13 @@ sealed class ButtonType(val text: String) {
     object Exit : ButtonType("Uscita")
 }
 
-class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver { // Implement DefaultLifecycleObserver
+class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver, IHomeViewModel { // Implement DefaultLifecycleObserver
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var notificationPollingJob: Job? = null
 
@@ -232,7 +233,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     }
 
 
-    fun handleTimeButtonPress(buttonType: ButtonType) {
+    override fun handleTimeButtonPress(buttonType: ButtonType) {
         val currentTime = Date()
         var newEnterTime = _uiState.value.enterTime
         var newToLunchTime = _uiState.value.toLunchTime
@@ -319,7 +320,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         recalculateAndUpdateUi()
     }
 
-    fun handleTimeEditRequest(buttonType: ButtonType) {
+    override fun handleTimeEditRequest(buttonType: ButtonType) {
         val current = _uiState.value
         val calendar = Calendar.getInstance()
         val timeToEdit: Date? = when (buttonType) {
@@ -341,7 +342,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         }
     }
 
-    fun onTimeEdited(buttonType: ButtonType, hour: Int, minute: Int) {
+    override fun onTimeEdited(buttonType: ButtonType, hour: Int, minute: Int) {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
@@ -409,11 +410,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         recalculateAndUpdateUi()
     }
 
-    fun onDialogDismissed() {
+    override fun onDialogDismissed() {
         _uiState.update { it.copy(timePickerEvent = null) }
     }
 
-    fun clearMessage() {
+    override fun clearMessage() {
         // Debounce or delay message clearing if needed, or clear immediately.
         // For Toast, it clears itself. For in-app messages, you might want this.
         if (_uiState.value.message.isNotEmpty() && !_uiState.value.message.startsWith("NOTIFY_")) {
@@ -423,7 +424,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     }
 
     // Helper to be called from Composable for formatting
-    fun formatTimeToDisplay(date: Date?): String {
+    override fun formatTimeToDisplay(date: Date?): String {
         return date?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A"
     }
 

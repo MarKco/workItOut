@@ -16,23 +16,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
+import androidx.compose.material3.* // Ensure this is the M3 import
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.isEmpty
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.collectLatest
+import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme // Import your theme
 
+@OptIn(ExperimentalMaterial3Api::class) // Keep if using experimental M3 APIs
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel()
@@ -44,7 +42,7 @@ fun SettingsScreen(
     LaunchedEffect(uiState.message) {
         if (uiState.message.isNotEmpty()) {
             Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
-            settingsViewModel.clearMessage() // Clear message after showing
+            settingsViewModel.clearMessage()
         }
     }
 
@@ -63,31 +61,33 @@ fun SettingsScreen(
                 Log.e("SettingsScreen", "Error sharing history: ${e.message}", e)
                 Toast.makeText(context, "Impossibile avviare la condivisione.", Toast.LENGTH_SHORT).show()
             }
-            settingsViewModel.onShareIntentLaunched() // Reset the event
+            settingsViewModel.onShareIntentLaunched()
         }
     }
-
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        // Padding is likely handled by the parent layout in WorkItOutAppEntry,
+        // but if this screen is used standalone, add .padding(16.dp) here.
+        // For now, assuming parent handles general screen padding.
     ) {
-        // Ore di lavoro totali Card
+        // Daily Working Hours Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f)),
+            shape = MaterialTheme.shapes.large, // Use M3 shape
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant // M3 themed surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(Modifier.padding(16.dp)) {
                 Text(
                     text = "Ore di lavoro totali:",
-                    color = Color(0xFF9A4616),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge, // M3 Typography
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, // M3 themed text color
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Row(
@@ -96,23 +96,41 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     OutlinedTextField(
-                        value = uiState.dailyHoursInputString, // Bind directly to the String state
-                        onValueChange = { newValue -> settingsViewModel.onDailyHoursInputChange(newValue) },
-                        label = { Text("Ore (es. 7.5)") }, // Added a label for clarity
+                        value = uiState.dailyHoursInputString,
+                        onValueChange = { settingsViewModel.onDailyHoursInputChange(it) },
+                        label = { Text("Ore (es. 7.5)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors( /* ... your colors ... */ ),
+                        // TextFieldDefaults.outlinedTextFieldColors will use theme colors by default
+                        // You can customize further if needed:
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                        )
                     )
                     Button(
                         onClick = { settingsViewModel.saveDailyHours() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF782F04)),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        // ButtonDefaults.buttonColors will use theme colors by default
+                        // (primary container, onPrimary content)
+                        // colors = ButtonDefaults.buttonColors(
+                        // containerColor = MaterialTheme.colorScheme.primary,
+                        // contentColor = MaterialTheme.colorScheme.onPrimary
+                        // ),
+                        shape = MaterialTheme.shapes.medium, // M3 Shape
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     ) {
-                        Text(text = "Salva", color = Color.White, fontSize = 16.sp)
+                        Text(text = "Salva", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -123,131 +141,113 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+            horizontalArrangement = Arrangement.spacedBy(16.dp), // Consistent spacing
         ) {
-            Button(
+            // Share Button (FilledTonalButton for less emphasis than primary action)
+            FilledTonalButton( // M3 alternative for secondary actions
                 onClick = { settingsViewModel.shareHistory() },
                 modifier = Modifier
                     .weight(1f)
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF009688)), // Teal-500
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
+                    .height(56.dp), // Standard M3 button height
+                shape = MaterialTheme.shapes.medium,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
+                // colors = ButtonDefaults.filledTonalButtonColors(
+                // containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                // contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                // )
             ) {
-                Icon(Icons.Filled.Share, contentDescription = "Condividi", tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text(text = "Condividi", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Icon(
+                    Icons.Filled.Share,
+                    contentDescription = "Condividi",
+                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                )
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                Text(text = "Condividi", style = MaterialTheme.typography.labelLarge)
             }
-            Spacer(Modifier.width(16.dp))
+
+            // Clear Button (Error color for destructive action)
             Button(
                 onClick = { settingsViewModel.requestClearHistory() },
                 modifier = Modifier
                     .weight(1f)
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), // Red-700
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = "Pulisci", tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text(text = "Pulisci", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Pulisci",
+                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                )
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                Text(text = "Pulisci", style = MaterialTheme.typography.labelLarge)
             }
         }
 
-        // Animated message display (from original code, slightly adapted)
+        // Animated message display
         AnimatedVisibility(
-            visible = uiState.message.isNotBlank(), // Show if ViewModel message is set
+            visible = uiState.message.isNotBlank(),
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
+            val isErrorMessage = uiState.message.startsWith("Error", ignoreCase = true) ||
+                    uiState.message.startsWith("Errore", ignoreCase = true)
             Text(
                 text = uiState.message,
-                color = if (uiState.message.startsWith("Error") || uiState.message.startsWith("Errore")) MaterialTheme.colorScheme.error else Color(
-                    0xFF9A4616
-                ),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                color = if (isErrorMessage) MaterialTheme.colorScheme.onErrorContainer
+                else MaterialTheme.colorScheme.onPrimaryContainer, // Or onSecondaryContainer
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(
-                        (if (uiState.message.startsWith("Error") || uiState.message.startsWith("Errore")) MaterialTheme.colorScheme.errorContainer else Color(
-                            0xFF9A4616
-                        ).copy(alpha = 0.2f))
+                        if (isErrorMessage) MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) // Or secondaryContainer
                     )
                     .padding(12.dp),
                 textAlign = TextAlign.Center
             )
         }
-        Spacer(Modifier.height(16.dp))
-
+        Spacer(Modifier.height(16.dp)) // Add space if message is shown
 
         // History List Card
+        Text( // Title for the history section
+            text = "Storico",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary, // Use primary for section titles
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
         Card(
-            modifier = Modifier.fillMaxSize(), // Takes remaining space
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+            modifier = Modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface // Main surface for list
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    text = "Storico",
-                    color = Color(0xFF9A4616),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                if (uiState.history.isEmpty()) {
+            if (uiState.history.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "Nessuno storico disponibile.",
-                        color = Color(0xFF9A4616).copy(alpha = 0.7f),
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(uiState.history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) }) { record ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF9A4616).copy(alpha = 0.15f)),
-                            ) {
-                                Column(Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "Data: ${record["id"]}",
-                                        color = Color(0xFF9A4616),
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(bottom = 4.dp),
-                                    )
-                                    Text(
-                                        text = "Ingresso: ${settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)}",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                    Text(
-                                        text = "In pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                    Text(
-                                        text = "Fine pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                    Text(
-                                        text = "Uscita: ${settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)}",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                    Text(
-                                        text = "Ore lavorate totali: ${record["totalWorkedTime"] ?: "N/A"}",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                    Text(
-                                        text = "Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h",
-                                        color = Color(0xFF9A4616).copy(alpha = 0.8f), fontSize = 14.sp,
-                                    )
-                                }
-                            }
-                        }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp), // Padding inside the list card
+                    verticalArrangement = Arrangement.spacedBy(12.dp), // Spacing between history items
+                ) {
+                    items(uiState.history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) }) { record ->
+                        HistoryItemCard(record = record, settingsViewModel = settingsViewModel)
                     }
                 }
             }
@@ -258,50 +258,68 @@ fun SettingsScreen(
     if (uiState.showClearConfirmDialog) {
         AlertDialog(
             onDismissRequest = { settingsViewModel.cancelClearHistory() },
-            title = { Text("Pulisci lo storico") },
-            text = { Text("Sei sicuro di voler cancellare tutto lo storico? Questa azione non può essere annullata.") },
+            title = { Text("Pulisci lo storico", style = MaterialTheme.typography.headlineSmall) },
+            text = { Text("Sei sicuro di voler cancellare tutto lo storico? Questa azione non può essere annullata.", style = MaterialTheme.typography.bodyMedium) },
             confirmButton = {
-                Button(
+                TextButton( // Use TextButton for dialog actions as per M3
                     onClick = { settingsViewModel.confirmClearHistory() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-                ) { Text("Conferma", color = Color.White) }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Conferma") }
             },
             dismissButton = {
-                Button(onClick = { settingsViewModel.cancelClearHistory() }) { Text("Annulla") }
-            }
+                TextButton(onClick = { settingsViewModel.cancelClearHistory() }) { Text("Annulla") }
+            },
+            // containerColor = MaterialTheme.colorScheme.surface, // Dialogs use surface color
+            // titleContentColor = MaterialTheme.colorScheme.onSurface,
+            // textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-
-@Preview(showBackground = true, backgroundColor = 0xFFF0EAE2)
 @Composable
-fun SettingsScreenPreview() {
-    // For preview, we might need a way to inject a ViewModel with preview data
-    // or rely on the default ViewModel instantiation which will use the actual LocalHistoryRepository.
-    // To make previews more hermetic, you could have a factory for ViewModel that allows injecting
-    // a version with dummy data for previews.
-
-    // Add some dummy data to the local repository for the preview
-    // This will be picked up by the default ViewModel if LocalHistoryRepository is an object
-    LaunchedEffect(Unit) {
-        if (LocalHistoryRepository.history.isEmpty()) {
-            LocalHistoryRepository.addDummyRecord(
-                System.currentTimeMillis() - 86400000 * 2,
-                System.currentTimeMillis() - (86400000 * 2 - 8 * 3600000),
-                "7h 45m",
-                8.0
+fun HistoryItemCard(record: Map<String, Any?>, settingsViewModel: SettingsViewModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium, // M3 shape for list items
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f) // Slightly different from main list card
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                text = "Data: ${record["id"]}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 6.dp),
             )
-            LocalHistoryRepository.addDummyRecord(
-                System.currentTimeMillis() - 86400000,
-                System.currentTimeMillis() - (86400000 - 7.5 * 3600000).toLong(),
-                "7h 30m",
-                7.5
-            )
+            HistoryDetailText("Ingresso: ${settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)}")
+            HistoryDetailText("In pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}")
+            HistoryDetailText("Fine pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}")
+            HistoryDetailText("Uscita: ${settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)}")
+            HistoryDetailText("Ore lavorate totali: ${record["totalWorkedTime"] ?: "N/A"}")
+            HistoryDetailText("Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h")
         }
     }
+}
 
-    MaterialTheme {
-        SettingsScreen()
+@Composable
+fun HistoryDetailText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f), // Slightly muted for details
+        modifier = Modifier.padding(vertical = 2.dp)
+    )
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun SettingsScreenPreview() {
+    WorkItOutM3Theme { // Wrap preview in your M3 Theme
+        Surface(color = MaterialTheme.colorScheme.background) { // Add surface for background in preview
+            SettingsScreen()
+        }
     }
 }

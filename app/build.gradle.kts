@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
+    implementation(libs.ui.accompanist.user.permissions) // Or latest version
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

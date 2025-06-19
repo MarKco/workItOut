@@ -53,10 +53,8 @@ class MainActivity : ComponentActivity() {
         // In a real Android app, you'd handle user authentication directly,
         // e.g., with email/password, Google Sign-In, or anonymous sign-in.
         // The __initial_auth_token is a Canvas-specific variable.
-
         setContent {
-            Log.d("HomeScreen", "Setting content")
-            WorkItOut { requestNotificationPermission() }
+            WorkItOutAppEntry() // Call the updated composable
         }
 
         createNotificationChannel()
@@ -105,7 +103,5 @@ fun PreviewWorkItOut() {
     // takes mock data/dependencies.
     // For now, it will just show the structure.
     LocalContext.current
-    WorkItOut(
-        { }
-    )
+    WorkItOutAppEntry()
 }

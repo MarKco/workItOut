@@ -1,28 +1,37 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import IHomeViewModel
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,32 +40,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
-
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalLifecycleOwner // Import this
-import androidx.lifecycle.LifecycleEventObserver        // Import this
+import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: HomeViewModel = viewModel()
-) {
+    homeViewModel: IHomeViewModel)
+{
     val uiState by homeViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current // Get the lifecycle owner
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val timePickerState = rememberTimePickerState(is24Hour = true)
+    var showTimePickerDialog by remember { mutableStateOf(false) }
 
     // Observe lifecycle events to call ViewModel's onResume
     DisposableEffect(lifecycleOwner) {
@@ -68,14 +77,12 @@ fun HomeScreen(
             //     homeViewModel.someSpecificOnResumeFunction() // if you had one
             // }
         }
-        lifecycleOwner.lifecycle.addObserver(homeViewModel) // Add ViewModel as an observer
+        lifecycleOwner.lifecycle.addObserver(homeViewModel as LifecycleObserver) // Add ViewModel as an observer
 
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(homeViewModel) // Clean up
+            lifecycleOwner.lifecycle.removeObserver(homeViewModel as LifecycleObserver) // Clean up
         }
     }
-
-    val timePickerState = rememberTimePickerState(is24Hour = true)
 
     // Handle showing TimePickerDialog based on ViewModel event
     LaunchedEffect(uiState.timePickerEvent) {
@@ -86,7 +93,7 @@ fun HomeScreen(
         }
     }
 
-    var showTimePickerDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(uiState.timePickerEvent) {
         showTimePickerDialog = uiState.timePickerEvent != null
     }
@@ -107,101 +114,203 @@ fun HomeScreen(
     }
 
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+// Apply your M3 Theme
+    WorkItOutM3Theme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
         ) {
             Column(
                 modifier = Modifier
-                    .wrapContentWidth()
-                    .weight(1f)
-                    .padding(top = 32.dp, bottom = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceAround,
-            ) {
-                TimeButton(
-                    text = ButtonType.Enter.text,
-                    time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
-                    buttonColor = Color(0xFFFF6A3A),
-                    onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
-                    onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Enter) },
-                    enabled = true
-                )
-                TimeButton(
-                    text = ButtonType.ToLunch.text,
-                    time = homeViewModel.formatTimeToDisplay(uiState.toLunchTime),
-                    buttonColor = Color(0xFFB8552A),
-                    onClick = { homeViewModel.handleTimeButtonPress(ButtonType.ToLunch) },
-                    onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.ToLunch) },
-                    enabled = uiState.enterTime != null
-                )
-                TimeButton(
-                    text = ButtonType.FromLunch.text,
-                    time = homeViewModel.formatTimeToDisplay(uiState.fromLunchTime),
-                    buttonColor = Color(0xFF9A4616),
-                    onClick = { homeViewModel.handleTimeButtonPress(ButtonType.FromLunch) },
-                    onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.FromLunch) },
-                    enabled = uiState.toLunchTime != null
-                )
-                TimeButton(
-                    text = ButtonType.Exit.text,
-                    time = homeViewModel.formatTimeToDisplay(uiState.exitTime), // ViewModel's exitTime is cleared after save
-                    buttonColor = Color(0xFF7A3610),
-                    onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Exit) },
-                    onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Exit) },
-                    enabled = uiState.enterTime != null && ((uiState.toLunchTime == null && uiState.fromLunchTime == null) || uiState.fromLunchTime != null)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White.copy(alpha = 0.90f))
-                    .padding(16.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp), // Overall horizontal padding
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = "Ore giornaliere: ${"%.1f".format(uiState.dailyHours)}h",
-                    color = Color(0xFF9A4616),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "Uscita stimata: ${homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime)}",
-                    color = Color(0xFF9A4616),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "Totale oggi: ${uiState.totalWorkedTime ?: "N/A"}",
-                    color = Color(0xFF9A4616),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-
-        if (showTimePickerDialog && uiState.timePickerEvent != null) {
-            val currentDialogEvent = uiState.timePickerEvent // Capture for stable use in dialog
-            TimePickerDialog(
-                onDismiss = { homeViewModel.onDialogDismissed() },
-                onConfirm = {
-                    homeViewModel.onTimeEdited(
-                        buttonType = currentDialogEvent!!.type, // !! safe due to outer check
-                        hour = timePickerState.hour,
-                        minute = timePickerState.minute
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth() // Buttons will take full width with padding
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically) // Spacing and centering
+                ) {
+                    TimeButtonM3(
+                        buttonType = ButtonType.Enter,
+                        time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Enter) },
+                        enabled = true,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                    TimeButtonM3(
+                        buttonType = ButtonType.ToLunch,
+                        time = homeViewModel.formatTimeToDisplay(uiState.toLunchTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.ToLunch) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.ToLunch) },
+                        enabled = uiState.enterTime != null,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer, // Use tonal for secondary actions
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    )
+                    TimeButtonM3(
+                        buttonType = ButtonType.FromLunch,
+                        time = homeViewModel.formatTimeToDisplay(uiState.fromLunchTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.FromLunch) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.FromLunch) },
+                        enabled = uiState.toLunchTime != null,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    )
+                    TimeButtonM3(
+                        buttonType = ButtonType.Exit,
+                        time = homeViewModel.formatTimeToDisplay(uiState.exitTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Exit) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Exit) },
+                        enabled = uiState.enterTime != null && ((uiState.toLunchTime != null && uiState.fromLunchTime != null) || uiState.toLunchTime == null),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary, // Or error for strong exit
+                            contentColor = MaterialTheme.colorScheme.onTertiary
+                        )
                     )
                 }
-            ) {
-                TimePicker(state = timePickerState)
+
+                // Summary Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    shape = MaterialTheme.shapes.large, // Use M3 shape
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant, // Slightly different surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start // Align text to start for better readability
+                    ) {
+                        SummaryTextRow("Ore giornaliere:", "${"%.1f".format(uiState.dailyHours)}h")
+                        SummaryTextRow("Uscita stimata:", homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
+                        SummaryTextRow("Totale oggi:", uiState.totalWorkedTime ?: "N/A", isBold = true)
+                    }
+                }
+            }
+
+            if (showTimePickerDialog && uiState.timePickerEvent != null) {
+                val currentDialogEvent = uiState.timePickerEvent
+                TimePickerDialog(
+                    onDismiss = { homeViewModel.onDialogDismissed() },
+                    onConfirm = {
+                        homeViewModel.onTimeEdited(
+                            buttonType = currentDialogEvent!!.type,
+                            hour = timePickerState.hour,
+                            minute = timePickerState.minute
+                        )
+                    }
+                ) {
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors( // Customize picker colors
+                            clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                            periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
+                            selectorColor = MaterialTheme.colorScheme.primary
+                            // ... explore other color options
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Reusable Composable for Summary Text Rows
+@Composable
+fun SummaryTextRow(label: String, value: String, isBold: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+
+// Updated TimeButton for M3 style
+@Composable
+fun TimeButtonM3(
+    buttonType: ButtonType,
+    time: String,
+    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    enabled: Boolean = true,
+    colors: ButtonColors = ButtonDefaults.elevatedButtonColors()
+) {
+    ElevatedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(72.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = colors, // Pass the whole ButtonColors object
+        elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 4.dp, pressedElevation = 2.dp),
+        enabled = enabled
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(horizontalAlignment = Alignment.Start) {
+                // The content color for this Text will be resolved automatically by the Button
+                Text(buttonType.text, style = MaterialTheme.typography.titleMedium)
+                if (time != "N/A") {
+                    Text(
+                        time,
+                        style = MaterialTheme.typography.bodySmall,
+                        // The Button's contentColor will apply, but we can make it slightly transparent
+                        // For a more subtle effect, it's better to rely on the theme's onSurface.copy(alpha=...)
+                        // or ensure the provided `colors` in ButtonColors already has the desired alpha.
+                        // For simplicity here, we'll let the button's default content color apply,
+                        // or ensure the `ButtonColors` passed in has appropriate alpha.
+                        // If you need explicit alpha control for sub-elements:
+                        // color = LocalContentColor.current.copy(alpha = if (enabled) 0.8f else ContentAlpha.disabled)
+                        // However, ButtonColors should handle the disabled state correctly.
+                    )
+                }
+            }
+            if (time != "N/A") {
+                IconButton(onClick = onEditClick, enabled = enabled) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = "Modifica ${buttonType.text}",
+                        // Tint for Icon in IconButton should also use LocalContentColor or be explicitly set
+                        // The IconButton itself will also provide a content color.
+                        // If you want it to match the button's text, rely on what IconButton provides
+                        // or explicitly use a themed color like MaterialTheme.colorScheme.onPrimary.copy(alpha=0.7f)
+                        // For consistency with the button's behavior, let the theme resolve it.
+                        // If the passed `colors: ButtonColors` defines a specific contentColor, that will be used by default.
+                    )
+                }
             }
         }
     }
@@ -239,10 +348,43 @@ private fun showLocalNotification(context: Context, title: String, body: String)
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE0F2F1)
+@Preview(showBackground = true, name = "HomeScreen Logged In")
 @Composable
-fun HomeScreenPreview() {
-    MaterialTheme {
-        HomeScreen() // ViewModel will be default-instantiated
+fun HomeScreenPreview_LoggedIn() {
+    WorkItOutM3Theme {
+        // If HomeScreen takes the ViewModel interface:
+        HomeScreen(homeViewModel = PreviewHomeViewModel())
+
+        // If HomeScreen directly takes HomeUiState and lambdas (alternative structure):
+        // val previewState = getPreviewHomeUiState()
+        // HomeScreen(
+        //     uiState = previewState,
+        //     onHandleTimeButtonPress = { /* no-op */ },
+        //     onHandleTimeEditRequest = { /* no-op */ },
+        //     onTimeEdited = { _, _, _ -> /* no-op */ },
+        //     onDialogDismissed = { /* no-op */ },
+        //     formatTimeToDisplay = { date -> date?.toString() ?: "N/A" }
+        // )
+    }
+}
+
+@Preview(showBackground = true, name = "HomeScreen Initial")
+@Composable
+fun HomeScreenPreview_Initial() {
+    WorkItOutM3Theme {
+        val initialVm = PreviewHomeViewModel().apply {
+            // If PreviewHomeViewModel has a way to update its internal state directly:
+            // (this.asMutableStateFlow()).value = getPreviewHomeUiState(enterTime = null, toLunchTime = null, totalWorkedTime = null, calculatedExitTime = null)
+            // Or, more simply, create another preview state function:
+            (this._uiState).value = getPreviewHomeUiState(
+                enterTime = null,
+                toLunchTime = null,
+                fromLunchTime = null,
+                exitTime = null,
+                calculatedExitTime = null, // Or some initial calculation
+                totalWorkedTime = null
+            )
+        }
+        HomeScreen(homeViewModel = initialVm)
     }
 }
