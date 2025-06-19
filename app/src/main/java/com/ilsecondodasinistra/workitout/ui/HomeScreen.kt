@@ -290,11 +290,12 @@ fun TimeButtonM3(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(horizontalAlignment = Alignment.Start) {
-                Text(buttonType.text, style = MaterialTheme.typography.titleMedium)
+                Text(buttonType.text, style = MaterialTheme.typography.titleLarge)
                 if (time != "N/A") {
                     Text(
-                        time,
-                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp),
+                        text = time,
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
