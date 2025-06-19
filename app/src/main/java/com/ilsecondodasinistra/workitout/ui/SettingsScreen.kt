@@ -319,7 +319,7 @@ fun SettingsScreen() {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) }) { record -> // Added key for stability
+                        items(history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) + (it["exitTime"] as? Long ?: 0L) }) { record -> // Added key for stability
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
