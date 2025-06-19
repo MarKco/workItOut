@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx) // For lifecycleScope, collectAsStateWithLifecycle
+    implementation(libs.androidx.lifecycle.viewmodel.ktx) // For viewModelScope
 
     // Tooling for previews
     debugImplementation(libs.ui.tooling)
