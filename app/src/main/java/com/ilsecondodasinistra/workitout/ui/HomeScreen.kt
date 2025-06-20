@@ -126,7 +126,7 @@ fun HomeScreen(
                 scope.launch {
                     snackbarHostState.showSnackbar(
                         message = uiState.message,
-                        duration = SnackbarDuration.Long
+                        duration = SnackbarDuration.Short
                     )
                 }
                 homeViewModel.clearMessage() // Clear regular message after showing
@@ -388,8 +388,20 @@ fun PausePairRow(
         ) {
             Text("Pausa ${index + 1}")
             if (pause.durationMinutes != null && pause.durationMinutes > 0) {
+                val totalMinutes = pause.durationMinutes
+                val durationText = if (totalMinutes < 60) {
+                    "$totalMinutes min"
+                } else {
+                    val hours = totalMinutes / 60
+                    val minutes = totalMinutes % 60
+                    if (minutes == 0L) { 
+                        "${hours}h"
+                    } else {
+                        "${hours}h ${minutes}min"
+                    }
+                }
                 Text(
-                    text = "Durata: ${pause.durationMinutes} min",
+                    text = "Durata: $durationText",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp) 
