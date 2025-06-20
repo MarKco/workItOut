@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.data.HistoryRepository
-import com.ilsecondodasinistra.workitout.data.SerializablePausePair // Assuming this is @Serializable
+import com.ilsecondodasinistra.workitout.data.SerializablePausePair
 import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -83,6 +83,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         if (sessionData != null) {
             val (enterTimeMillis, exitTimeMillis, currentPausesJson) = sessionData
             val restoredEnterTime = enterTimeMillis?.let { Date(it) }
+            // If exitTimeMillis is present, it means a session was concluded but not fully cleared or app was killed.
+            // We should honor this as the effective exit, but not reset the UI if enterTime is also present.
             val restoredExitTime = exitTimeMillis?.let { Date(it) }
 
             val restoredPauses: List<PausePair> = currentPausesJson?.mapNotNull { jsonString ->
@@ -93,7 +95,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         end = serializablePause.end?.let { Date(it) }
                     )
                 } catch (e: Exception) {
-                    Log.e("HomeViewModel", "Error deserializing pause with kotlinx.serialization: $jsonString", e)
+                    Log.e("HomeViewModel", "Error deserializing pause: $jsonString", e)
                     null
                 }
             } ?: emptyList()
@@ -101,15 +103,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             _uiState.update {
                 it.copy(
                     enterTime = restoredEnterTime,
-                    exitTime = restoredExitTime,
+                    exitTime = restoredExitTime, // Will show if session was previously concluded
                     pauses = restoredPauses,
                     message = "Sessione precedente ripristinata."
                 )
             }
             Log.d("HomeViewModel", "Session restored: Enter=${formatTime(restoredEnterTime)}, Exit=${formatTime(restoredExitTime)}, Pauses=${restoredPauses.size}")
-            recalculateAndUpdateUi() // Recalculate based on restored state
-            if (restoredEnterTime != null && restoredExitTime == null) {
-                startOrUpdateNotificationPolling(_uiState.value.calculatedExitTime)
+            recalculateAndUpdateUi() // This will update totalWorkedTime and calculatedExitTime based on restored state
+
+            if (restoredEnterTime != null && restoredExitTime == null) { // Only poll if session is ongoing
+                 startOrUpdateNotificationPolling(_uiState.value.calculatedExitTime)
             }
         } else {
             Log.d("HomeViewModel", "No current session found in DataStore.")
@@ -118,29 +121,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private suspend fun persistCurrentSessionState() {
         val current = _uiState.value
-        // Only persist if there's an active session (enterTime not null, and exitTime is null)
+        // Only persist if there's an active, uncompleted session
         if (current.enterTime != null && current.exitTime == null) {
-            Log.d("HomeViewModel", "Persisting active session state to DataStore.")
-            val enterTimeMillis = current.enterTime.time // enterTime is non-null here
-            val exitTimeMillis = current.exitTime?.time // exitTime is null here, so this will be null
-
+            Log.d("HomeViewModel", "Persisting current active session state to DataStore.")
+            val enterTimeMillis = current.enterTime?.time
+            // exitTimeMillis should be null here for an active session
             val pausesJson: Set<String>? = current.pauses.mapNotNull { pause ->
                 try {
                     json.encodeToString(SerializablePausePair(pause.start?.time, pause.end?.time))
                 } catch (e: Exception) {
-                    Log.e("HomeViewModel", "Error serializing pause with kotlinx.serialization: $pause", e)
+                    Log.e("HomeViewModel", "Error serializing pause: $pause", e)
                     null
                 }
             }.toSet().ifEmpty { null }
 
             try {
-                workHistoryRepository.saveCurrentSession(enterTimeMillis, exitTimeMillis, pausesJson)
+                workHistoryRepository.saveCurrentSession(enterTimeMillis, null, pausesJson)
                 Log.d("HomeViewModel", "Active session state persisted successfully.")
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error persisting active session state.", e)
             }
         } else {
-            Log.d("HomeViewModel", "No active session to persist or session already concluded.")
+            Log.d("HomeViewModel", "Skipping persistence: No active session (enterTime null or exitTime already set).")
         }
     }
 
@@ -152,10 +154,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     _uiState.update {
                         it.copy(dailyHours = loadedDailyHours)
                     }
-                    recalculateAndUpdateUi()
+                    recalculateAndUpdateUi() // Recalculate if daily hours change
                     Log.d("HomeViewModel", "Daily hours updated from DataStore: $loadedDailyHours")
                 } else {
-                    Log.d("HomeViewModel", "Daily hours from DataStore same as current: $loadedDailyHours, no recalculation needed based on this.")
+                    Log.d("HomeViewModel", "Daily hours from DataStore same as current: $loadedDailyHours.")
                 }
             }
         }
@@ -176,7 +178,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     totalPauseTime += pause.end.time - pause.start.time
                 }
             }
-
             val newCalculatedExitMs = enterMs + totalWorkMilliseconds + totalPauseTime
             return Date(newCalculatedExitMs)
         }
@@ -212,16 +213,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         val newCalculatedExitTime = if (current.exitTime == null && current.enterTime != null) {
             calculateExpectedExitTime(current.enterTime, current.pauses, current.dailyHours)
         } else {
-            null // If exitTime is already set, no need for calculatedExitTime
+            null // If session is already exited, no calculated exit time needed
         }
-        // Only calculate totalWorkedTime if exitTime is actually set.
-        // Otherwise, it might show a total for an incomplete session based on a previous value.
-        val newTotalWorkedTime = if (current.exitTime != null) {
+        val newTotalWorkedTime = if (current.exitTime != null && current.enterTime != null) {
             calculateTotalWorkedTime(current.enterTime, current.pauses, current.exitTime)
         } else {
-            current.totalWorkedTime // Keep existing if no exit time, or null if never set
+            current.totalWorkedTime // Preserve if already calculated, or null if not yet exited
         }
-
 
         _uiState.update {
             it.copy(
@@ -229,12 +227,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 totalWorkedTime = newTotalWorkedTime
             )
         }
-        // Manage notification polling based on whether the session is active
-        if (current.enterTime != null && current.exitTime == null) {
+         if (current.enterTime != null && current.exitTime == null) { // Only poll if session is ongoing
             startOrUpdateNotificationPolling(newCalculatedExitTime)
         } else {
             notificationPollingJob?.cancel()
-            Log.d("HomeViewModel", "Recalculate: Polling stopped (enter null or exit not null).")
+             Log.d("HomeViewModel", "Recalculate: Polling stopped (enter null or exit already set).")
         }
     }
 
@@ -242,7 +239,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     private fun startOrUpdateNotificationPolling(expectedExitTime: Date?) {
         notificationPollingJob?.cancel()
         if (expectedExitTime == null || _uiState.value.exitTime != null || _uiState.value.enterTime == null) {
-            Log.d("HomeViewModel", "Notification polling stopped or not started. Expected: ${formatTime(expectedExitTime)}, Actual Exit: ${formatTime(_uiState.value.exitTime)}, Enter: ${formatTime(_uiState.value.enterTime)}")
+            Log.d("HomeViewModel", "Notification polling stopped/not started. Expected: ${formatTime(expectedExitTime)}, Actual Exit: ${formatTime(_uiState.value.exitTime)}, Enter: ${formatTime(_uiState.value.enterTime)}")
             return
         }
 
@@ -257,74 +254,84 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 }
                 delay(10000L)
             }
-            if (notified || _uiState.value.exitTime != null) {
+             if (notified || _uiState.value.exitTime != null) {
                 Log.d("HomeViewModel", "Notification polling loop ended. Notified: $notified, ExitRecorded: ${_uiState.value.exitTime != null}")
             }
         }
     }
 
-    private suspend fun finalizeAndSaveWorkSession(confirmedExitTime: Date) {
+    // This function now handles all session finalization logic
+    private suspend fun finalizeAndSaveWorkSession(rawConfirmedExitTime: Date) {
         val current = _uiState.value
-        var tempMessage = ""
-
         if (current.enterTime == null) {
-            tempMessage = "Errore: Ingresso non registrato. Impossibile salvare."
-            _uiState.update { it.copy(message = tempMessage) }
+            _uiState.update { it.copy(message = "Devi prima registrare l'ingresso per questa sessione!") }
             return
         }
 
-        val finalTotalWorked = calculateTotalWorkedTime(current.enterTime, current.pauses, confirmedExitTime)
+        var adjustedExitTime = rawConfirmedExitTime
+        if (rawConfirmedExitTime.before(current.enterTime)) {
+            val calendar = Calendar.getInstance()
+            calendar.time = rawConfirmedExitTime
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            adjustedExitTime = calendar.time
+            Log.d("HomeViewModel", "Exit time ${formatTime(rawConfirmedExitTime)} was before entry ${formatTime(current.enterTime)}. Adjusted to next day: ${formatTime(adjustedExitTime)}")
+        }
+
+        val finalTotalWorked = calculateTotalWorkedTime(current.enterTime, current.pauses, adjustedExitTime)
+        var tempMessage: String
 
         if (finalTotalWorked != null) {
             val entryToSave = WorkHistoryEntry(
-                id = current.enterTime.time.toString(), // Assuming enterTime is non-null due to the check above
+                id = current.enterTime.time.toString(), // Consider a more robust ID
                 enterTime = current.enterTime.time,
                 pauses = current.pauses.map { SerializablePausePair(it.start?.time, it.end?.time) },
-                exitTime = confirmedExitTime.time,
+                exitTime = adjustedExitTime.time,
                 totalWorkedTime = finalTotalWorked,
                 dailyHoursTarget = current.dailyHours
             )
             try {
                 workHistoryRepository.addWorkHistoryEntry(entryToSave)
-                Log.d("HomeViewModel", "Work history entry saved to DataStore. ID: ${entryToSave.id}")
                 workHistoryRepository.saveCurrentSession(null, null, null) // Clear active session
-                Log.d("HomeViewModel", "Active session cleared after saving to history.")
-                tempMessage = "Sessione salvata: ${formatTime(confirmedExitTime)}. Totale: $finalTotalWorked"
+                tempMessage = "Sessione salvata. Totale: $finalTotalWorked"
+                Log.d("HomeViewModel", "Work history entry saved. ID: ${entryToSave.id}. Active session cleared.")
                 notificationPollingJob?.cancel()
                 Log.d("HomeViewModel", "Polling stopped due to session finalization.")
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error saving work history entry or clearing session.", e)
                 tempMessage = "Errore durante il salvataggio della sessione."
+                Log.e("HomeViewModel", "Error saving work history or clearing session", e)
             }
         } else {
-            tempMessage = "Uscita registrata, ma errore nel calcolo del totale lavorato."
+            tempMessage = "Uscita registrata, ma impossibile calcolare il totale lavorato."
+            Log.w("HomeViewModel", "Could not calculate total worked time. Enter: ${formatTime(current.enterTime)}, Exit: ${formatTime(adjustedExitTime)}")
         }
 
         _uiState.update {
             it.copy(
-                // enterTime and pauses are NOT reset here, as per requirement
-                exitTime = confirmedExitTime,
+                exitTime = adjustedExitTime, // Show the (potentially adjusted) exit time
                 totalWorkedTime = finalTotalWorked,
                 calculatedExitTime = null, // Session is now complete
                 message = tempMessage
+                // enterTime and pauses remain to show the completed session details
             )
         }
+        // No recalculateAndUpdateUi() here, as we've explicitly set the final state.
     }
 
 
     override fun handleTimeButtonPress(buttonType: ButtonType) {
         val currentTime = Date()
-        val currentUiStateValue = _uiState.value // Use a consistent snapshot for this operation
+        val currentUiStateValue = _uiState.value // For read-only access to current state
 
         when (buttonType) {
             ButtonType.Enter -> {
                 _uiState.update {
+                    // This is where UI is reset for a new session
                     it.copy(
                         enterTime = currentTime,
                         pauses = emptyList(),
                         exitTime = null,
                         totalWorkedTime = null,
-                        calculatedExitTime = null,
+                        calculatedExitTime = null, // Will be recalculated
                         message = "Nuovo Ingresso registrato: ${formatTime(currentTime)}"
                     )
                 }
@@ -448,9 +455,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             }
             ButtonType.Exit -> {
                 val currentEnterTime = _uiState.value.enterTime
-                if (currentEnterTime != null && selectedDate.before(currentEnterTime)) {
-                    _uiState.update { it.copy(message = "L'orario di uscita non può essere prima dell'ingresso.") }
-                } else if (currentEnterTime == null) {
+                if (currentEnterTime == null) {
                      _uiState.update { it.copy(message = "Devi prima registrare l'ingresso.") }
                 } else {
                     // Directly finalize and save if Exit time is edited
@@ -581,10 +586,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             if (currentPause.start != null && currentPause.end == null) {
                 return@update current.copy(message = "Pausa ${index + 1} già iniziata.")
             }
-            // Prevent starting a new pause if the previous one isn't complete (unless it's the first pause)
-            if (index > 0 && newPauses[index-1].end == null && newPauses[index-1].start != null) {
-                 return@update current.copy(message = "Completa la pausa precedente prima di iniziarne una nuova.")
+             if (currentPause.start != null && currentPause.end != null && currentTime.before(currentPause.end)) {
+                 return@update current.copy(message = "Non puoi iniziare una nuova pausa prima della fine della precedente.")
             }
+
 
             newPauses[index] = currentPause.copy(start = currentTime, end = null)
             current.copy(pauses = newPauses, message = "Inizio pausa ${index + 1}: ${formatTime(currentTime)}")
@@ -596,7 +601,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     override fun handlePauseEnd(index: Int) {
         val currentTime = Date()
         _uiState.update { current ->
-            if (current.enterTime == null) { // Should not happen if pause was started, but good check
+             if (current.enterTime == null) { // Should not happen if pause button is enabled correctly
                 return@update current.copy(message = "Errore: Ingresso non registrato.")
             }
             if (current.exitTime != null) {
@@ -613,7 +618,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 return@update current.copy(message = "Devi prima iniziare la pausa ${index + 1}.")
             }
             if (currentTime.before(currentPause.start)) {
-                // This case should ideally be handled by the time picker validation if one is used for pause end
+                // This case should ideally be prevented by button logic or handled more gracefully
                 return@update current.copy(message = "La fine pausa non può essere prima dell'inizio.")
             }
             newPauses[index] = currentPause.copy(end = currentTime)
@@ -626,10 +631,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     override fun onCleared() {
         super.onCleared()
         notificationPollingJob?.cancel()
-        Log.d("HomeViewModel", "onCleared called, notification polling job cancelled. Attempting to persist final session state if active.")
+        Log.d("HomeViewModel", "onCleared called, notification polling job cancelled.")
         // Persist only if there's an active, uncompleted session
         if (_uiState.value.enterTime != null && _uiState.value.exitTime == null) {
-            viewModelScope.launch { persistCurrentSessionState() }
+            Log.d("HomeViewModel", "Attempting to persist final session state onCleared.")
+            // Run this synchronously if needed, or manage with a different scope if viewModelScope is cancelling
+            // For simplicity, launching in viewModelScope, but be aware of its lifecycle.
+             viewModelScope.launch { persistCurrentSessionState() }
         }
     }
 }
