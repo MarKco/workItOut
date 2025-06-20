@@ -382,7 +382,20 @@ fun PausePairRow(
                 )
             )
         }
-        Text("Pausa ${index + 1}", modifier = Modifier.padding(start = 8.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Text("Pausa ${index + 1}")
+            if (pause.durationMinutes != null && pause.durationMinutes > 0) {
+                Text(
+                    text = "Durata: ${pause.durationMinutes} min",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp) 
+                )
+            }
+        }
     }
 }
 
