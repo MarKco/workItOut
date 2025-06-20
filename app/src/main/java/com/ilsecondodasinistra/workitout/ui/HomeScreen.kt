@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.workitout.ui
 
+//import androidx.lifecycle.viewmodel.compose.viewModel // Already imported via IHomeViewModel
 import IHomeViewModel
 import android.Manifest
 import android.content.Context
@@ -56,7 +57,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
-//import androidx.lifecycle.viewmodel.compose.viewModel // Already imported via IHomeViewModel
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
@@ -65,8 +65,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: IHomeViewModel)
-{
+    homeViewModel: IHomeViewModel
+) {
     val uiState by homeViewModel.uiState.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -333,7 +333,7 @@ private fun showLocalNotification(context: Context, title: String, body: String)
                 ActivityCompat.requestPermissions(
                     activity,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    0, 
+                    0,
                 )
             }
         }
@@ -359,7 +359,7 @@ fun HomeScreenPreview_Initial() {
                 toLunchTime = null,
                 fromLunchTime = null,
                 exitTime = null,
-                calculatedExitTime = null, 
+                calculatedExitTime = null,
                 totalWorkedTime = null
             )
         }
