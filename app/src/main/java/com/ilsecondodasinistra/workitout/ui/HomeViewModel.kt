@@ -2,20 +2,21 @@ package com.ilsecondodasinistra.workitout.ui
 
 import IHomeViewModel
 import android.app.Application
-import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
-import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID // Assuming this is accessible
-import com.ilsecondodasinistra.workitout.NOTIFICATION_ID     // Assuming this is accessible
+import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository
+import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
+import com.ilsecondodasinistra.workitout.data.HistoryRepository
+// Import your WorkHistoryRepository and WorkHistoryEntry
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -23,25 +24,19 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-// Constants for SharedPreferences
-private const val PREFS_NAME = "workitout_settings_prefs"
-private const val KEY_DAILY_HOURS = "daily_hours"
-private const val KEY_CURRENT_DAY_PREFIX = "current_day_"
-private const val KEY_ENTER_TIME = "enter_time"
-private const val KEY_TO_LUNCH_TIME = "to_lunch_time"
-private const val KEY_FROM_LUNCH_TIME = "from_lunch_time"
-private const val KEY_EXIT_TIME = "exit_time" // Added for persistent exit time
+// Removed SharedPreferences constants
 
 data class HomeUiState(
     val enterTime: Date? = null,
     val toLunchTime: Date? = null,
     val fromLunchTime: Date? = null,
-    val exitTime: Date? = null, // Will now persist in UI after exit
+    val exitTime: Date? = null, // This will be set only when Exit is pressed
     val calculatedExitTime: Date? = null,
     val totalWorkedTime: String? = null,
-    val dailyHours: Double = 8.0,
+    val dailyHours: Double = 8.0, // Default, will be loaded from DataStore
     val message: String = "",
     val timePickerEvent: TimePickerEvent? = null
 )
@@ -61,8 +56,8 @@ sealed class ButtonType(val text: String) {
 
 class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver, IHomeViewModel {
 
-    private val sharedPreferences: SharedPreferences =
-        application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Use WorkHistoryRepository for DataStore access
+    private val workHistoryRepository = DataStoreHistoryRepository(application)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -70,85 +65,33 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     private var notificationPollingJob: Job? = null
 
     init {
-        loadInitialData()
+        loadDailyHoursFromDataStore()
+        // No longer loading a "current day progress" from SharedPreferences.
+        // The UI starts fresh for timings.
     }
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        Log.d("HomeViewModel", "onResume called, reloading daily hours.")
-        loadDailyHoursFromPrefs()
+        Log.d("HomeViewModel", "onResume called, reloading daily hours if necessary.")
+        loadDailyHoursFromDataStore() // Ensure daily hours are up-to-date
     }
 
-    private fun loadDailyHoursFromPrefs() {
+    private fun loadDailyHoursFromDataStore() {
         viewModelScope.launch {
-            val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
+            val loadedDailyHours = workHistoryRepository.getDailyHours().first() // Assuming getDailyHours returns Flow<Double>
             if (_uiState.value.dailyHours != loadedDailyHours) {
                 _uiState.update {
                     it.copy(dailyHours = loadedDailyHours)
                 }
-                recalculateAndUpdateUi()
-                Log.d("HomeViewModel", "Daily hours reloaded and UI updated: $loadedDailyHours")
+                recalculateAndUpdateUi() // Recalculate if daily hours changed
+                Log.d("HomeViewModel", "Daily hours loaded from DataStore: $loadedDailyHours")
             } else {
-                Log.d("HomeViewModel", "Daily hours unchanged: $loadedDailyHours")
+                Log.d("HomeViewModel", "Daily hours unchanged from DataStore: $loadedDailyHours")
             }
         }
     }
 
-    private fun loadInitialData() {
-        viewModelScope.launch {
-            val savedEnterTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", -1L)
-            val savedToLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", -1L)
-            val savedFromLunchTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", -1L)
-            val savedExitTimeMs = sharedPreferences.getLong("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME", -1L) // Load saved exit time
-
-            val initialEnterTime = if (savedEnterTimeMs != -1L) Date(savedEnterTimeMs) else null
-            val initialToLunchTime = if (savedToLunchTimeMs != -1L) Date(savedToLunchTimeMs) else null
-            val initialFromLunchTime = if (savedFromLunchTimeMs != -1L) Date(savedFromLunchTimeMs) else null
-            val initialExitTime = if (savedExitTimeMs != -1L) Date(savedExitTimeMs) else null // Assign loaded exit time
-
-            val loadedDailyHours = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
-
-            _uiState.update {
-                it.copy(
-                    dailyHours = loadedDailyHours,
-                    enterTime = initialEnterTime,
-                    toLunchTime = initialToLunchTime,
-                    fromLunchTime = initialFromLunchTime,
-                    exitTime = initialExitTime, // Set exitTime in UI state
-                    message = if (initialEnterTime != null && initialExitTime == null) "Giorno lavorativo ripreso." else if (initialExitTime != null) "Giorno precedente completato." else ""
-                )
-            }
-            recalculateAndUpdateUi()
-            Log.d("HomeViewModel", "Initial data loaded. Daily Hours: $loadedDailyHours, Exit Time: ${initialExitTime?.let { formatTime(it) }}")
-        }
-    }
-
-    private fun saveCurrentDayProgress() {
-        val currentState = _uiState.value
-        with(sharedPreferences.edit()) {
-            currentState.enterTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME", it.time) }
-                ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME")
-            currentState.toLunchTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME", it.time) }
-                ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
-            currentState.fromLunchTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME", it.time) }
-                ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
-            currentState.exitTime?.let { putLong("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME", it.time) } // Save exit time
-                ?: remove("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME")
-            apply()
-        }
-        Log.d("HomeViewModel", "Current day progress saved. Exit Time: ${currentState.exitTime?.let { formatTime(it) }}")
-    }
-
-    private fun clearCurrentDayProgressFromPrefs() {
-        with(sharedPreferences.edit()) {
-            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_ENTER_TIME")
-            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_TO_LUNCH_TIME")
-            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_FROM_LUNCH_TIME")
-            remove("${KEY_CURRENT_DAY_PREFIX}$KEY_EXIT_TIME") // Clear exit time
-            apply()
-        }
-        Log.d("HomeViewModel", "Current day progress cleared from prefs.")
-    }
+    // Removed loadInitialData, saveCurrentDayProgress, clearCurrentDayProgressFromPrefs
 
     private fun calculateExpectedExitTime(
         enterTime: Date?,
@@ -195,11 +138,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private fun recalculateAndUpdateUi() {
         val current = _uiState.value
-        val newCalculatedExitTime = if (current.exitTime == null) { // Only calculate if day is not yet complete
+        // Only calculate expected exit time if no actual exit time is set for the current shift
+        val newCalculatedExitTime = if (current.exitTime == null && current.enterTime != null) {
             calculateExpectedExitTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.dailyHours)
         } else {
-            null // If day is complete, no need for expected exit time
+            null // If exitTime is set, or no enterTime, no need for calculated one.
         }
+        // Total worked time is calculated if an exit time is present for the current shift
         val newTotalWorkedTime = calculateTotalWorkedTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.exitTime)
 
         _uiState.update {
@@ -208,25 +153,32 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 totalWorkedTime = newTotalWorkedTime
             )
         }
-        // Save progress if there's any relevant time set (day active or completed)
-        if (current.enterTime != null) {
-            saveCurrentDayProgress()
-        }
+        // No longer calling saveCurrentDayProgress() here
         startOrUpdateNotificationPolling(newCalculatedExitTime)
     }
 
+
     private fun startOrUpdateNotificationPolling(expectedExitTime: Date?) {
         notificationPollingJob?.cancel()
-        if (expectedExitTime == null) return
+        // Only start polling if there's an expected exit time and no actual exit time has been recorded yet for the current shift
+        if (expectedExitTime == null || _uiState.value.exitTime != null) {
+            Log.d("HomeViewModel", "Notification polling stopped or not started. Expected: $expectedExitTime, Actual Exit: ${_uiState.value.exitTime}")
+            return
+        }
 
+        Log.d("HomeViewModel", "Starting notification polling for: ${formatTime(expectedExitTime)}")
         notificationPollingJob = viewModelScope.launch {
             var notified = false
-            while (isActive && !notified) {
+            while (isActive && !notified && _uiState.value.exitTime == null) { // Also check if an exit time has been recorded
                 if (System.currentTimeMillis() >= expectedExitTime.time) {
                     _uiState.update { it.copy(message = "NOTIFY_EXIT_TIME:${formatTime(expectedExitTime)}") }
                     notified = true
+                    Log.d("HomeViewModel", "Exit time notification triggered for: ${formatTime(expectedExitTime)}")
                 }
-                delay(10000L)
+                delay(10000L) // Check every 10 seconds
+            }
+            if (notified || _uiState.value.exitTime != null) {
+                Log.d("HomeViewModel", "Notification polling loop ended. Notified: $notified, ExitRecorded: ${_uiState.value.exitTime != null}")
             }
         }
     }
@@ -237,27 +189,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         var newEnterTime = currentUiState.enterTime
         var newToLunchTime = currentUiState.toLunchTime
         var newFromLunchTime = currentUiState.fromLunchTime
-        var newExitTime = currentUiState.exitTime // Preserve existing exit time
+        var newExitTime = currentUiState.exitTime // Should be null unless an Exit was just pressed
         var tempMessage = ""
 
         when (buttonType) {
             ButtonType.Enter -> {
-                // If a previous day was completed (exitTime is not null), or if it's a fresh app start (enterTime is null)
-                // then clear everything for the new day.
-                if (currentUiState.exitTime != null || currentUiState.enterTime == null) {
-                    clearCurrentDayProgressFromPrefs() // Clear all stored times
-                    newEnterTime = currentTime
-                    newToLunchTime = null
-                    newFromLunchTime = null
-                    newExitTime = null      // Explicitly null for a new day's start
-                    tempMessage = "Ingresso registrato: ${formatTime(newEnterTime)}"
-                } else { // Handle re-pressing "Ingresso" on an active day (overwrite)
-                    newEnterTime = currentTime
-                    newToLunchTime = null
-                    newFromLunchTime = null
-                    newExitTime = null // Clear exit if re-entering
-                    tempMessage = "Ingresso sovrascritto: ${formatTime(newEnterTime)}"
-                }
+                // Always starts a new shift. Clear previous partial shift data from UI state.
+                newEnterTime = currentTime
+                newToLunchTime = null
+                newFromLunchTime = null
+                newExitTime = null // Explicitly null for a new shift's start
+                tempMessage = "Nuovo Ingresso registrato: ${formatTime(newEnterTime)}"
+                Log.d("HomeViewModel", "Enter pressed. New shift started at ${formatTime(newEnterTime)}")
             }
             ButtonType.ToLunch -> {
                 if (newEnterTime == null) {
@@ -281,31 +224,68 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             }
             ButtonType.Exit -> {
                 if (newEnterTime == null) {
-                    tempMessage = "Devi prima registrare l'ingresso!"
+                    tempMessage = "Devi prima registrare l'ingresso per questa sessione!"
                 } else {
-                    newExitTime = currentTime // Set current exit time
+                    newExitTime = currentTime // Set current exit time for this shift
                     val finalTotalWorked = calculateTotalWorkedTime(newEnterTime, newToLunchTime, newFromLunchTime, newExitTime)
                     tempMessage = "Uscita registrata: ${formatTime(newExitTime)}. Totale: $finalTotalWorked"
+                    Log.d("HomeViewModel", "Exit pressed at ${formatTime(newExitTime)}")
 
                     if (finalTotalWorked != null) {
-                        val record = mapOf(
-                            "enterTime" to newEnterTime?.time,
-                            "toLunchTime" to newToLunchTime?.time,
-                            "fromLunchTime" to newFromLunchTime?.time,
-                            "exitTime" to newExitTime?.time,
-                            "totalWorkedTime" to finalTotalWorked,
-                            "dailyHours" to _uiState.value.dailyHours
+                        val entryToSave = WorkHistoryEntry(
+                            id = newEnterTime.time.toString(), // Using enter time as ID, ensure WorkHistoryEntry expects String
+                            enterTime = newEnterTime.time,
+                            toLunchTime = newToLunchTime?.time,
+                            fromLunchTime = newFromLunchTime?.time,
+                            exitTime = newExitTime.time, // Non-null because we just set it
+                            totalWorkedTime = finalTotalWorked,
+                            dailyHoursTarget = _uiState.value.dailyHours // Save the daily hours setting at the time of completion
                         )
-                        LocalHistoryRepository.addRecord(record)
-                        Log.d("HomeViewModel", "Day record saved to LocalHistoryRepository.")
-                        // DO NOT clear newEnterTime, newToLunchTime, newFromLunchTime
-                        // DO NOT call clearCurrentDayProgressFromPrefs() here.
-                        // saveCurrentDayProgress() will be called by recalculateAndUpdateUi with the new exitTime.
+                        viewModelScope.launch {
+                            workHistoryRepository.addWorkHistoryEntry(entryToSave)
+                            Log.d("HomeViewModel", "Work history entry saved to DataStore. ID: ${entryToSave.id}")
+                            // Reset UI state for the next shift after successful save
+                            _uiState.update {
+                                it.copy(
+                                    // Keep the times from the shift that was just saved
+                                    enterTime = newEnterTime, // This is currentUiState.enterTime or the edited enterTime
+                                    toLunchTime = newToLunchTime, // This is currentUiState.toLunchTime or the edited toLunchTime
+                                    fromLunchTime = newFromLunchTime, // This is currentUiState.fromLunchTime or the edited fromLunchTime
+                                    exitTime = newExitTime, // This is the currentTime when Exit was pressed or the edited exitTime
+                                    totalWorkedTime = finalTotalWorked, // This is the calculated total for the completed shift
+                                    calculatedExitTime = null, // No longer need a calculated exit time as the shift is done
+                                    message = tempMessage // Keep the confirmation message
+                                )
+                            }
+                            // No need to call recalculateAndUpdateUi() immediately after reset,
+                            // as all relevant values are nulled.
+                            // Notification polling will be stopped by recalculateAndUpdateUi if current.exitTime is null
+                            // or if current.enterTime is null.
+                            // We need to explicitly call it here to ensure polling stops if it was running.
+                             recalculateAndUpdateUi()
+
+
+                        }
                     } else {
                         tempMessage = "Uscita registrata, ma impossibile calcolare il totale lavorato."
                         // Do not clear newExitTime here, let it be saved as is for transparency if calculation fails.
                         // Or revert to previous newExitTime state (currentUiState.exitTime) if preferred.
+                        // For now, we will update the UI with the exit time, even if total calculation failed
+                         _uiState.update {
+                            it.copy(
+                                enterTime = newEnterTime, // Keep enter time
+                                toLunchTime = newToLunchTime, // Keep toLunch
+                                fromLunchTime = newFromLunchTime, // Keep fromLunch
+                                exitTime = newExitTime, // Show the exit time that was problematic
+                                message = tempMessage
+                                // totalWorkedTime will be null, calculatedExitTime will be null
+                            )
+                        }
+                        recalculateAndUpdateUi() // Update calculations (which will likely be null)
                     }
+                    // The _uiState.update for successful save is now inside the coroutine.
+                    // If save fails or total is null, we only update the message and potentially the exit time.
+                    return // Return to avoid the general _uiState.update below for Exit case
                 }
             }
         }
@@ -315,13 +295,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 enterTime = newEnterTime,
                 toLunchTime = newToLunchTime,
                 fromLunchTime = newFromLunchTime,
-                exitTime = newExitTime, // Persist exitTime in UI
+                // exitTime is only set definitively on Exit press and handled above for saving.
+                // For other button presses, if an exit time was somehow present, it should be cleared
+                // or managed based on whether a new shift is starting.
+                // With Enter now always clearing exitTime, this should be fine.
+                exitTime = if (buttonType == ButtonType.Enter) null else it.exitTime,
                 message = tempMessage
             )
         }
-        // The specific reset block for ButtonType.Exit that was here is removed.
-        recalculateAndUpdateUi() // This will call saveCurrentDayProgress with the latest state
+        recalculateAndUpdateUi()
     }
+
 
     override fun handleTimeEditRequest(buttonType: ButtonType) {
         val current = _uiState.value
@@ -330,7 +314,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             ButtonType.Enter -> current.enterTime
             ButtonType.ToLunch -> current.toLunchTime
             ButtonType.FromLunch -> current.fromLunchTime
-            ButtonType.Exit -> current.exitTime
+            ButtonType.Exit -> current.exitTime // User can edit the exit time before confirming the actual "Exit"
         }
         timeToEdit?.let { calendar.time = it }
 
@@ -354,12 +338,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         }
         val selectedDate = calendar.time
         var tempMessage = ""
-        var editedExitTime: Date? = _uiState.value.exitTime // Hold current exit time
 
         _uiState.update { current ->
             var newEnterTime = current.enterTime
             var newToLunchTime = current.toLunchTime
             var newFromLunchTime = current.fromLunchTime
+            var newExitTime = current.exitTime // This is the value that might be edited
 
             when (buttonType) {
                 ButtonType.Enter -> {
@@ -382,12 +366,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         tempMessage = "Fine pausa modificata: ${formatTime(newFromLunchTime)}"
                     }
                 }
-                ButtonType.Exit -> {
+                ButtonType.Exit -> { // Editing the proposed/actual exit time
                      if (newEnterTime != null && selectedDate.before(newEnterTime)) {
                         tempMessage = "L'orario di uscita non può essere prima dell'ingresso."
                     } else {
-                        editedExitTime = selectedDate // Update the local exit time
-                        tempMessage = "Orario di uscita modificato: ${formatTime(editedExitTime)}. Premi 'Uscita' per salvare le modifiche e completare il giorno."
+                        newExitTime = selectedDate // Update the UI state's exitTime
+                        tempMessage = "Orario di uscita modificato: ${formatTime(newExitTime)}. Premi 'Uscita' per salvare."
                     }
                 }
             }
@@ -395,13 +379,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 enterTime = newEnterTime,
                 toLunchTime = newToLunchTime,
                 fromLunchTime = newFromLunchTime,
-                exitTime = if (buttonType == ButtonType.Exit) editedExitTime else current.exitTime, // Apply edited exit time
+                exitTime = newExitTime, // Apply the edited time to UI state for all cases
                 message = tempMessage,
                 timePickerEvent = null
             )
         }
-        recalculateAndUpdateUi()
+        recalculateAndUpdateUi() // Recalculate based on potentially new times
     }
+
 
     override fun onDialogDismissed() {
         _uiState.update { it.copy(timePickerEvent = null) }
@@ -424,5 +409,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     override fun onCleared() {
         super.onCleared()
         notificationPollingJob?.cancel()
+        Log.d("HomeViewModel", "onCleared called, notification polling job cancelled.")
     }
 }

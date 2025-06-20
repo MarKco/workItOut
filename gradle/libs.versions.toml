@@ -16,7 +16,8 @@ activityCompose = "1.10.1"
 composeBom = "2025.06.00"
 lifecycleRuntimeKtxVersion = "2.9.1"
 accompanistPermissions = "0.37.3"
-
+datastoreCore = "1.1.7"
+kotlinxSerializationJsonVersion = "1.6.3"
 
 [libraries]
 androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -49,6 +50,9 @@ ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 ui-accompanist-user-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastoreCore" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastoreCore" } # Added this line
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJsonVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
