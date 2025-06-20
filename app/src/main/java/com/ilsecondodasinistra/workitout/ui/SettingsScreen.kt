@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -195,7 +196,10 @@ fun SettingsScreen(
                     contentPadding = PaddingValues(vertical = 8.dp), // Padding inside the list, top and bottom
                     verticalArrangement = Arrangement.spacedBy(12.dp), // Spacing between history items
                 ) {
-                    items(uiState.history, key = { it["id"].toString() + (it["enterTime"] as? Long ?: 0L) }) { record ->
+                    itemsIndexed(
+                        items = uiState.history,
+                        key = { index, _ -> "history_item_$index" }
+                    ) { _, record ->
                         HistoryItemCard(record = record, settingsViewModel = settingsViewModel)
                     }
                 }
