@@ -7,6 +7,8 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository
+import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +38,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    // Use DataStoreHistoryRepository for persistent history
+    private val workHistoryRepository = DataStoreHistoryRepository(application)
+
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -44,21 +49,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         loadDailyHours()
-        loadHistory()
+        observeHistory()
+    }
+
+    private fun observeHistory() {
+        viewModelScope.launch {
+            workHistoryRepository.getAllHistoryFlow().collect { entryList ->
+                val mapped = entryList.map { entry -> workHistoryEntryToMap(entry) }
+                _uiState.update { it.copy(history = mapped) }
+                Log.d("SettingsViewModel", "History loaded from DataStore with ${'$'}{mapped.size} items.")
+            }
+        }
+    }
+
+    // Convert WorkHistoryEntry to Map<String, Any?> for UI compatibility
+    private fun workHistoryEntryToMap(entry: WorkHistoryEntry): Map<String, Any?> {
+        return mapOf(
+            "id" to entry.id,
+            "enterTime" to entry.enterTime,
+            "toLunchTime" to entry.toLunchTime,
+            "fromLunchTime" to entry.fromLunchTime,
+            "exitTime" to entry.exitTime,
+            "totalWorkedTime" to entry.totalWorkedTime,
+            "dailyHours" to entry.dailyHoursTarget
+        )
     }
 
     private fun loadDailyHours() {
         val loadedHoursDouble = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
         _uiState.update { it.copy(dailyHoursInputString = formatDoubleForInput(loadedHoursDouble)) }
         Log.d("SettingsViewModel", "Loaded daily hours: $loadedHoursDouble, string: ${_uiState.value.dailyHoursInputString}")
-    }
-
-    fun loadHistory() {
-        viewModelScope.launch {
-            val currentHistory = LocalHistoryRepository.history
-            _uiState.update { it.copy(history = currentHistory) }
-            Log.d("SettingsViewModel", "History loaded with ${currentHistory.size} items.")
-        }
     }
 
     fun onDailyHoursInputChange(newInput: String) {
@@ -112,10 +132,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun confirmClearHistory() {
         viewModelScope.launch {
             try {
-                LocalHistoryRepository.clearHistory()
+                workHistoryRepository.clearAllHistory()
                 _uiState.update {
                     it.copy(
-                        history = LocalHistoryRepository.history, // Refresh
+                        history = emptyList(), // Clear the history in UI
                         message = "Storico ripulito con successo!",
                         showClearConfirmDialog = false
                     )
