@@ -54,12 +54,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx) // For lifecycleScope, collectAsStateWithLifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx) // For viewModelScope
 
-    // Room Persistence
-    val room_version = "2.6.1"
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp("androidx.room:room-compiler:$room_version") // Explicit KSP dependency
-
     // Tooling for previews
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
