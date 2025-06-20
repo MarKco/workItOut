@@ -27,8 +27,6 @@ fun getPreviewHomeUiState(
 ): HomeUiState {
     return HomeUiState(
         enterTime = enterTime,
-        toLunchTime = toLunchTime,
-        fromLunchTime = fromLunchTime,
         exitTime = exitTime,
         calculatedExitTime = calculatedExitTime,
         totalWorkedTime = totalWorkedTime,
@@ -75,5 +73,25 @@ class PreviewHomeViewModel : IHomeViewModel { // Or just create a class with the
             val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
             sdf.format(it)
         } ?: "N/A"
+    }
+
+    override fun handlePauseStart(index: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handlePauseEnd(index: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handlePauseEditStart(index: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handlePauseEditEnd(index: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handleAddPause() {
+        TODO("Not yet implemented")
     }
 }

@@ -64,14 +64,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     // Convert WorkHistoryEntry to Map<String, Any?> for UI compatibility
     private fun workHistoryEntryToMap(entry: WorkHistoryEntry): Map<String, Any?> {
+        // For backward compatibility, show the first pause as toLunchTime/fromLunchTime, and all pauses as a list
+        val firstPause = entry.pauses.firstOrNull()
         return mapOf(
             "id" to entry.id,
             "enterTime" to entry.enterTime,
-            "toLunchTime" to entry.toLunchTime,
-            "fromLunchTime" to entry.fromLunchTime,
+            "toLunchTime" to firstPause?.start,
+            "fromLunchTime" to firstPause?.end,
             "exitTime" to entry.exitTime,
             "totalWorkedTime" to entry.totalWorkedTime,
-            "dailyHours" to entry.dailyHoursTarget
+            "dailyHours" to entry.dailyHoursTarget,
+            "pauses" to entry.pauses // List<SerializablePausePair>
         )
     }
 

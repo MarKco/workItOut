@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository
 import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
 import com.ilsecondodasinistra.workitout.data.HistoryRepository
+import com.ilsecondodasinistra.workitout.data.SerializablePausePair
 // Import your WorkHistoryRepository and WorkHistoryEntry
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,10 +30,14 @@ import java.util.concurrent.TimeUnit
 
 // Removed SharedPreferences constants
 
+data class PausePair(
+    val start: Date? = null,
+    val end: Date? = null
+)
+
 data class HomeUiState(
     val enterTime: Date? = null,
-    val toLunchTime: Date? = null,
-    val fromLunchTime: Date? = null,
+    val pauses: List<PausePair> = emptyList(),
     val exitTime: Date? = null, // This will be set only when Exit is pressed
     val calculatedExitTime: Date? = null,
     val totalWorkedTime: String? = null,
@@ -95,19 +100,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private fun calculateExpectedExitTime(
         enterTime: Date?,
-        toLunchTime: Date?,
-        fromLunchTime: Date?,
+        pauses: List<PausePair>,
         dailyHours: Double
     ): Date? {
         if (enterTime != null && dailyHours > 0) {
             val enterMs = enterTime.time
             val totalWorkMilliseconds = (dailyHours * 60 * 60 * 1000).toLong()
-            var lunchBreakMilliseconds = 0L
+            var totalPauseTime = 0L
 
-            if (toLunchTime != null && fromLunchTime != null && fromLunchTime.after(toLunchTime)) {
-                lunchBreakMilliseconds = fromLunchTime.time - toLunchTime.time
+            // Calculate total pause time
+            for (pause in pauses) {
+                if (pause.start != null && pause.end != null && pause.end.after(pause.start)) {
+                    totalPauseTime += pause.end.time - pause.start.time
+                }
             }
-            val newCalculatedExitMs = enterMs + totalWorkMilliseconds + lunchBreakMilliseconds
+
+            val newCalculatedExitMs = enterMs + totalWorkMilliseconds + totalPauseTime
             return Date(newCalculatedExitMs)
         }
         return null
@@ -115,18 +123,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private fun calculateTotalWorkedTime(
         enterTime: Date?,
-        toLunchTime: Date?,
-        fromLunchTime: Date?,
+        pauses: List<PausePair>,
         exitTime: Date?
     ): String? {
         if (enterTime != null && exitTime != null && exitTime.after(enterTime)) {
             var totalMs = exitTime.time - enterTime.time
-            var lunchMs = 0L
+            var totalPauseTime = 0L
 
-            if (toLunchTime != null && fromLunchTime != null && fromLunchTime.after(toLunchTime)) {
-                lunchMs = fromLunchTime.time - toLunchTime.time
+            // Calculate total pause time
+            for (pause in pauses) {
+                if (pause.start != null && pause.end != null && pause.end.after(pause.start)) {
+                    totalPauseTime += pause.end.time - pause.start.time
+                }
             }
-            totalMs -= lunchMs
+            totalMs -= totalPauseTime
             if (totalMs < 0) totalMs = 0
 
             val totalHours = TimeUnit.MILLISECONDS.toHours(totalMs)
@@ -140,12 +150,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         val current = _uiState.value
         // Only calculate expected exit time if no actual exit time is set for the current shift
         val newCalculatedExitTime = if (current.exitTime == null && current.enterTime != null) {
-            calculateExpectedExitTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.dailyHours)
+            calculateExpectedExitTime(current.enterTime, current.pauses, current.dailyHours)
         } else {
             null // If exitTime is set, or no enterTime, no need for calculated one.
         }
         // Total worked time is calculated if an exit time is present for the current shift
-        val newTotalWorkedTime = calculateTotalWorkedTime(current.enterTime, current.toLunchTime, current.fromLunchTime, current.exitTime)
+        val newTotalWorkedTime = calculateTotalWorkedTime(current.enterTime, current.pauses, current.exitTime)
 
         _uiState.update {
             it.copy(
@@ -187,8 +197,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         val currentTime = Date()
         var currentUiState = _uiState.value
         var newEnterTime = currentUiState.enterTime
-        var newToLunchTime = currentUiState.toLunchTime
-        var newFromLunchTime = currentUiState.fromLunchTime
+        var newPauses = currentUiState.pauses.toMutableList()
         var newExitTime = currentUiState.exitTime // Should be null unless an Exit was just pressed
         var tempMessage = ""
 
@@ -196,8 +205,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             ButtonType.Enter -> {
                 // Always starts a new shift. Clear previous partial shift data from UI state.
                 newEnterTime = currentTime
-                newToLunchTime = null
-                newFromLunchTime = null
+                newPauses.clear()
                 newExitTime = null // Explicitly null for a new shift's start
                 tempMessage = "Nuovo Ingresso registrato: ${formatTime(newEnterTime)}"
                 Log.d("HomeViewModel", "Enter pressed. New shift started at ${formatTime(newEnterTime)}")
@@ -205,21 +213,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             ButtonType.ToLunch -> {
                 if (newEnterTime == null) {
                     tempMessage = "Devi prima registrare l'ingresso!"
-                } else if (newToLunchTime != null && newFromLunchTime == null) {
+                } else if (newPauses.isNotEmpty() && newPauses.last().end == null) {
                     tempMessage = "Sei già in pausa. Registra il rientro."
                 } else {
-                    newToLunchTime = currentTime
-                    tempMessage = "Inizio pausa: ${formatTime(newToLunchTime)}"
+                    // Start a new pause
+                    newPauses.add(PausePair(start = currentTime))
+                    tempMessage = "Inizio pausa: ${formatTime(currentTime)}"
                 }
             }
             ButtonType.FromLunch -> {
-                if (newToLunchTime == null) {
+                if (newPauses.isEmpty() || newPauses.last().end != null) {
                     tempMessage = "Devi prima registrare l'inizio della pausa!"
-                } else if (currentTime.before(newToLunchTime)) {
+                } else if (currentTime.before(newPauses.last().start)) {
                     tempMessage = "Il rientro non può essere prima dell'inizio pausa!"
                 } else {
-                    newFromLunchTime = currentTime
-                    tempMessage = "Fine pausa: ${formatTime(newFromLunchTime)}"
+                    // End the last pause (replace the last PausePair)
+                    val lastIdx = newPauses.lastIndex
+                    newPauses[lastIdx] = newPauses[lastIdx].copy(end = currentTime)
+                    tempMessage = "Fine pausa: ${formatTime(currentTime)}"
                 }
             }
             ButtonType.Exit -> {
@@ -227,19 +238,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     tempMessage = "Devi prima registrare l'ingresso per questa sessione!"
                 } else {
                     newExitTime = currentTime // Set current exit time for this shift
-                    val finalTotalWorked = calculateTotalWorkedTime(newEnterTime, newToLunchTime, newFromLunchTime, newExitTime)
+                    val finalTotalWorked = calculateTotalWorkedTime(newEnterTime, newPauses, newExitTime)
                     tempMessage = "Uscita registrata: ${formatTime(newExitTime)}. Totale: $finalTotalWorked"
                     Log.d("HomeViewModel", "Exit pressed at ${formatTime(newExitTime)}")
 
                     if (finalTotalWorked != null) {
                         val entryToSave = WorkHistoryEntry(
-                            id = newEnterTime.time.toString(), // Using enter time as ID, ensure WorkHistoryEntry expects String
+                            id = newEnterTime.time.toString(),
                             enterTime = newEnterTime.time,
-                            toLunchTime = newToLunchTime?.time,
-                            fromLunchTime = newFromLunchTime?.time,
-                            exitTime = newExitTime.time, // Non-null because we just set it
+                            pauses = newPauses.map { SerializablePausePair(it.start?.time, it.end?.time) },
+                            exitTime = newExitTime.time,
                             totalWorkedTime = finalTotalWorked,
-                            dailyHoursTarget = _uiState.value.dailyHours // Save the daily hours setting at the time of completion
+                            dailyHoursTarget = _uiState.value.dailyHours
                         )
                         viewModelScope.launch {
                             workHistoryRepository.addWorkHistoryEntry(entryToSave)
@@ -249,8 +259,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                                 it.copy(
                                     // Keep the times from the shift that was just saved
                                     enterTime = newEnterTime, // This is currentUiState.enterTime or the edited enterTime
-                                    toLunchTime = newToLunchTime, // This is currentUiState.toLunchTime or the edited toLunchTime
-                                    fromLunchTime = newFromLunchTime, // This is currentUiState.fromLunchTime or the edited fromLunchTime
+                                    pauses = newPauses, // This is currentUiState.pauses or the edited pauses
                                     exitTime = newExitTime, // This is the currentTime when Exit was pressed or the edited exitTime
                                     totalWorkedTime = finalTotalWorked, // This is the calculated total for the completed shift
                                     calculatedExitTime = null, // No longer need a calculated exit time as the shift is done
@@ -274,8 +283,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                          _uiState.update {
                             it.copy(
                                 enterTime = newEnterTime, // Keep enter time
-                                toLunchTime = newToLunchTime, // Keep toLunch
-                                fromLunchTime = newFromLunchTime, // Keep fromLunch
+                                pauses = newPauses, // Keep pauses
                                 exitTime = newExitTime, // Show the exit time that was problematic
                                 message = tempMessage
                                 // totalWorkedTime will be null, calculatedExitTime will be null
@@ -293,8 +301,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         _uiState.update {
             it.copy(
                 enterTime = newEnterTime,
-                toLunchTime = newToLunchTime,
-                fromLunchTime = newFromLunchTime,
+                pauses = newPauses,
                 // exitTime is only set definitively on Exit press and handled above for saving.
                 // For other button presses, if an exit time was somehow present, it should be cleared
                 // or managed based on whether a new shift is starting.
@@ -312,8 +319,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         val calendar = Calendar.getInstance()
         val timeToEdit: Date? = when (buttonType) {
             ButtonType.Enter -> current.enterTime
-            ButtonType.ToLunch -> current.toLunchTime
-            ButtonType.FromLunch -> current.fromLunchTime
+            ButtonType.ToLunch -> current.pauses.lastOrNull()?.start
+            ButtonType.FromLunch -> current.pauses.lastOrNull()?.end
             ButtonType.Exit -> current.exitTime // User can edit the exit time before confirming the actual "Exit"
         }
         timeToEdit?.let { calendar.time = it }
@@ -341,8 +348,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
         _uiState.update { current ->
             var newEnterTime = current.enterTime
-            var newToLunchTime = current.toLunchTime
-            var newFromLunchTime = current.fromLunchTime
+            var newPauses = current.pauses.toMutableList()
             var newExitTime = current.exitTime // This is the value that might be edited
 
             when (buttonType) {
@@ -354,16 +360,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     if (newEnterTime != null && selectedDate.before(newEnterTime)) {
                         tempMessage = "L'inizio pausa non può essere prima dell'ingresso."
                     } else {
-                        newToLunchTime = selectedDate
-                        tempMessage = "Inizio pausa modificato: ${formatTime(newToLunchTime)}"
+                        // Modify the start of the last pause (replace the last PausePair)
+                        if (newPauses.isNotEmpty() && newPauses.last().end == null) {
+                            val lastIdx = newPauses.lastIndex
+                            newPauses[lastIdx] = newPauses[lastIdx].copy(start = selectedDate)
+                            tempMessage = "Inizio pausa modificato: ${formatTime(selectedDate)}"
+                        } else {
+                            newPauses.add(PausePair(start = selectedDate))
+                            tempMessage = "Inizio pausa modificato: ${formatTime(selectedDate)}"
+                        }
                     }
                 }
                 ButtonType.FromLunch -> {
-                    if (newToLunchTime != null && selectedDate.before(newToLunchTime)) {
-                        tempMessage = "Il rientro non può essere prima dell'inizio pausa."
+                    if (newPauses.isEmpty() || newPauses.last().end != null) {
+                        tempMessage = "Devi prima registrare l'inizio della pausa!"
+                    } else if (selectedDate.before(newPauses.last().start)) {
+                        tempMessage = "Il rientro non può essere prima dell'inizio pausa!"
                     } else {
-                        newFromLunchTime = selectedDate
-                        tempMessage = "Fine pausa modificata: ${formatTime(newFromLunchTime)}"
+                        // Modify the end of the last pause (replace the last PausePair)
+                        val lastIdx = newPauses.lastIndex
+                        newPauses[lastIdx] = newPauses[lastIdx].copy(end = selectedDate)
+                        tempMessage = "Fine pausa modificata: ${formatTime(selectedDate)}"
                     }
                 }
                 ButtonType.Exit -> { // Editing the proposed/actual exit time
@@ -377,8 +394,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             }
             current.copy(
                 enterTime = newEnterTime,
-                toLunchTime = newToLunchTime,
-                fromLunchTime = newFromLunchTime,
+                pauses = newPauses,
                 exitTime = newExitTime, // Apply the edited time to UI state for all cases
                 message = tempMessage,
                 timePickerEvent = null
@@ -411,4 +427,61 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         notificationPollingJob?.cancel()
         Log.d("HomeViewModel", "onCleared called, notification polling job cancelled.")
     }
+
+    // --- New Pause Pair Logic for Multiple Pauses ---
+    override fun handleAddPause() {
+        val current = _uiState.value
+        if (current.enterTime == null) return
+        if (current.pauses.isNotEmpty() && current.pauses.last().end == null) return
+        _uiState.update {
+            it.copy(pauses = it.pauses + PausePair())
+        }
+    }
+
+    override fun handlePauseStart(index: Int) {
+        val current = _uiState.value
+        if (current.enterTime == null) return
+        val pauses = current.pauses.toMutableList()
+        if (index < pauses.size && pauses[index].start == null) {
+            pauses[index] = pauses[index].copy(start = Date())
+            _uiState.update { it.copy(pauses = pauses, message = "Inizio pausa: ${formatTime(pauses[index].start)}") }
+            recalculateAndUpdateUi()
+        }
+    }
+
+    override fun handlePauseEnd(index: Int) {
+        val current = _uiState.value
+        val pauses = current.pauses.toMutableList()
+        if (index < pauses.size && pauses[index].start != null && pauses[index].end == null) {
+            val now = Date()
+            if (now.before(pauses[index].start)) {
+                _uiState.update { it.copy(message = "Il rientro non può essere prima dell'inizio pausa!") }
+                return
+            }
+            pauses[index] = pauses[index].copy(end = now)
+            _uiState.update { it.copy(pauses = pauses, message = "Fine pausa: ${formatTime(pauses[index].end)}") }
+            recalculateAndUpdateUi()
+        }
+    }
+
+    override fun handlePauseEditStart(index: Int) {
+        val current = _uiState.value
+        val pause = current.pauses.getOrNull(index)
+        val calendar = Calendar.getInstance()
+        pause?.start?.let { calendar.time = it }
+        _uiState.update {
+            it.copy(timePickerEvent = TimePickerEvent(ButtonType.ToLunch, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)))
+        }
+    }
+
+    override fun handlePauseEditEnd(index: Int) {
+        val current = _uiState.value
+        val pause = current.pauses.getOrNull(index)
+        val calendar = Calendar.getInstance()
+        pause?.end?.let { calendar.time = it }
+        _uiState.update {
+            it.copy(timePickerEvent = TimePickerEvent(ButtonType.FromLunch, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)))
+        }
+    }
+    // --- End New Pause Pair Logic ---
 }

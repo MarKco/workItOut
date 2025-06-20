@@ -8,15 +8,24 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -61,6 +70,8 @@ import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,7 +131,7 @@ fun HomeScreen(
         }
     }
 
-// Apply your M3 Theme
+    // Apply your M3 Theme
     WorkItOutM3Theme {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -128,68 +139,79 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding) // Apply padding from Scaffold
+                    .padding(innerPadding)
             ) {
+                // Scrollable area for buttons and pauses
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp), // Overall horizontal padding
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(rememberScrollState())
+                        .align(Alignment.TopCenter)
+                        .padding(bottom = 180.dp), // Leave space for the summary card
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth() // Buttons will take full width with padding
-                            .weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically) // Spacing and centering
-                    ) {
-                        TimeButtonM3(
-                            buttonType = ButtonType.Enter,
-                            time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
-                            onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
-                            onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Enter) },
-                            enabled = true,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                    TimeButtonM3(
+                        modifier = Modifier.padding(vertical = 24.dp),
+                        buttonType = ButtonType.Enter,
+                        time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Enter) },
+                        enabled = true,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
-                        TimeButtonM3(
-                            buttonType = ButtonType.ToLunch,
-                            time = homeViewModel.formatTimeToDisplay(uiState.toLunchTime),
-                            onClick = { homeViewModel.handleTimeButtonPress(ButtonType.ToLunch) },
-                            onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.ToLunch) },
+                    )
+                    // --- Multiple Pause Pairs UI ---
+                    uiState.pauses.forEachIndexed { idx, pause ->
+                        PausePairRow(
+                            index = idx,
+                            pause = pause,
                             enabled = uiState.enterTime != null,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-                        TimeButtonM3(
-                            buttonType = ButtonType.FromLunch,
-                            time = homeViewModel.formatTimeToDisplay(uiState.fromLunchTime),
-                            onClick = { homeViewModel.handleTimeButtonPress(ButtonType.FromLunch) },
-                            onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.FromLunch) },
-                            enabled = uiState.toLunchTime != null,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-                        TimeButtonM3(
-                            buttonType = ButtonType.Exit,
-                            time = homeViewModel.formatTimeToDisplay(uiState.exitTime),
-                            onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Exit) },
-                            onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Exit) },
-                            enabled = uiState.enterTime != null && ((uiState.toLunchTime != null && uiState.fromLunchTime != null) || uiState.toLunchTime == null),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary,
-                                contentColor = MaterialTheme.colorScheme.onTertiary
-                            )
+                            onToLunch = { homeViewModel.handlePauseStart(idx) },
+                            onFromLunch = { homeViewModel.handlePauseEnd(idx) },
+                            onEditToLunch = { homeViewModel.handlePauseEditStart(idx) },
+                            onEditFromLunch = { homeViewModel.handlePauseEditEnd(idx) }
                         )
                     }
-
-                    // Summary Card
+                    ElevatedButton(
+                        onClick = { homeViewModel.handleAddPause() },
+                        enabled = uiState.enterTime != null && (uiState.pauses.isEmpty() || uiState.pauses.last().end != null),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(48.dp)
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = "Aggiungi pausa")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Aggiungi pausa")
+                    }
+                    // --- End Multiple Pause Pairs UI ---
+                    TimeButtonM3(
+                        modifier = Modifier.padding(vertical = 24.dp),
+                        buttonType = ButtonType.Exit,
+                        time = homeViewModel.formatTimeToDisplay(uiState.exitTime),
+                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Exit) },
+                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Exit) },
+                        enabled = uiState.enterTime != null,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
+                        )
+                    )
+                }
+                // Fixed summary card at the bottom
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                ) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -267,6 +289,7 @@ fun SummaryTextRow(label: String, value: String, isBold: Boolean = false) {
 // Updated TimeButton for M3 style
 @Composable
 fun TimeButtonM3(
+    modifier: Modifier = Modifier,
     buttonType: ButtonType,
     time: String,
     onClick: () -> Unit,
@@ -276,7 +299,7 @@ fun TimeButtonM3(
 ) {
     ElevatedButton(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(0.9f)
             .height(96.dp),
         shape = MaterialTheme.shapes.medium,
@@ -308,6 +331,54 @@ fun TimeButtonM3(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PausePairRow(
+    index: Int,
+    pause: PausePair,
+    enabled: Boolean,
+    onToLunch: () -> Unit,
+    onFromLunch: () -> Unit,
+    onEditToLunch: () -> Unit,
+    onEditFromLunch: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .padding(vertical = 16.dp)
+            .fillMaxWidth(0.9f)
+            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            TimeButtonM3(
+                buttonType = ButtonType.ToLunch,
+                time = pause.start?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
+                onClick = onToLunch,
+                onEditClick = onEditToLunch,
+                enabled = enabled && pause.start == null,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            )
+            TimeButtonM3(
+                buttonType = ButtonType.FromLunch,
+                time = pause.end?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
+                onClick = onFromLunch,
+                onEditClick = onEditFromLunch,
+                enabled = enabled && pause.start != null && pause.end == null,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            )
+        }
+        Text("Pausa ${index + 1}", modifier = Modifier.padding(start = 8.dp))
     }
 }
 

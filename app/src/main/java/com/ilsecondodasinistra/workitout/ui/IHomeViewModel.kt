@@ -12,6 +12,11 @@ interface IHomeViewModel {
     fun onDialogDismissed()
     fun clearMessage()
     fun formatTimeToDisplay(date: Date?): String
+    fun handlePauseStart(index: Int)
+    fun handlePauseEnd(index: Int)
+    fun handlePauseEditStart(index: Int)
+    fun handlePauseEditEnd(index: Int)
+    fun handleAddPause()
     // Add any other public methods/properties your UI needs
 }
 
