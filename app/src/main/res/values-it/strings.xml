@@ -2,4 +2,60 @@
 <resources>
     <string name="app_name">WorkItOut</string>
     <string name="settings">Impostazioni</string>
+    
+    <!-- HomeScreen strings -->
+    <string name="notification_exit_time_title">Ora di uscire!</string>
+    <string name="notification_exit_time_body">Il tuo orario di uscita previsto è %1$s</string>
+    <string name="add_pause">Aggiungi pausa</string>
+    <string name="daily_hours">Ore giornaliere:</string>
+    <string name="estimated_exit">Uscita stimata:</string>
+    <string name="total_today">Totale oggi:</string>
+    <string name="edit_button_description">Modifica %1$s</string>
+    <string name="pause_number">Pausa %1$d</string>
+    <string name="duration">Durata: %1$s</string>
+    <string name="minutes_short">min</string>
+    <string name="hours_short">h</string>
+    <string name="hours_minutes_format">%1$dh %2$dmin</string>
+    <string name="session_restored">Sessione precedente ripristinata.</string>
+    <string name="notification_permission_needed">%1$s: %2$s (Notification permission needed)</string>
+    <string name="error_must_enter_first">Devi prima registrare l\'ingresso per questa sessione!</string>
+    <string name="error_must_enter_first_short">Devi prima registrare l\'ingresso.</string>
+    <string name="error_must_enter_first_exclamation">Devi prima registrare l\'ingresso!</string>
+    
+    <!-- Error messages -->
+    <string name="error_pause_not_found">Errore: Pausa non trovata per la modifica.</string>
+    <string name="error_pause_not_found_general">Errore: Pausa non trovata.</string>
+    <string name="error_pause_index_invalid">Errore: Indice pausa non valido per la modifica.</string>
+    <string name="error_pause_edit_failed">Errore: Modifica pausa non riuscita.</string>
+    <string name="error_entry_not_recorded">Errore: Ingresso non registrato.</string>
+    <string name="error_pause_start_after_end">L\'inizio pausa non può essere dopo la fine della stessa pausa.</string>
+    <string name="error_cannot_edit_pause_end_no_start">Impossibile modificare fine pausa: inizio pausa non impostato.</string>
+    <string name="error_pause_end_before_start">La fine pausa non può essere prima dell\'inizio.</string>
+    <string name="error_must_start_pause_first">Devi prima iniziare la pausa %1$d.</string>
+    <string name="error_must_enter_before_pause">Registra prima l\'ingresso per aggiungere una pausa.</string>
+    <string name="error_pause_already_started">Pausa %1$d già iniziata e non conclusa.</string>
+    <string name="error_session_save_failed">Errore nel salvataggio della sessione.</string>
+    <string name="error_exit_recorded_no_total">Uscita registrata, ma impossibile calcolare il totale lavorato.</string>
+    
+    <!-- Success messages -->
+    <string name="enter_modified">Ingresso modificato: %1$s</string>
+    <string name="new_entry_recorded">Nuovo Ingresso registrato: %1$s</string>
+    <string name="pause_start_modified">Inizio pausa %1$d modificato: %2$s</string>
+    <string name="pause_start_modified_next_day">Inizio pausa %1$d (giorno succ.) modificato: %2$s</string>
+    <string name="pause_end_modified">Fine pausa %1$d modificata: %2$s</string>
+    <string name="pause_end_modified_next_day">Fine pausa %1$d (giorno succ.) modificata: %2$s</string>
+    <string name="new_pause_added">Nuova pausa aggiunta. Registra inizio e fine.</string>
+    <string name="pause_start_recorded">Inizio pausa %1$d: %2$s</string>
+    <string name="pause_end_recorded">Fine pausa %1$d: %2$s. Durata: %3$d min</string>
+    
+    <!-- Message prefixes for clearing logic -->
+    <string name="error_prefix">Errore:</string>
+    <string name="session_saved">Sessione salvata</string>
+    <string name="session_saved_with_total">Sessione salvata. Totale: %1$s</string>
+    
+    <!-- ButtonType strings -->
+    <string name="button_enter">Ingresso</string>
+    <string name="button_to_lunch">In Pausa</string>
+    <string name="button_from_lunch">Fine Pausa</string>
+    <string name="button_exit">Uscita</string>
 </resources>

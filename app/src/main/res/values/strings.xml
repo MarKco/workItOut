@@ -1,4 +1,60 @@
 <resources>
     <string name="app_name">WorkItOut</string>
     <string name="settings">Settings</string>
+    
+    <!-- HomeScreen strings -->
+    <string name="notification_exit_time_title">Time to leave!</string>
+    <string name="notification_exit_time_body">Your expected exit time is %1$s</string>
+    <string name="add_pause">Add pause</string>
+    <string name="daily_hours">Daily hours:</string>
+    <string name="estimated_exit">Estimated exit:</string>
+    <string name="total_today">Total today:</string>
+    <string name="edit_button_description">Edit %1$s</string>
+    <string name="pause_number">Pause %1$d</string>
+    <string name="duration">Duration: %1$s</string>
+    <string name="minutes_short">min</string>
+    <string name="hours_short">h</string>
+    <string name="hours_minutes_format">%1$dh %2$dmin</string>
+    <string name="session_restored">Previous session restored.</string>
+    <string name="notification_permission_needed">%1$s: %2$s (Notification permission needed)</string>
+    <string name="error_must_enter_first">You must record your entry time first for this session!</string>
+    <string name="error_must_enter_first_short">You must record your entry time first.</string>
+    <string name="error_must_enter_first_exclamation">You must record your entry time first!</string>
+    
+    <!-- Error messages -->
+    <string name="error_pause_not_found">Error: Pause not found for editing.</string>
+    <string name="error_pause_not_found_general">Error: Pause not found.</string>
+    <string name="error_pause_index_invalid">Error: Invalid pause index for editing.</string>
+    <string name="error_pause_edit_failed">Error: Pause editing failed.</string>
+    <string name="error_entry_not_recorded">Error: Entry not recorded.</string>
+    <string name="error_pause_start_after_end">Pause start cannot be after pause end.</string>
+    <string name="error_cannot_edit_pause_end_no_start">Cannot edit pause end: pause start not set.</string>
+    <string name="error_pause_end_before_start">Pause end cannot be before pause start.</string>
+    <string name="error_must_start_pause_first">You must start pause %1$d first.</string>
+    <string name="error_must_enter_before_pause">Record entry time first to add a pause.</string>
+    <string name="error_pause_already_started">Pause %1$d already started and not finished.</string>
+    <string name="error_session_save_failed">Error saving session.</string>
+    <string name="error_exit_recorded_no_total">Exit recorded, but unable to calculate total worked time.</string>
+    
+    <!-- Success messages -->
+    <string name="enter_modified">Entry modified: %1$s</string>
+    <string name="new_entry_recorded">New entry recorded: %1$s</string>
+    <string name="pause_start_modified">Pause %1$d start modified: %2$s</string>
+    <string name="pause_start_modified_next_day">Pause %1$d start (next day) modified: %2$s</string>
+    <string name="pause_end_modified">Pause %1$d end modified: %2$s</string>
+    <string name="pause_end_modified_next_day">Pause %1$d end (next day) modified: %2$s</string>
+    <string name="new_pause_added">New pause added. Record start and end.</string>
+    <string name="pause_start_recorded">Pause %1$d start: %2$s</string>
+    <string name="pause_end_recorded">Pause %1$d end: %2$s. Duration: %3$d min</string>
+    
+    <!-- Message prefixes for clearing logic -->
+    <string name="error_prefix">Error:</string>
+    <string name="session_saved">Session saved</string>
+    <string name="session_saved_with_total">Session saved. Total: %1$s</string>
+    
+    <!-- ButtonType strings -->
+    <string name="button_enter">Enter</string>
+    <string name="button_to_lunch">To Break</string>
+    <string name="button_from_lunch">End Break</string>
+    <string name="button_exit">Exit</string>
 </resources>

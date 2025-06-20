@@ -68,6 +68,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
 import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
 import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
+import com.ilsecondodasinistra.workitout.R
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -75,6 +76,7 @@ import java.util.Locale
 import kotlin.collections.forEachIndexed
 // Add this import
 import com.ilsecondodasinistra.workitout.ui.PausePair
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +91,10 @@ fun HomeScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Get string resources in Composable context
+    val notificationTitle = stringResource(R.string.notification_exit_time_title)
+    val notificationBodyTemplate = stringResource(R.string.notification_exit_time_body)
 
     // Observe lifecycle events to call ViewModel's onResume
     DisposableEffect(lifecycleOwner) {
@@ -120,7 +126,7 @@ fun HomeScreen(
         if (uiState.message.isNotEmpty()) {
             if (uiState.message.startsWith("NOTIFY_EXIT_TIME:")) {
                 val notificationMessage = uiState.message.substringAfter("NOTIFY_EXIT_TIME:")
-                showLocalNotification(context, "Ora di uscire!", "Il tuo orario di uscita previsto è $notificationMessage")
+                showLocalNotification(context, notificationTitle, notificationBodyTemplate.format(notificationMessage))
                 homeViewModel.clearMessage() // Clear notification trigger message
             } else {
                 scope.launch {
@@ -190,9 +196,9 @@ fun HomeScreen(
                             .fillMaxWidth(0.9f)
                             .height(48.dp)
                     ) {
-                        Icon(Icons.Outlined.Add, contentDescription = "Aggiungi pausa")
+                        Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.add_pause))
                         Spacer(Modifier.width(8.dp))
-                        Text("Aggiungi pausa")
+                        Text(stringResource(R.string.add_pause))
                     }
                     // --- End Multiple Pause Pairs UI ---
                     TimeButtonM3(
@@ -231,9 +237,9 @@ fun HomeScreen(
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.Start
                         ) {
-                            SummaryTextRow("Ore giornaliere:", "${"%.1f".format(uiState.dailyHours)}h")
-                            SummaryTextRow("Uscita stimata:", homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
-                            SummaryTextRow("Totale oggi:", uiState.totalWorkedTime ?: "N/A", isBold = true)
+                            SummaryTextRow(stringResource(R.string.daily_hours), "${"%.1f".format(uiState.dailyHours)}h")
+                            SummaryTextRow(stringResource(R.string.estimated_exit), homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
+                            SummaryTextRow(stringResource(R.string.total_today), uiState.totalWorkedTime ?: "N/A", isBold = true)
                         }
                     }
                 }
@@ -316,7 +322,7 @@ fun TimeButtonM3(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(horizontalAlignment = Alignment.Start) {
-                Text(buttonType.text, style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(buttonType.textResId), style = MaterialTheme.typography.titleLarge)
                 if (time != "N/A") {
                     Text(
                         modifier = Modifier.padding(top = 6.dp),
@@ -329,7 +335,7 @@ fun TimeButtonM3(
             IconButton(onClick = onEditClick, enabled = enabled) {
                 Icon(
                     Icons.Outlined.Edit,
-                    contentDescription = "Modifica ${buttonType.text}",
+                    contentDescription = stringResource(R.string.edit_button_description, stringResource(buttonType.textResId)),
                 )
             }
         }
@@ -386,22 +392,22 @@ fun PausePairRow(
             horizontalAlignment = Alignment.End,
             modifier = Modifier.padding(start = 8.dp)
         ) {
-            Text("Pausa ${index + 1}")
+            Text(stringResource(R.string.pause_number, index + 1))
             if (pause.durationMinutes != null && pause.durationMinutes > 0) {
                 val totalMinutes = pause.durationMinutes
                 val durationText = if (totalMinutes < 60) {
-                    "$totalMinutes min"
+                    "$totalMinutes ${stringResource(R.string.minutes_short)}"
                 } else {
                     val hours = totalMinutes / 60
                     val minutes = totalMinutes % 60
                     if (minutes == 0L) { 
-                        "${hours}h"
+                        "${hours}${stringResource(R.string.hours_short)}"
                     } else {
-                        "${hours}h ${minutes}min"
+                        stringResource(R.string.hours_minutes_format, hours, minutes)
                     }
                 }
                 Text(
-                    text = "Durata: $durationText",
+                    text = stringResource(R.string.duration, durationText),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp) 
