@@ -65,7 +65,7 @@ fun WorkItOutAppEntry() {
                 TopAppBar(
                     title = {
                         Text(
-                            text = if (currentPage == "home") "WorkItOut" else stringResource(R.string.settings),
+                            text = if (currentPage == "home") stringResource(R.string.app_name) else stringResource(R.string.settings),
                             style = MaterialTheme.typography.headlineSmall,
                         )
                     },
@@ -102,7 +102,7 @@ fun WorkItOutAppEntry() {
                         }) {
                             Icon(
                                 imageVector = if (currentPage == "home") Icons.Filled.Settings else Icons.Filled.Home,
-                                contentDescription = if (currentPage == "home") stringResource(R.string.settings) else "Home"
+                                contentDescription = if (currentPage == "home") stringResource(R.string.settings) else stringResource(R.string.home)
                             )
                         }
                     }

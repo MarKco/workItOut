@@ -6,6 +6,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilsecondodasinistra.workitout.R
 import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository
 import com.ilsecondodasinistra.workitout.data.HistoryRepository // Assuming this is the interface DataStoreHistoryRepository implements
 import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
@@ -101,7 +102,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val hoursToSave = _uiState.value.dailyHoursInputString.toDoubleOrNull()
             if (hoursToSave == null || hoursToSave < 0 || hoursToSave > 24) {
-                _uiState.update { it.copy(message = "Valore ore non valido (0-24).") }
+                _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_invalid_hours_value)) }
                 Log.w("SettingsViewModel", "Invalid daily hours input for saving: ${_uiState.value.dailyHoursInputString}")
                 return@launch
             }
@@ -110,14 +111,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 workHistoryRepository.saveDailyHours(hoursToSave) // Use repository to save
                 _uiState.update {
                     it.copy(
-                        message = "Ore giornaliere aggiornate!",
+                        message = getApplication<Application>().getString(R.string.daily_hours_updated),
                         dailyHoursInputString = formatDoubleForInput(hoursToSave)
                     )
                 }
                 Log.d("SettingsViewModel", "Daily hours saved to DataStore: $hoursToSave")
             } catch (e: Exception) {
                 Log.e("SettingsViewModel", "Error updating daily hours in DataStore: ${e.message}", e)
-                _uiState.update { it.copy(message = "Errore durante l'aggiornamento.") }
+                _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_during_update)) }
             }
         }
     }
@@ -137,7 +138,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update {
                     it.copy(
                         history = emptyList(),
-                        message = "Storico ripulito con successo!",
+                        message = getApplication<Application>().getString(R.string.history_cleared_successfully),
                         showClearConfirmDialog = false
                     )
                 }
@@ -146,7 +147,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 Log.e("SettingsViewModel", "Error clearing history: ${e.message}", e)
                 _uiState.update {
                     it.copy(
-                        message = "Errore durante la pulizia dello storico.",
+                        message = getApplication<Application>().getString(R.string.error_during_clear),
                         showClearConfirmDialog = false
                     )
                 }
@@ -161,32 +162,32 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun shareHistory() {
         val currentHistory = _uiState.value.history
         if (currentHistory.isEmpty()) {
-            _uiState.update { it.copy(message = "Nessuno storico da condividere!") }
+            _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.no_history_to_share)) }
             return
         }
 
-        val shareTextBuilder = StringBuilder("Storico ore lavorate:\n\n")
+        val shareTextBuilder = StringBuilder("${getApplication<Application>().getString(R.string.work_history)}:\n\n")
         currentHistory.forEach { record ->
             // Using 'id' which now correctly comes from DataStoreHistoryRepository as a string (timestamp)
             val entryDate = try {
                 SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date((record["id"] as String).toLong()))
             } catch (e: Exception) {
-                record["id"] as? String ?: "Data Invalida" // Fallback to raw id string if conversion fails
+                record["id"] as? String ?: getApplication<Application>().getString(R.string.invalid_date) // Fallback to raw id string if conversion fails
             }
-            shareTextBuilder.append("Data: $entryDate\n")
-            shareTextBuilder.append("  Ingresso: ${formatLongTimestampToDisplay(record["enterTime"] as? Long)}\n")
-            shareTextBuilder.append("  Inizio Pausa: ${formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}\n")
-            shareTextBuilder.append("  Fine Pausa: ${formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}\n")
-            shareTextBuilder.append("  Uscita: ${formatLongTimestampToDisplay(record["exitTime"] as? Long)}\n")
-            shareTextBuilder.append("  Totale lavorato: ${record["totalWorkedTime"] ?: "N/A"}\n")
-            shareTextBuilder.append("  Target ore: ${record["dailyHours"] ?: "N/A"}h\n\n")
+            shareTextBuilder.append("${getApplication<Application>().getString(R.string.date, entryDate)}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.entry_time, formatLongTimestampToDisplay(record["enterTime"] as? Long))}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.pause_start, formatLongTimestampToDisplay(record["toLunchTime"] as? Long))}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.pause_end, formatLongTimestampToDisplay(record["fromLunchTime"] as? Long))}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.exit_time, formatLongTimestampToDisplay(record["exitTime"] as? Long))}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.total_worked_hours, record["totalWorkedTime"] ?: "N/A")}\n")
+            shareTextBuilder.append("  ${getApplication<Application>().getString(R.string.target_hours, record["dailyHours"] ?: "N/A")}h\n\n")
         }
 
         Log.d("SettingsViewModel", "Sharing history content: ${shareTextBuilder.toString()}")
         _uiState.update {
             it.copy(
                 shareIntentEvent = ShareIntentEvent(shareTextBuilder.toString()),
-                message = "Lo storico è pronto per essere condiviso!"
+                message = getApplication<Application>().getString(R.string.history_ready_to_share)
             )
         }
     }

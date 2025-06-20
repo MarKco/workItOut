@@ -160,7 +160,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TimeButtonM3(
-                        modifier = Modifier.padding(vertical = 16.dp),
+                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                         buttonType = ButtonType.Enter,
                         time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
                         onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },

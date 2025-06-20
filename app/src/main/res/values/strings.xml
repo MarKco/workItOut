@@ -52,6 +52,49 @@
     <string name="session_saved">Session saved</string>
     <string name="session_saved_with_total">Session saved. Total: %1$s</string>
     
+    <!-- SettingsScreen strings -->
+    <string name="share_history_via">Share history via...</string>
+    <string name="error_cannot_start_sharing">Unable to start sharing.</string>
+    <string name="total_working_hours">Total working hours:</string>
+    <string name="hours_example">Hours (e.g. 7.5)</string>
+    <string name="save">Save</string>
+    <string name="share">Share</string>
+    <string name="clear">Clear</string>
+    <string name="history">History</string>
+    <string name="no_history_available">No history available.</string>
+    <string name="clear_history">Clear History</string>
+    <string name="clear_history_confirmation">Are you sure you want to delete all history? This action cannot be undone.</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="date">Date: %1$s</string>
+    <string name="entry_time">Entry: %1$s</string>
+    <string name="pause_start">Pause start: %1$s</string>
+    <string name="pause_end">Pause end: %1$s</string>
+    <string name="exit_time">Exit: %1$s</string>
+    <string name="total_worked_hours">Total worked hours: %1$s</string>
+    <string name="daily_hours_set">Daily hours set: %1$s</string>
+    <string name="home">Home</string>
+    
+    <!-- SettingsViewModel strings -->
+    <string name="error_invalid_hours_value">Invalid hours value (0-24).</string>
+    <string name="daily_hours_updated">Daily hours updated!</string>
+    <string name="error_during_update">Error during update.</string>
+    <string name="history_cleared_successfully">History cleared successfully!</string>
+    <string name="error_during_clear">Error during history clearing.</string>
+    <string name="no_history_to_share">No history to share!</string>
+    <string name="history_ready_to_share">History is ready to be shared!</string>
+    <string name="work_history">Work History</string>
+    <string name="invalid_date">Invalid Date</string>
+    <string name="target_hours">Target hours</string>
+    
+    <!-- TimePickers strings -->
+    <string name="dismiss">Dismiss</string>
+    <string name="ok">OK</string>
+    
+    <!-- Notification strings -->
+    <string name="notification_channel_name">Workitout</string>
+    <string name="notification_channel_description">Notifications for work hours tracking</string>
+    
     <!-- ButtonType strings -->
     <string name="button_enter">Enter</string>
     <string name="button_to_lunch">To Break</string>

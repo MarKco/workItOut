@@ -14,10 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ilsecondodasinistra.workitout.R
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
 
@@ -30,6 +32,10 @@ fun SettingsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Get string resources in Composable context
+    val shareHistoryVia = stringResource(R.string.share_history_via)
+    val errorCannotStartSharing = stringResource(R.string.error_cannot_start_sharing)
 
     // Handle messages
     LaunchedEffect(uiState.message) {
@@ -50,12 +56,12 @@ fun SettingsScreen(
                     putExtra(Intent.EXTRA_TEXT, event.textToShare)
                     type = "text/plain"
                 }
-                val shareIntent = Intent.createChooser(sendIntent, "Condividi storico tramite...")
+                val shareIntent = Intent.createChooser(sendIntent, shareHistoryVia)
                 context.startActivity(shareIntent)
             } catch (e: Exception) {
                 Log.e("SettingsScreen", "Error sharing history: ${e.message}", e)
                 scope.launch {
-                    snackbarHostState.showSnackbar(message = "Impossibile avviare la condivisione.")
+                    snackbarHostState.showSnackbar(message = errorCannotStartSharing)
                 }
             }
             settingsViewModel.onShareIntentLaunched()
@@ -75,7 +81,7 @@ fun SettingsScreen(
             // Daily Working Hours Section (No Card)
             Column { // Column to group daily hours elements
                 Text(
-                    text = "Ore di lavoro totali:",
+                    text = stringResource(R.string.total_working_hours),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -88,7 +94,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = uiState.dailyHoursInputString,
                         onValueChange = { settingsViewModel.onDailyHoursInputChange(it) },
-                        label = { Text("Ore (es. 7.5)") },
+                        label = { Text(stringResource(R.string.hours_example)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(1f)
@@ -112,7 +118,7 @@ fun SettingsScreen(
                         shape = MaterialTheme.shapes.medium,
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     ) {
-                        Text(text = "Salva", style = MaterialTheme.typography.labelLarge)
+                        Text(text = stringResource(R.string.save), style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -134,11 +140,11 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         Icons.Filled.Share,
-                        contentDescription = "Condividi",
+                        contentDescription = stringResource(R.string.share),
                         modifier = Modifier.size(ButtonDefaults.IconSize)
                     )
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(text = "Condividi", style = MaterialTheme.typography.labelLarge)
+                    Text(text = stringResource(R.string.share), style = MaterialTheme.typography.labelLarge)
                 }
 
                 Button(
@@ -155,18 +161,18 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         Icons.Filled.Delete,
-                        contentDescription = "Pulisci",
+                        contentDescription = stringResource(R.string.clear),
                         modifier = Modifier.size(ButtonDefaults.IconSize)
                     )
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(text = "Pulisci", style = MaterialTheme.typography.labelLarge)
+                    Text(text = stringResource(R.string.clear), style = MaterialTheme.typography.labelLarge)
                 }
             }
             // Spacer(Modifier.height(16.dp)) // Managed by main Column's verticalArrangement
 
             // History List Section (No Card)
             Text( // Title for the history section
-                text = "Storico",
+                text = stringResource(R.string.history),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp), // Padding between title and list
@@ -178,7 +184,7 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Nessuno storico disponibile.",
+                        text = stringResource(R.string.no_history_available),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -200,16 +206,16 @@ fun SettingsScreen(
         if (uiState.showClearConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { settingsViewModel.cancelClearHistory() },
-                title = { Text("Pulisci lo storico", style = MaterialTheme.typography.headlineSmall) },
-                text = { Text("Sei sicuro di voler cancellare tutto lo storico? Questa azione non può essere annullata.", style = MaterialTheme.typography.bodyMedium) },
+                title = { Text(stringResource(R.string.clear_history), style = MaterialTheme.typography.headlineSmall) },
+                text = { Text(stringResource(R.string.clear_history_confirmation), style = MaterialTheme.typography.bodyMedium) },
                 confirmButton = {
                     TextButton(
                         onClick = { settingsViewModel.confirmClearHistory() },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Conferma") }
+                    ) { Text(stringResource(R.string.confirm)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { settingsViewModel.cancelClearHistory() }) { Text("Annulla") }
+                    TextButton(onClick = { settingsViewModel.cancelClearHistory() }) { Text(stringResource(R.string.cancel)) }
                 },
             )
         }
@@ -232,17 +238,17 @@ fun HistoryItemCard(record: Map<String, Any?>, settingsViewModel: SettingsViewMo
                 java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date(it))
             } ?: (record["id"]?.toString() ?: "N/A")
             Text(
-                text = "Data: $dateString",
+                text = stringResource(R.string.date, dateString),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
-            HistoryDetailText("Ingresso: ${settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)}")
-            HistoryDetailText("In pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}")
-            HistoryDetailText("Fine pausa: ${settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}")
-            HistoryDetailText("Uscita: ${settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)}")
-            HistoryDetailText("Ore lavorate totali: ${record["totalWorkedTime"] ?: "N/A"}")
-            HistoryDetailText("Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h")
+            HistoryDetailText(stringResource(R.string.entry_time, settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)))
+            HistoryDetailText(stringResource(R.string.pause_start, settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)))
+            HistoryDetailText(stringResource(R.string.pause_end, settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)))
+            HistoryDetailText(stringResource(R.string.exit_time, settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)))
+            HistoryDetailText(stringResource(R.string.total_worked_hours, record["totalWorkedTime"] ?: "N/A"))
+            HistoryDetailText(stringResource(R.string.daily_hours_set, record["dailyHours"] ?: "N/A"))
         }
     }
 }

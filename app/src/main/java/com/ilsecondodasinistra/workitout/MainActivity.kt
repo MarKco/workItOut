@@ -62,8 +62,8 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Workitout"
-            val descriptionText = "Notifications for work hours tracking"
+            val name = getString(R.string.notification_channel_name)
+            val descriptionText = getString(R.string.notification_channel_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel =
                 NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {

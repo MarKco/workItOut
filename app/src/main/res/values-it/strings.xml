@@ -53,6 +53,49 @@
     <string name="session_saved">Sessione salvata</string>
     <string name="session_saved_with_total">Sessione salvata. Totale: %1$s</string>
     
+    <!-- SettingsScreen strings -->
+    <string name="share_history_via">Condividi storico tramite...</string>
+    <string name="error_cannot_start_sharing">Impossibile avviare la condivisione.</string>
+    <string name="total_working_hours">Ore di lavoro totali:</string>
+    <string name="hours_example">Ore (es. 7.5)</string>
+    <string name="save">Salva</string>
+    <string name="share">Condividi</string>
+    <string name="clear">Pulisci</string>
+    <string name="history">Storico</string>
+    <string name="no_history_available">Nessuno storico disponibile.</string>
+    <string name="clear_history">Pulisci lo storico</string>
+    <string name="clear_history_confirmation">Sei sicuro di voler cancellare tutto lo storico? Questa azione non può essere annullata.</string>
+    <string name="confirm">Conferma</string>
+    <string name="cancel">Annulla</string>
+    <string name="date">Data: %1$s</string>
+    <string name="entry_time">Ingresso: %1$s</string>
+    <string name="pause_start">In pausa: %1$s</string>
+    <string name="pause_end">Fine pausa: %1$s</string>
+    <string name="exit_time">Uscita: %1$s</string>
+    <string name="total_worked_hours">Ore lavorate totali: %1$s</string>
+    <string name="daily_hours_set">Ore giornaliere impostate: %1$s</string>
+    <string name="home">Home</string>
+    
+    <!-- SettingsViewModel strings -->
+    <string name="error_invalid_hours_value">Valore ore non valido (0-24).</string>
+    <string name="daily_hours_updated">Ore giornaliere aggiornate!</string>
+    <string name="error_during_update">Errore durante l\'aggiornamento.</string>
+    <string name="history_cleared_successfully">Storico ripulito con successo!</string>
+    <string name="error_during_clear">Errore durante la pulizia dello storico.</string>
+    <string name="no_history_to_share">Nessuno storico da condividere!</string>
+    <string name="history_ready_to_share">Lo storico è pronto per essere condiviso!</string>
+    <string name="work_history">Storico ore lavorate</string>
+    <string name="invalid_date">Data Invalida</string>
+    <string name="target_hours">Target ore</string>
+    
+    <!-- TimePickers strings -->
+    <string name="dismiss">Annulla</string>
+    <string name="ok">OK</string>
+    
+    <!-- Notification strings -->
+    <string name="notification_channel_name">Workitout</string>
+    <string name="notification_channel_description">Notifiche per il tracciamento delle ore di lavoro</string>
+    
     <!-- ButtonType strings -->
     <string name="button_enter">Ingresso</string>
     <string name="button_to_lunch">In Pausa</string>
