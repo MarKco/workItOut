@@ -1,17 +1,18 @@
 package com.ilsecondodasinistra.workitout.ui
 
 import android.app.Application
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
+// import android.content.Context // No longer needed
+// import android.content.SharedPreferences // No longer needed
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository
+import com.ilsecondodasinistra.workitout.data.HistoryRepository // Assuming this is the interface DataStoreHistoryRepository implements
 import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect // For collecting the flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -19,12 +20,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// Constants for SharedPreferences (ensure these are consistent)
-private const val PREFS_NAME = "workitout_settings_prefs"
-private const val KEY_DAILY_HOURS = "daily_hours"
+// SharedPreferences constants are no longer needed
+// private const val PREFS_NAME = "workitout_settings_prefs"
+// private const val KEY_DAILY_HOURS = "daily_hours"
 
 data class SettingsUiState(
-    val dailyHoursInputString: String = "8.0", // String representation for TextField
+    val dailyHoursInputString: String = "8.0",
     val history: List<Map<String, Any?>> = emptyList(),
     val message: String = "",
     val showClearConfirmDialog: Boolean = false,
@@ -35,20 +36,20 @@ data class ShareIntentEvent(val textToShare: String)
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val sharedPreferences: SharedPreferences =
-        application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Removed SharedPreferences instance
+    // private val sharedPreferences: SharedPreferences =
+    //     application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // Use DataStoreHistoryRepository for persistent history
-    private val workHistoryRepository = DataStoreHistoryRepository(application)
+    // Use DataStoreHistoryRepository for all persistent data
+    private val workHistoryRepository: HistoryRepository = DataStoreHistoryRepository(application) // Use interface type
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    // Helper to format Double to String for display, avoiding ".0" for whole numbers
-    private val decimalFormat = DecimalFormat("#.##") // Max 2 decimal places
+    private val decimalFormat = DecimalFormat("#.##")
 
     init {
-        loadDailyHours()
+        loadDailyHours() // Will now use DataStore
         observeHistory()
     }
 
@@ -57,14 +58,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             workHistoryRepository.getAllHistoryFlow().collect { entryList ->
                 val mapped = entryList.map { entry -> workHistoryEntryToMap(entry) }
                 _uiState.update { it.copy(history = mapped) }
-                Log.d("SettingsViewModel", "History loaded from DataStore with ${'$'}{mapped.size} items.")
+                Log.d("SettingsViewModel", "History loaded from DataStore with ${mapped.size} items.")
             }
         }
     }
 
-    // Convert WorkHistoryEntry to Map<String, Any?> for UI compatibility
     private fun workHistoryEntryToMap(entry: WorkHistoryEntry): Map<String, Any?> {
-        // For backward compatibility, show the first pause as toLunchTime/fromLunchTime, and all pauses as a list
         val firstPause = entry.pauses.firstOrNull()
         return mapOf(
             "id" to entry.id,
@@ -74,51 +73,50 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             "exitTime" to entry.exitTime,
             "totalWorkedTime" to entry.totalWorkedTime,
             "dailyHours" to entry.dailyHoursTarget,
-            "pauses" to entry.pauses // List<SerializablePausePair>
+            "pauses" to entry.pauses
         )
     }
 
+    // Updated to load from DataStoreHistoryRepository
     private fun loadDailyHours() {
-        val loadedHoursDouble = sharedPreferences.getFloat(KEY_DAILY_HOURS, 8.0f).toDouble()
-        _uiState.update { it.copy(dailyHoursInputString = formatDoubleForInput(loadedHoursDouble)) }
-        Log.d("SettingsViewModel", "Loaded daily hours: $loadedHoursDouble, string: ${_uiState.value.dailyHoursInputString}")
+        viewModelScope.launch {
+            workHistoryRepository.getDailyHours().collect { loadedHoursDouble ->
+                _uiState.update { it.copy(dailyHoursInputString = formatDoubleForInput(loadedHoursDouble)) }
+                Log.d("SettingsViewModel", "Loaded daily hours from DataStore: $loadedHoursDouble, string: ${_uiState.value.dailyHoursInputString}")
+            }
+        }
     }
 
     fun onDailyHoursInputChange(newInput: String) {
-        // Allow empty string, numbers, and at most one decimal point
         val filteredInput = if (newInput.isEmpty() || newInput == "." || newInput.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
             newInput
         } else {
-            _uiState.value.dailyHoursInputString // Revert to previous valid string if input is invalid
+            _uiState.value.dailyHoursInputString
         }
         _uiState.update { it.copy(dailyHoursInputString = filteredInput) }
     }
 
+    // Updated to save to DataStoreHistoryRepository
     fun saveDailyHours() {
         viewModelScope.launch {
             val hoursToSave = _uiState.value.dailyHoursInputString.toDoubleOrNull()
-            if (hoursToSave == null || hoursToSave < 0 || hoursToSave > 24) { // Basic validation
+            if (hoursToSave == null || hoursToSave < 0 || hoursToSave > 24) {
                 _uiState.update { it.copy(message = "Valore ore non valido (0-24).") }
                 Log.w("SettingsViewModel", "Invalid daily hours input for saving: ${_uiState.value.dailyHoursInputString}")
                 return@launch
             }
 
             try {
-                with(sharedPreferences.edit()) {
-                    putFloat(KEY_DAILY_HOURS, hoursToSave.toFloat())
-                    apply()
-                }
-                // Update the input string to the formatted version of what was saved
-                // This handles cases like "8." -> "8" or "8.50" -> "8.5"
+                workHistoryRepository.saveDailyHours(hoursToSave) // Use repository to save
                 _uiState.update {
                     it.copy(
                         message = "Ore giornaliere aggiornate!",
                         dailyHoursInputString = formatDoubleForInput(hoursToSave)
                     )
                 }
-                Log.d("SettingsViewModel", "Daily hours saved: $hoursToSave")
+                Log.d("SettingsViewModel", "Daily hours saved to DataStore: $hoursToSave")
             } catch (e: Exception) {
-                Log.e("SettingsViewModel", "Error updating daily hours: ${e.message}", e)
+                Log.e("SettingsViewModel", "Error updating daily hours in DataStore: ${e.message}", e)
                 _uiState.update { it.copy(message = "Errore durante l'aggiornamento.") }
             }
         }
@@ -138,7 +136,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 workHistoryRepository.clearAllHistory()
                 _uiState.update {
                     it.copy(
-                        history = emptyList(), // Clear the history in UI
+                        history = emptyList(),
                         message = "Storico ripulito con successo!",
                         showClearConfirmDialog = false
                     )
@@ -169,33 +167,38 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         val shareTextBuilder = StringBuilder("Storico ore lavorate:\n\n")
         currentHistory.forEach { record ->
-            shareTextBuilder.append("Data: ${record["id"]}\n") // 'id' is date string from LocalHistoryRepo
+            // Using 'id' which now correctly comes from DataStoreHistoryRepository as a string (timestamp)
+            val entryDate = try {
+                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date((record["id"] as String).toLong()))
+            } catch (e: Exception) {
+                record["id"] as? String ?: "Data Invalida" // Fallback to raw id string if conversion fails
+            }
+            shareTextBuilder.append("Data: $entryDate\n")
             shareTextBuilder.append("  Ingresso: ${formatLongTimestampToDisplay(record["enterTime"] as? Long)}\n")
-            shareTextBuilder.append("  In pausa: ${formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}\n")
-            shareTextBuilder.append("  Fine pausa: ${formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}\n")
+            shareTextBuilder.append("  Inizio Pausa: ${formatLongTimestampToDisplay(record["toLunchTime"] as? Long)}\n")
+            shareTextBuilder.append("  Fine Pausa: ${formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)}\n")
             shareTextBuilder.append("  Uscita: ${formatLongTimestampToDisplay(record["exitTime"] as? Long)}\n")
             shareTextBuilder.append("  Totale lavorato: ${record["totalWorkedTime"] ?: "N/A"}\n")
-            shareTextBuilder.append("  Ore giornaliere impostate: ${record["dailyHours"] ?: "N/A"}h\n\n")
+            shareTextBuilder.append("  Target ore: ${record["dailyHours"] ?: "N/A"}h\n\n")
         }
 
         Log.d("SettingsViewModel", "Sharing history content: ${shareTextBuilder.toString()}")
         _uiState.update {
             it.copy(
                 shareIntentEvent = ShareIntentEvent(shareTextBuilder.toString()),
-                message = "Lo storico è pronto per essere condiviso!" // Optional message
+                message = "Lo storico è pronto per essere condiviso!"
             )
         }
     }
 
     fun onShareIntentLaunched() {
-        _uiState.update { it.copy(shareIntentEvent = null) } // Reset event
+        _uiState.update { it.copy(shareIntentEvent = null) }
     }
 
     fun clearMessage() {
         _uiState.update { it.copy(message = "") }
     }
 
-    // Helper for display in UI, as Composable shouldn't know about Date/SimpleDateFormat directly
     fun formatLongTimestampToDisplay(timestamp: Long?): String {
         return timestamp?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(it)) } ?: "N/A"
     }

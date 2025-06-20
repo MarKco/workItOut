@@ -5,7 +5,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+// import androidx.lifecycle.LifecycleOwner // No longer needed for onResume
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.data.DataStoreHistoryRepository // Corrected from previous session
 import com.ilsecondodasinistra.workitout.data.HistoryRepository // Assuming this is the interface
@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+// import kotlinx.coroutines.flow.first // No longer needed for single load
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -58,16 +58,6 @@ sealed class ButtonType(val text: String) {
     object Exit : ButtonType("Uscita")
 }
 
-// Assuming IHomeViewModel interface would be updated with:
-// fun handlePauseEditStart(index: Int)
-// fun handlePauseEditEnd(index: Int)
-// fun handlePauseStart(index: Int)
-// fun handlePauseEnd(index: Int)
-// fun handleAddPause()
-// fun onDialogDismissed()
-// fun clearMessage()
-// fun formatTimeToDisplay(date: Date?): String
-
 class HomeViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver, IHomeViewModel {
 
     private val workHistoryRepository: HistoryRepository = DataStoreHistoryRepository(application)
@@ -78,29 +68,33 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     private var notificationPollingJob: Job? = null
 
     init {
-        loadDailyHoursFromDataStore()
+        observeDailyHours() // Changed from loadDailyHoursFromDataStore
     }
 
-    override fun onResume(owner: LifecycleOwner) {
-        super.onResume(owner)
-        Log.d("HomeViewModel", "onResume called, reloading daily hours if necessary.")
-        loadDailyHoursFromDataStore()
-    }
+    // onResume is no longer needed for dailyHours loading
+    // override fun onResume(owner: LifecycleOwner) {
+    //     super.onResume(owner)
+    //     Log.d("HomeViewModel", "onResume called, reloading daily hours if necessary.")
+    //     // loadDailyHoursFromDataStore() // This is now handled by continuous observation
+    // }
 
-    private fun loadDailyHoursFromDataStore() {
+    private fun observeDailyHours() {
         viewModelScope.launch {
-            val loadedDailyHours = workHistoryRepository.getDailyHours().first()
-            if (_uiState.value.dailyHours != loadedDailyHours) {
-                _uiState.update {
-                    it.copy(dailyHours = loadedDailyHours)
+            workHistoryRepository.getDailyHours().collect { loadedDailyHours ->
+                if (_uiState.value.dailyHours != loadedDailyHours) {
+                    _uiState.update {
+                        it.copy(dailyHours = loadedDailyHours)
+                    }
+                    recalculateAndUpdateUi()
+                    Log.d("HomeViewModel", "Daily hours updated from DataStore: $loadedDailyHours")
+                } else {
+                    Log.d("HomeViewModel", "Daily hours from DataStore same as current: $loadedDailyHours")
                 }
-                recalculateAndUpdateUi()
-                Log.d("HomeViewModel", "Daily hours loaded from DataStore: $loadedDailyHours")
-            } else {
-                Log.d("HomeViewModel", "Daily hours unchanged from DataStore: $loadedDailyHours")
             }
         }
     }
+
+    // loadDailyHoursFromDataStore() is removed as it's replaced by observeDailyHours
 
     private fun calculateExpectedExitTime(
         enterTime: Date?,

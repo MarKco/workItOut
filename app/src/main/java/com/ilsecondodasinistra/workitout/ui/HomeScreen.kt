@@ -325,13 +325,12 @@ fun TimeButtonM3(
                     )
                 }
             }
-            if (time != "N/A") {
-                IconButton(onClick = onEditClick, enabled = enabled) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Modifica ${buttonType.text}",
-                    )
-                }
+            // IconButton will now always be part of the composition
+            IconButton(onClick = onEditClick, enabled = enabled) {
+                Icon(
+                    Icons.Outlined.Edit,
+                    contentDescription = "Modifica ${buttonType.text}",
+                )
             }
         }
     }
