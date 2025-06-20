@@ -222,13 +222,17 @@ fun HistoryItemCard(record: Map<String, Any?>, settingsViewModel: SettingsViewMo
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            containerColor = MaterialTheme.colorScheme.background
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(Modifier.padding(12.dp)) {
+            val enterTime = record["enterTime"] as? Long
+            val dateString = enterTime?.let {
+                java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date(it))
+            } ?: (record["id"]?.toString() ?: "N/A")
             Text(
-                text = "Data: ${record["id"]}",
+                text = "Data: $dateString",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
@@ -263,4 +267,3 @@ fun SettingsScreenPreview() {
         }
     }
 }
-
