@@ -148,14 +148,13 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
                         .verticalScroll(rememberScrollState())
                         .align(Alignment.TopCenter)
                         .padding(bottom = 180.dp), // Leave space for the summary card
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TimeButtonM3(
-                        modifier = Modifier.padding(vertical = 24.dp),
+                        modifier = Modifier.padding(vertical = 16.dp),
                         buttonType = ButtonType.Enter,
                         time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
                         onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
@@ -187,6 +186,7 @@ fun HomeScreen(
                             contentColor = MaterialTheme.colorScheme.onSecondary
                         ),
                         modifier = Modifier
+                            .padding(vertical = 8.dp)
                             .fillMaxWidth(0.9f)
                             .height(48.dp)
                     ) {
@@ -218,7 +218,7 @@ fun HomeScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp, top = 8.dp),
+                            .padding(bottom = 32.dp, top = 16.dp),
                         shape = MaterialTheme.shapes.large,
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -350,7 +350,7 @@ fun PausePairRow(
         modifier = Modifier
             .padding(vertical = 16.dp)
             .fillMaxWidth(0.9f)
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), RoundedCornerShape(12.dp))
+            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)), RoundedCornerShape(12.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
