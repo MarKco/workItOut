@@ -72,6 +72,9 @@ import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.collections.forEachIndexed
+// Add this import
+import com.ilsecondodasinistra.workitout.ui.PausePair
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -429,8 +432,7 @@ fun HomeScreenPreview_Initial() {
         val initialVm = PreviewHomeViewModel().apply {
             (this._uiState).value = getPreviewHomeUiState(
                 enterTime = null,
-                toLunchTime = null,
-                fromLunchTime = null,
+                pauses = emptyList(), // Corrected
                 exitTime = null,
                 calculatedExitTime = null,
                 totalWorkedTime = null
