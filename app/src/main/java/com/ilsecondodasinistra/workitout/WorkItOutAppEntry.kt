@@ -2,9 +2,11 @@ package com.ilsecondodasinistra.workitout
 
 import android.Manifest
 import android.os.Build
-import androidx.compose.foundation.Image // Import for Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.* // Import size
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -17,14 +19,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale // For Image scaling
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource // Import for painterResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -111,28 +115,15 @@ fun WorkItOutAppEntry() {
                     .padding(paddingValues),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                                )
-                            )
-                        )
+                        .padding(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        if (currentPage == "home") {
-                            HomeScreen(homeViewModel = viewModel<HomeViewModel>())
-                        } else {
-                            SettingsScreen()
-                        }
+                    if (currentPage == "home") {
+                        HomeScreen(homeViewModel = viewModel<HomeViewModel>())
+                    } else {
+                        SettingsScreen()
                     }
                 }
             }

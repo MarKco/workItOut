@@ -215,7 +215,7 @@ fun HomeScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 48.dp, top = 8.dp),
+                            .padding(bottom = 24.dp, top = 8.dp),
                         shape = MaterialTheme.shapes.large,
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -353,14 +353,16 @@ fun PausePairRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             TimeButtonM3(
                 buttonType = ButtonType.ToLunch,
                 time = pause.start?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
                 onClick = onToLunch,
                 onEditClick = onEditToLunch,
-                enabled = enabled && pause.start == null,
+                enabled = enabled,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -371,7 +373,7 @@ fun PausePairRow(
                 time = pause.end?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
                 onClick = onFromLunch,
                 onEditClick = onEditFromLunch,
-                enabled = enabled && pause.start != null && pause.end == null,
+                enabled = enabled,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
