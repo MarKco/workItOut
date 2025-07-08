@@ -15,6 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 
 // Define Firebase configuration and app ID globals (these would typically be managed in
 // build.gradle or as string resources in a real Android app, not directly here)
@@ -34,6 +43,30 @@ const val NOTIFICATION_CHANNEL_ID = "work_tracker_channel"
 const val NOTIFICATION_ID = 101
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private var entranceCount = 0
+        private var lastPermissionRequestCount = -10
+        fun incrementEntranceAndMaybeRequestPermission(context: android.content.Context) {
+            entranceCount++
+            val activity = context as? MainActivity ?: return
+            if (shouldRequestNotificationPermission(context)) {
+                activity.requestNotificationPermission()
+                lastPermissionRequestCount = entranceCount
+            }
+        }
+        fun resetEntranceCounter() {
+            entranceCount = 0
+            lastPermissionRequestCount = -10
+        }
+        private fun shouldRequestNotificationPermission(context: android.content.Context): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED &&
+                (entranceCount == 1 || entranceCount - lastPermissionRequestCount >= 10)
+        }
+    }
     // Request notification permission for Android 13+
     private val requestPermissionLauncher =
         registerForActivityResult(
@@ -54,7 +87,27 @@ class MainActivity : ComponentActivity() {
         // e.g., with email/password, Google Sign-In, or anonymous sign-in.
         // The __initial_auth_token is a Canvas-specific variable.
         setContent {
-            WorkItOutAppEntry() // Call the updated composable
+            var showAlarmDialog by remember { mutableStateOf(false) }
+            val context = this
+            // Check alarm permission on startup
+            LaunchedEffect(Unit) {
+                if (!hasExactAlarmPermission()) {
+                    showAlarmDialog = true
+                }
+            }
+            WorkItOutAppEntry()
+            if (showAlarmDialog) {
+                AlarmPermissionDialog(
+                    onGoToSettings = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                        showAlarmDialog = false
+                    },
+                    onCancel = { showAlarmDialog = false }
+                )
+            }
         }
 
         createNotificationChannel()
@@ -85,6 +138,34 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun hasExactAlarmPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(ALARM_SERVICE) as android.app.AlarmManager
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true // Permission not required on older versions
+        }
+    }
+}
+
+@Composable
+fun AlarmPermissionDialog(onGoToSettings: () -> Unit, onCancel: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(text = stringResource(R.string.alarm_permission_title)) },
+        text = { Text(text = stringResource(R.string.alarm_permission_message)) },
+        confirmButton = {
+            Button(onClick = onGoToSettings) {
+                Text(text = stringResource(R.string.alarm_permission_settings_button))
+            }
+        },
+        dismissButton = {
+            Button(onClick = onCancel) {
+                Text(text = stringResource(R.string.alarm_permission_cancel_button))
+            }
+        }
+    )
 }
 
 

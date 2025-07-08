@@ -77,6 +77,8 @@ import kotlin.collections.forEachIndexed
 // Add this import
 import com.ilsecondodasinistra.workitout.ui.PausePair
 import androidx.compose.ui.res.stringResource
+import java.lang.System
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,22 +123,33 @@ fun HomeScreen(
         showTimePickerDialog = uiState.timePickerEvent != null
     }
 
-    // Handle messages (Snackbar and Notifications)
+    // Handle messages (Snackbar)
     LaunchedEffect(uiState.message) {
         if (uiState.message.isNotEmpty()) {
-            if (uiState.message.startsWith("NOTIFY_EXIT_TIME:")) {
-                val notificationMessage = uiState.message.substringAfter("NOTIFY_EXIT_TIME:")
-                showLocalNotification(context, notificationTitle, notificationBodyTemplate.format(notificationMessage))
-                homeViewModel.clearMessage() // Clear notification trigger message
-            } else {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = uiState.message,
-                        duration = SnackbarDuration.Short
-                    )
-                }
-                homeViewModel.clearMessage() // Clear regular message after showing
+            scope.launch {
+//                snackbarHostState.showSnackbar(
+//                    message = uiState.message,
+//                    duration = SnackbarDuration.Short
+//                )
             }
+            homeViewModel.clearMessage() // Clear regular message after showing
+        }
+    }
+
+    // Schedule alarm when calculatedExitTime changes and is valid
+    LaunchedEffect(uiState.calculatedExitTime) {
+        val calculatedExitTime = uiState.calculatedExitTime
+        if (calculatedExitTime != null && calculatedExitTime.time > System.currentTimeMillis()) {
+            Toast.makeText(
+                context,
+                "${notificationTitle}: ${homeViewModel.formatTimeToDisplay(calculatedExitTime)}",
+                Toast.LENGTH_SHORT
+            ).show()
+            (homeViewModel as? HomeViewModel)?.scheduleExitAlarmIfNeeded(
+                context,
+                notificationTitle,
+                notificationBodyTemplate
+            )
         }
     }
 
@@ -414,36 +427,6 @@ fun PausePairRow(
                 )
             }
         }
-    }
-}
-
-// Helper function for showing local notifications (can be moved to a utility file)
-private fun showLocalNotification(context: Context, title: String, body: String) {
-    if (ActivityCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
-    ) {
-        val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID, builder.build())
-        }
-    } else {
-        Log.w("Notification", "POST_NOTIFICATIONS permission not granted. Requesting...")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            (context as? androidx.activity.ComponentActivity)?.let { activity ->
-                ActivityCompat.requestPermissions(
-                    activity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    0,
-                )
-            }
-        }
-        Toast.makeText(context, "$title: $body (Notification permission needed)", Toast.LENGTH_LONG).show()
     }
 }
 

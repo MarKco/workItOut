@@ -29,6 +29,12 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
+import com.ilsecondodasinistra.workitout.MainActivity
 
 data class PausePair(
     val start: Date? = null,
@@ -71,8 +77,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
     private val _uiState = MutableStateFlow(HomeUiState())
     override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-    private var notificationPollingJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -122,9 +126,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             }
             Log.d("HomeViewModel", "Session restored: Enter=${formatTime(restoredEnterTime)}, Exit=${formatTime(restoredExitTime)}, Pauses=${restoredPauses.size}")
             recalculateAndUpdateUi() // This will also handle calculatedExitTime
-            if (restoredEnterTime != null && restoredExitTime == null) {
-                 startOrUpdateNotificationPolling(_uiState.value.calculatedExitTime)
-            }
         } else {
             Log.d("HomeViewModel", "No current session found in DataStore.")
              // Ensure UI is clean if no session is found, especially dailyHours should come from its observer
@@ -238,35 +239,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                 totalWorkedTime = newTotalWorkedTime // Retain if session ongoing, null if new
             )
         }
-        if (current.enterTime != null && current.exitTime == null) {
-            startOrUpdateNotificationPolling(newCalculatedExitTime)
-        } else {
-            notificationPollingJob?.cancel()
-            Log.d("HomeViewModel", "Recalculate: Polling stopped (enter null or exit not null).")
-        }
+        // REMOVE: notificationPollingJob logic
     }
 
-    private fun startOrUpdateNotificationPolling(expectedExitTime: Date?) {
-        notificationPollingJob?.cancel()
-        if (expectedExitTime == null || _uiState.value.exitTime != null || _uiState.value.enterTime == null) {
-            Log.d("HomeViewModel", "Notification polling stopped or not started. Expected: ${formatTime(expectedExitTime)}, Actual Exit: ${formatTime(_uiState.value.exitTime)}, Enter: ${formatTime(_uiState.value.enterTime)}")
-            return
+    fun scheduleExitAlarm(context: Context, triggerAtMillis: Long, title: String, body: String) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, com.ilsecondodasinistra.workitout.AlarmReceiver::class.java).apply {
+            putExtra("title", title)
+            putExtra("body", body)
+            putExtra("notification_id", NOTIFICATION_ID)
         }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-        Log.d("HomeViewModel", "Starting notification polling for: ${formatTime(expectedExitTime)}")
-        notificationPollingJob = viewModelScope.launch {
-            var notified = false
-            while (isActive && !notified && _uiState.value.exitTime == null) {
-                if (System.currentTimeMillis() >= expectedExitTime.time) {
-                    _uiState.update { it.copy(message = "NOTIFY_EXIT_TIME:${formatTime(expectedExitTime)}") }
-                    notified = true
-                    Log.d("HomeViewModel", "Exit time notification triggered for: ${formatTime(expectedExitTime)}")
-                }
-                delay(10000L)
-            }
-            if (notified || _uiState.value.exitTime != null) {
-                Log.d("HomeViewModel", "Notification polling loop ended. Notified: $notified, ExitRecorded: ${_uiState.value.exitTime != null}")
-            }
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            pendingIntent
+        )
+    }
+
+    /**
+     * Schedules an exact alarm for the calculated exit time if it is valid and in the future.
+     * Call this from the UI when calculatedExitTime changes.
+     */
+    fun scheduleExitAlarmIfNeeded(context: Context, title: String, body: String) {
+//        val triggerAtMillis = _uiState.value.calculatedExitTime?.time ?: return
+        val triggerAtMillis = System.currentTimeMillis() + 1000 * 5 // Example: 5 seconds from now, adjust as needed
+        if (triggerAtMillis > System.currentTimeMillis()) {
+            scheduleExitAlarm(context, triggerAtMillis, title, body)
         }
     }
 
@@ -311,7 +316,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         message = getApplication<Application>().getString(R.string.session_saved_with_total, finalTotalWorked)
                     )
                 }
-                notificationPollingJob?.cancel()
+                // REMOVE: notificationPollingJob?.cancel()
                 Log.d("HomeViewModel", "Polling stopped due to session finalization.")
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error saving work history entry or clearing session.", e)
@@ -322,6 +327,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
         }
     }
 
+    fun onEntranceStarted(context: Context) {
+        MainActivity.incrementEntranceAndMaybeRequestPermission(context)
+    }
 
     override fun handleTimeButtonPress(buttonType: ButtonType) {
         val currentTime = Date()
@@ -329,6 +337,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
 
         when (buttonType) {
             ButtonType.Enter -> {
+                // Call permission logic here
+                onEntranceStarted(getApplication<Application>())
                 _uiState.update {
                     it.copy(
                         enterTime = currentTime,
@@ -339,7 +349,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         message = getApplication<Application>().getString(R.string.new_entry_recorded, formatTime(currentTime))
                     )
                 }
-                Log.d("HomeViewModel", "Enter pressed. New shift started at ${formatTime(currentTime)}")
+                Log.d("HomeViewModel", "Enter pressed. New shift started at "+formatTime(currentTime))
                 viewModelScope.launch { persistCurrentSessionState() } // Persist the new active session
                 recalculateAndUpdateUi() // Recalculate for the new session
             }
@@ -649,7 +659,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
     @androidx.annotation.CallSuper
     override fun onCleared() {
         super.onCleared()
-        notificationPollingJob?.cancel()
+        // REMOVE: notificationPollingJob?.cancel()
         Log.d("HomeViewModel", "onCleared called, notification polling job cancelled.")
         // Persist one last time if the session was active and not completed
         val current = _uiState.value

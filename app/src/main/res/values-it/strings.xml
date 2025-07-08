@@ -101,4 +101,10 @@
     <string name="button_to_lunch">In Pausa</string>
     <string name="button_from_lunch">Fine Pausa</string>
     <string name="button_exit">Uscita</string>
+
+    <!-- Alarm permission dialog -->
+    <string name="alarm_permission_title">Consenti permesso sveglia</string>
+    <string name="alarm_permission_message">Per garantire notifiche precise, consenti all\'app di programmare sveglie esatte. Puoi abilitarlo nelle impostazioni di sistema.</string>
+    <string name="alarm_permission_settings_button">Vai alle impostazioni</string>
+    <string name="alarm_permission_cancel_button">Annulla</string>
 </resources>
