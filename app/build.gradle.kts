@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") // No version here, it's inherited
     id("com.google.devtools.ksp") version "2.1.21-2.0.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21" // This is CORRECT and present
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0" // This is CORRECT and present
 }
 
 android {
@@ -14,8 +14,8 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout" // Replace with your actual package
         minSdk = 24
         targetSdk = 36
-        versionCode = 1004
-        versionName = "3.4.0"
+        versionCode = 1005
+        versionName = "3.5.0"
     }
 
     buildFeatures {
