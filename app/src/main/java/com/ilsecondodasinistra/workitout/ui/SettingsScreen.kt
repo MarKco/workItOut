@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -113,8 +114,13 @@ fun SettingsScreen(
         }
     }
     val focusRequester = remember { FocusRequester() }
-    // Select all text on focus
-    var lastFocusState by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
+    // Robustly select all text on focus using LaunchedEffect
+    LaunchedEffect(isFocused, textFieldValue.text) {
+        if (isFocused) {
+            textFieldValue = textFieldValue.copy(selection = androidx.compose.ui.text.TextRange(0, textFieldValue.text.length))
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -150,11 +156,9 @@ fun SettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp)
+                            .focusRequester(focusRequester)
                             .onFocusChanged { focusState ->
-                                if (focusState.isFocused && !lastFocusState) {
-                                    textFieldValue = textFieldValue.copy(selection = androidx.compose.ui.text.TextRange(0, textFieldValue.text.length))
-                                }
-                                lastFocusState = focusState.isFocused
+                                isFocused = focusState.isFocused
                             },
                         singleLine = true,
                     )
