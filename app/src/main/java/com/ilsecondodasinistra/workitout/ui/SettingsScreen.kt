@@ -2,21 +2,56 @@ package com.ilsecondodasinistra.workitout.ui
 
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,6 +104,18 @@ fun SettingsScreen(
         }
     }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInputString)) }
+    // Sync with ViewModel state if it changes externally
+    LaunchedEffect(uiState.dailyHoursInputString) {
+        if (textFieldValue.text != uiState.dailyHoursInputString) {
+            textFieldValue = textFieldValue.copy(text = uiState.dailyHoursInputString)
+        }
+    }
+    val focusRequester = remember { FocusRequester() }
+    // Select all text on focus
+    var lastFocusState by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
@@ -92,30 +139,30 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    OutlinedTextField(
-                        value = uiState.dailyHoursInputString,
-                        onValueChange = { settingsViewModel.onDailyHoursInputChange(it) },
+                    TextField(
+                        value = textFieldValue,
+                        onValueChange = {
+                            textFieldValue = it
+                            settingsViewModel.onDailyHoursInputChange(it.text)
+                        },
                         label = { Text(stringResource(R.string.hours_example)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = 8.dp),
+                            .padding(end = 8.dp)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused && !lastFocusState) {
+                                    textFieldValue = textFieldValue.copy(selection = androidx.compose.ui.text.TextRange(0, textFieldValue.text.length))
+                                }
+                                lastFocusState = focusState.isFocused
+                            },
                         singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                        )
                     )
                     Button(
-                        onClick = { settingsViewModel.saveDailyHours() },
+                        onClick = {
+                            keyboardController?.hide()
+                            settingsViewModel.saveDailyHours()
+                        },
                         shape = MaterialTheme.shapes.medium,
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     ) {
@@ -181,7 +228,10 @@ fun SettingsScreen(
 
             if (uiState.history.isEmpty()) {
                 Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp), // Added weight here
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(16.dp), // Added weight here
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -192,7 +242,9 @@ fun SettingsScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(), // Allow LazyColumn to take remaining space
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(), // Allow LazyColumn to take remaining space
                     contentPadding = PaddingValues(vertical = 8.dp), // Padding inside the list, top and bottom
                     verticalArrangement = Arrangement.spacedBy(12.dp), // Spacing between history items
                 ) {
