@@ -49,6 +49,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -105,6 +106,7 @@ fun SettingsScreen(
         }
     }
 
+    val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInputString)) }
     // Sync with ViewModel state if it changes externally
@@ -165,6 +167,7 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             keyboardController?.hide()
+                            focusManager.clearFocus()
                             settingsViewModel.saveDailyHours()
                         },
                         shape = MaterialTheme.shapes.medium,
