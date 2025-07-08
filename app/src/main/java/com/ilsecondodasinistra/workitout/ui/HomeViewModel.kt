@@ -121,7 +121,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                     enterTime = restoredEnterTime,
                     exitTime = restoredExitTime,
                     pauses = restoredPauses,
-                    message = if (restoredEnterTime != null) getApplication<Application>().getString(R.string.session_restored) else ""
+//                    message = if (restoredEnterTime != null) getApplication<Application>().getString(R.string.session_restored) else ""
                 )
             }
             Log.d("HomeViewModel", "Session restored: Enter=${formatTime(restoredEnterTime)}, Exit=${formatTime(restoredExitTime)}, Pauses=${restoredPauses.size}")
@@ -345,17 +345,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         exitTime = adjustedExitTime,
                         totalWorkedTime = finalTotalWorked,
                         calculatedExitTime = null, // Session is now complete
-                        message = getApplication<Application>().getString(R.string.session_saved_with_total, finalTotalWorked)
+//                        message = getApplication<Application>().getString(R.string.session_saved_with_total, finalTotalWorked)
                     )
                 }
                 // REMOVE: notificationPollingJob?.cancel()
                 Log.d("HomeViewModel", "Polling stopped due to session finalization.")
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error saving work history entry or clearing session.", e)
-                _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_session_save_failed)) }
+//                _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_session_save_failed)) }
             }
         } else {
-            _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_exit_recorded_no_total)) }
+            Log.e("HomeViewModel", "Error calculating total worked time. Enter: ${current.enterTime}, Exit: $adjustedExitTime, Pauses: ${current.pauses.size}")
+//            _uiState.update { it.copy(message = getApplication<Application>().getString(R.string.error_exit_recorded_no_total)) }
         }
     }
 
@@ -378,7 +379,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
                         exitTime = null,      // Reset exit time
                         totalWorkedTime = null,// Reset total worked time
                         calculatedExitTime = null, // Will be recalculated
-                        message = getApplication<Application>().getString(R.string.new_entry_recorded, formatTime(currentTime))
+//                        message = getApplication<Application>().getString(R.string.new_entry_recorded, formatTime(currentTime))
                     )
                 }
                 Log.d("HomeViewModel", "Enter pressed. New shift started at "+formatTime(currentTime))
@@ -625,7 +626,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             // Allow adding pauses even if exitTime is set, as 
             // the session might be reviewed before a new "Enter" clears it.
             val newPauses = current.pauses.toMutableList().apply { add(PausePair()) } // New pause has null duration
-            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.new_pause_added))
+//            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.new_pause_added))
+            current.copy(pauses = newPauses)
         }
         // No need to persist here as only an empty pause is added.
         // Persist will happen when start/end of this new pause is set.
@@ -654,7 +656,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             // If starting a new pause or restarting a completed one
             val updatedPause = currentPause.copy(start = currentTime, end = null, durationMinutes = null)
             newPauses[index] = updatedPause
-            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.pause_start_recorded, index + 1, formatTime(currentTime)))
+//            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.pause_start_recorded, index + 1, formatTime(currentTime)))
+            current.copy(pauses = newPauses)
         }
         viewModelScope.launch { persistCurrentSessionState() }
         recalculateAndUpdateUi()
@@ -682,7 +685,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
             }
             val updatedPause = currentPause.copy(end = currentTime)
             newPauses[index] = updatedPause.copy(durationMinutes = calculatePauseDurationMinutes(updatedPause))
-            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.pause_end_recorded, index + 1, formatTime(currentTime), newPauses[index].durationMinutes ?: 0))
+//            current.copy(pauses = newPauses, message = getApplication<Application>().getString(R.string.pause_end_recorded, index + 1, formatTime(currentTime), newPauses[index].durationMinutes ?: 0))
+            current.copy(pauses = newPauses)
         }
         viewModelScope.launch { persistCurrentSessionState() }
         recalculateAndUpdateUi()

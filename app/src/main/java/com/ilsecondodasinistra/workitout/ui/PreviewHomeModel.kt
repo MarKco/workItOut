@@ -105,15 +105,17 @@ class PreviewHomeViewModel : IHomeViewModel {
                 updatedPauses[pauseIndex] = currentPause
                 _uiState.value = _uiState.value.copy(
                     pauses = updatedPauses,
-                    message = "Pause ${pauseIndex + 1} ${if (buttonType == ButtonType.ToLunch) "start" else "end"} updated in preview",
+//                    message = "Pause ${pauseIndex + 1} ${if (buttonType == ButtonType.ToLunch) "start" else "end"} updated in preview",
                     timePickerEvent = null
                 )
             } else {
-                 _uiState.value = _uiState.value.copy(message = "Preview: Invalid pause index $pauseIndex", timePickerEvent = null)
+//                 _uiState.value = _uiState.value.copy(message = "Preview: Invalid pause index $pauseIndex", timePickerEvent = null)
+                 _uiState.value = _uiState.value.copy(timePickerEvent = null)
             }
         } else {
             // Logic for updating enter/exit time
-             _uiState.value = _uiState.value.copy(message = "Time updated for $buttonType in preview", timePickerEvent = null)
+//             _uiState.value = _uiState.value.copy(message = "Time updated for $buttonType in preview", timePickerEvent = null)
+             _uiState.value = _uiState.value.copy(timePickerEvent = null)
         }
     }
 
@@ -137,7 +139,8 @@ class PreviewHomeViewModel : IHomeViewModel {
     override fun handleAddPause() {
         println("Preview: handleAddPause called")
         val newPauses = _uiState.value.pauses.toMutableList().apply { add(PausePair()) }
-        _uiState.value = _uiState.value.copy(pauses = newPauses, message = "Preview: Pause added")
+//        _uiState.value = _uiState.value.copy(pauses = newPauses, message = "Preview: Pause added")
+        _uiState.value = _uiState.value.copy(pauses = newPauses)
     }
 
     override fun handlePauseStart(index: Int) {
@@ -145,7 +148,8 @@ class PreviewHomeViewModel : IHomeViewModel {
         val updatedPauses = _uiState.value.pauses.toMutableList()
         if (index >= 0 && index < updatedPauses.size) {
             updatedPauses[index] = updatedPauses[index].copy(start = Date(), end = null) // Set start to now, clear end
-            _uiState.value = _uiState.value.copy(pauses = updatedPauses, message = "Preview: Pause $index started")
+//            _uiState.value = _uiState.value.copy(pauses = updatedPauses, message = "Preview: Pause $index started")
+            _uiState.value = _uiState.value.copy(pauses = updatedPauses)
         }
     }
 
@@ -154,7 +158,8 @@ class PreviewHomeViewModel : IHomeViewModel {
          val updatedPauses = _uiState.value.pauses.toMutableList()
         if (index >= 0 && index < updatedPauses.size && updatedPauses[index].start != null) {
             updatedPauses[index] = updatedPauses[index].copy(end = Date()) // Set end to now
-            _uiState.value = _uiState.value.copy(pauses = updatedPauses, message = "Preview: Pause $index ended")
+//            _uiState.value = _uiState.value.copy(pauses = updatedPauses, message = "Preview: Pause $index ended")
+            _uiState.value = _uiState.value.copy(pauses = updatedPauses)
         }
     }
 
