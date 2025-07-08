@@ -107,4 +107,5 @@
     <string name="alarm_permission_message">Per garantire notifiche precise, consenti all\'app di programmare sveglie esatte. Puoi abilitarlo nelle impostazioni di sistema.</string>
     <string name="alarm_permission_settings_button">Vai alle impostazioni</string>
     <string name="alarm_permission_cancel_button">Annulla</string>
+    <string name="reset_all">reset</string>
 </resources>

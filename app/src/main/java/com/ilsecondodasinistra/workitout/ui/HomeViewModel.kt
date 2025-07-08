@@ -268,10 +268,42 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), D
      * Call this from the UI when calculatedExitTime changes.
      */
     fun scheduleExitAlarmIfNeeded(context: Context, title: String, body: String) {
-//        val triggerAtMillis = _uiState.value.calculatedExitTime?.time ?: return
-        val triggerAtMillis = System.currentTimeMillis() + 1000 * 5 // Example: 5 seconds from now, adjust as needed
+        val triggerAtMillis = _uiState.value.calculatedExitTime?.time ?: return
+//        val triggerAtMillis = System.currentTimeMillis() + 1000 * 5 // Example: 5 seconds from now, adjust as needed
         if (triggerAtMillis > System.currentTimeMillis()) {
             scheduleExitAlarm(context, triggerAtMillis, title, body)
+        }
+    }
+
+    /**
+     * Resets all session data and cancels any scheduled exit alarm.
+     */
+    fun resetAll(context: Context) {
+        // Cancel any scheduled alarm
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, com.ilsecondodasinistra.workitout.AlarmReceiver::class.java)
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            NOTIFICATION_ID,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+
+        // Clear UI state
+        _uiState.update {
+            it.copy(
+                enterTime = null,
+                exitTime = null,
+                pauses = emptyList(),
+                calculatedExitTime = null,
+                totalWorkedTime = null,
+                message = ""
+            )
+        }
+        // Persist cleared session
+        viewModelScope.launch {
+            workHistoryRepository.saveCurrentSession(null, null, null)
         }
     }
 

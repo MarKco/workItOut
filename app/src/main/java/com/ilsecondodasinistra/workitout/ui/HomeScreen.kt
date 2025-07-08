@@ -79,11 +79,16 @@ import com.ilsecondodasinistra.workitout.ui.PausePair
 import androidx.compose.ui.res.stringResource
 import java.lang.System
 import java.util.Date
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: IHomeViewModel
+    homeViewModel: IHomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel<HomeViewModel>(),
+    resetRequested: Boolean = false,
+    onResetHandled: () -> Unit = {}
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -127,14 +132,24 @@ fun HomeScreen(
     LaunchedEffect(uiState.message) {
         if (uiState.message.isNotEmpty()) {
             scope.launch {
-//                snackbarHostState.showSnackbar(
-//                    message = uiState.message,
-//                    duration = SnackbarDuration.Short
-//                )
+                snackbarHostState.showSnackbar(
+                    message = uiState.message,
+                    duration = SnackbarDuration.Short
+                )
             }
             homeViewModel.clearMessage() // Clear regular message after showing
         }
     }
+
+    // Handle reset request from parent
+    LaunchedEffect(resetRequested) {
+        if (resetRequested) {
+            (homeViewModel as? HomeViewModel)?.resetAll(context)
+            onResetHandled()
+        }
+    }
+
+    val messageForAlarmPermission = stringResource(R.string.alarm_permission_message)
 
     // Schedule alarm when calculatedExitTime changes and is valid
     LaunchedEffect(uiState.calculatedExitTime) {
@@ -145,17 +160,37 @@ fun HomeScreen(
                 "${notificationTitle}: ${homeViewModel.formatTimeToDisplay(calculatedExitTime)}",
                 Toast.LENGTH_SHORT
             ).show()
-            (homeViewModel as? HomeViewModel)?.scheduleExitAlarmIfNeeded(
-                context,
-                notificationTitle,
-                notificationBodyTemplate
-            )
+
+            // Check for exact alarm permission (Android 12+)
+            val hasExactAlarmPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+                alarmManager.canScheduleExactAlarms()
+            } else {
+                true
+            }
+            if (hasExactAlarmPermission) {
+                (homeViewModel as? HomeViewModel)?.scheduleExitAlarmIfNeeded(
+                    context,
+                    notificationTitle,
+                    notificationBodyTemplate.format(homeViewModel.formatTimeToDisplay(calculatedExitTime))
+                )
+            } else {
+                Toast.makeText(
+                    context,
+                    messageForAlarmPermission,
+                    Toast.LENGTH_LONG
+                ).show()
+                // Redirect to exact alarm permission settings
+                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                context.startActivity(intent)
+            }
         }
     }
 
     // Apply your M3 Theme
     WorkItOutM3Theme {
         Scaffold(
+            // Remove the topBar here to avoid duplicate toolbars
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
             Box(
@@ -413,7 +448,7 @@ fun PausePairRow(
                 } else {
                     val hours = totalMinutes / 60
                     val minutes = totalMinutes % 60
-                    if (minutes == 0L) { 
+                    if (minutes == 0L) {
                         "${hours}${stringResource(R.string.hours_short)}"
                     } else {
                         stringResource(R.string.hours_minutes_format, hours, minutes)
@@ -423,7 +458,7 @@ fun PausePairRow(
                     text = stringResource(R.string.duration, durationText),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp) 
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }

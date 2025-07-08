@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 fun WorkItOutAppEntry() {
     WorkItOutM3Theme {
         var currentPage by remember { mutableStateOf("home") }
+        var resetRequested by remember { mutableStateOf(false) }
 
         val context = LocalContext.current
         val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -68,6 +70,26 @@ fun WorkItOutAppEntry() {
                             text = if (currentPage == "home") stringResource(R.string.app_name) else stringResource(R.string.settings),
                             style = MaterialTheme.typography.headlineSmall,
                         )
+                    },
+                    actions = {
+                        // Reset button (only on home page)
+                        if (currentPage == "home") {
+                            IconButton(onClick = { resetRequested = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = stringResource(R.string.reset_all)
+                                )
+                            }
+                        }
+                        // Settings/Home navigation button
+                        IconButton(onClick = {
+                            currentPage = if (currentPage == "home") "settings" else "home"
+                        }) {
+                            Icon(
+                                imageVector = if (currentPage == "home") Icons.Filled.Settings else Icons.Filled.Home,
+                                contentDescription = if (currentPage == "home") stringResource(R.string.settings) else stringResource(R.string.home)
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -96,16 +118,6 @@ fun WorkItOutAppEntry() {
                         //     )
                         // }
                     },
-                    actions = {
-                        IconButton(onClick = {
-                            currentPage = if (currentPage == "home") "settings" else "home"
-                        }) {
-                            Icon(
-                                imageVector = if (currentPage == "home") Icons.Filled.Settings else Icons.Filled.Home,
-                                contentDescription = if (currentPage == "home") stringResource(R.string.settings) else stringResource(R.string.home)
-                            )
-                        }
-                    }
                 )
             },
         ) { paddingValues ->
@@ -121,7 +133,10 @@ fun WorkItOutAppEntry() {
                         .padding(16.dp)
                 ) {
                     if (currentPage == "home") {
-                        HomeScreen(homeViewModel = viewModel<HomeViewModel>())
+                        HomeScreen(
+                            resetRequested = resetRequested,
+                            onResetHandled = { resetRequested = false }
+                        )
                     } else {
                         SettingsScreen()
                     }
