@@ -1,12 +1,8 @@
 package com.ilsecondodasinistra.workitout.ui
 
 //import androidx.lifecycle.viewmodel.compose.viewModel // Already imported via IHomeViewModel
+// Add this import
 import IHomeViewModel
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -22,8 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Edit
@@ -57,31 +53,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
-import com.ilsecondodasinistra.workitout.NOTIFICATION_CHANNEL_ID
-import com.ilsecondodasinistra.workitout.NOTIFICATION_ID
 import com.ilsecondodasinistra.workitout.R
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlin.collections.forEachIndexed
-// Add this import
-import com.ilsecondodasinistra.workitout.ui.PausePair
-import androidx.compose.ui.res.stringResource
-import java.lang.System
-import java.util.Date
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,6 +133,7 @@ fun HomeScreen(
     }
 
     val messageForAlarmPermission = stringResource(R.string.alarm_permission_message)
+    val toastText = stringResource(R.string.notification_exit_time_body, homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
 
     // Schedule alarm when calculatedExitTime changes and is valid
     LaunchedEffect(uiState.calculatedExitTime) {
@@ -157,7 +141,7 @@ fun HomeScreen(
         if (calculatedExitTime != null && calculatedExitTime.time > System.currentTimeMillis()) {
             Toast.makeText(
                 context,
-                "${notificationTitle}: ${homeViewModel.formatTimeToDisplay(calculatedExitTime)}",
+                toastText,
                 Toast.LENGTH_SHORT
             ).show()
 
