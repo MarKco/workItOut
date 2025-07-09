@@ -45,11 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -106,21 +102,12 @@ fun SettingsScreen(
         }
     }
 
-    val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInputString)) }
     // Sync with ViewModel state if it changes externally
     LaunchedEffect(uiState.dailyHoursInputString) {
         if (textFieldValue.text != uiState.dailyHoursInputString) {
             textFieldValue = textFieldValue.copy(text = uiState.dailyHoursInputString)
-        }
-    }
-    val focusRequester = remember { FocusRequester() }
-    var isFocused by remember { mutableStateOf(false) }
-    // Robustly select all text on focus using LaunchedEffect
-    LaunchedEffect(isFocused, textFieldValue.text) {
-        if (isFocused) {
-            textFieldValue = textFieldValue.copy(selection = androidx.compose.ui.text.TextRange(0, textFieldValue.text.length))
         }
     }
 
@@ -154,20 +141,15 @@ fun SettingsScreen(
                             settingsViewModel.onDailyHoursInputChange(it.text)
                         },
                         label = { Text(stringResource(R.string.hours_example)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = 8.dp)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focusState ->
-                                isFocused = focusState.isFocused
-                            },
+                            .padding(end = 8.dp),
                         singleLine = true,
                     )
                     Button(
                         onClick = {
                             keyboardController?.hide()
-                            focusManager.clearFocus()
                             settingsViewModel.saveDailyHours()
                         },
                         shape = MaterialTheme.shapes.medium,

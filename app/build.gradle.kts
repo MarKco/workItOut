@@ -14,8 +14,8 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout" // Replace with your actual package
         minSdk = 24
         targetSdk = 36
-        versionCode = 1005
-        versionName = "3.5.0"
+        versionCode = 1006
+        versionName = "3.6.0"
     }
 
     buildFeatures {
