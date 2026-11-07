@@ -129,132 +129,128 @@ fun HomeScreen(
         }
     }
 
-    // Apply your M3 Theme
-    WorkItOutM3Theme {
-        Scaffold(
-            // Remove the topBar here to avoid duplicate toolbars
-            contentWindowInsets = WindowInsets(0),
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { innerPadding ->
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            // Scrollable area for buttons and pauses
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .align(Alignment.TopCenter)
+                    .padding(bottom = 180.dp), // Leave space for the summary card
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                TimeButtonM3(
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                    buttonType = ButtonType.Enter,
+                    time = TimeFormats.time(uiState.enterTime),
+                    onClick = { actions.press(ButtonType.Enter) },
+                    onEditClick = { actions.requestTimeEdit(ButtonType.Enter) },
+                    enabled = true,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+                // --- Multiple Pause Pairs UI ---
+                uiState.pauses.forEachIndexed { idx, pause ->
+                    PausePairRow(
+                        index = idx,
+                        pause = pause,
+                        enabled = uiState.enterTime != null,
+                        onToLunch = { actions.startPause(idx) },
+                        onFromLunch = { actions.endPause(idx) },
+                        onEditToLunch = { actions.requestPauseStartEdit(idx) },
+                        onEditFromLunch = { actions.requestPauseEndEdit(idx) }
+                    )
+                }
+                ElevatedButton(
+                    onClick = { actions.addPause() },
+                    enabled = uiState.enterTime != null && (uiState.pauses.isEmpty() || uiState.pauses.last().end != null),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    ),
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(0.9f)
+                        .height(48.dp)
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.add_pause))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.add_pause))
+                }
+                // --- End Multiple Pause Pairs UI ---
+                TimeButtonM3(
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    buttonType = ButtonType.Exit,
+                    time = TimeFormats.time(uiState.exitTime),
+                    onClick = { actions.press(ButtonType.Exit) },
+                    onEditClick = { actions.requestTimeEdit(ButtonType.Exit) },
+                    enabled = uiState.enterTime != null,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
+                    )
+                )
+            }
+            // Fixed summary card at the bottom
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
             ) {
-                // Scrollable area for buttons and pauses
-                Column(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .align(Alignment.TopCenter)
-                        .padding(bottom = 180.dp), // Leave space for the summary card
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                        .padding(bottom = 32.dp, top = 16.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    TimeButtonM3(
-                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
-                        buttonType = ButtonType.Enter,
-                        time = TimeFormats.time(uiState.enterTime),
-                        onClick = { actions.press(ButtonType.Enter) },
-                        onEditClick = { actions.requestTimeEdit(ButtonType.Enter) },
-                        enabled = true,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    )
-                    // --- Multiple Pause Pairs UI ---
-                    uiState.pauses.forEachIndexed { idx, pause ->
-                        PausePairRow(
-                            index = idx,
-                            pause = pause,
-                            enabled = uiState.enterTime != null,
-                            onToLunch = { actions.startPause(idx) },
-                            onFromLunch = { actions.endPause(idx) },
-                            onEditToLunch = { actions.requestPauseStartEdit(idx) },
-                            onEditFromLunch = { actions.requestPauseEndEdit(idx) }
-                        )
-                    }
-                    ElevatedButton(
-                        onClick = { actions.addPause() },
-                        enabled = uiState.enterTime != null && (uiState.pauses.isEmpty() || uiState.pauses.last().end != null),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        ),
+                    Column(
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(0.9f)
-                            .height(48.dp)
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
                     ) {
-                        Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.add_pause))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.add_pause))
-                    }
-                    // --- End Multiple Pause Pairs UI ---
-                    TimeButtonM3(
-                        modifier = Modifier.padding(vertical = 24.dp),
-                        buttonType = ButtonType.Exit,
-                        time = TimeFormats.time(uiState.exitTime),
-                        onClick = { actions.press(ButtonType.Exit) },
-                        onEditClick = { actions.requestTimeEdit(ButtonType.Exit) },
-                        enabled = uiState.enterTime != null,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary
-                        )
-                    )
-                }
-                // Fixed summary card at the bottom
-                Box(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 32.dp, top = 16.dp),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            SummaryTextRow(stringResource(R.string.daily_hours), "${"%.1f".format(uiState.dailyHours)}h")
-                            SummaryTextRow(stringResource(R.string.estimated_exit), TimeFormats.time(uiState.calculatedExitTime))
-                            SummaryTextRow(stringResource(R.string.total_today), uiState.totalWorkedTime ?: "N/A", isBold = true)
-                        }
+                        SummaryTextRow(stringResource(R.string.daily_hours), "${"%.1f".format(uiState.dailyHours)}h")
+                        SummaryTextRow(stringResource(R.string.estimated_exit), TimeFormats.time(uiState.calculatedExitTime))
+                        SummaryTextRow(stringResource(R.string.total_today), uiState.totalWorkedTime ?: "N/A", isBold = true)
                     }
                 }
+            }
 
-                uiState.timePickerEvent?.let { pickerEvent ->
-                    TimePickerDialog(
-                        onDismiss = { actions.dismissTimePicker() },
-                        onConfirm = {
-                            actions.onTimeEdited(
-                                type = pickerEvent.type,
-                                hour = timePickerState.hour,
-                                minute = timePickerState.minute
-                            )
-                        }
-                    ) {
-                        TimePicker(
-                            state = timePickerState,
-                            colors = TimePickerDefaults.colors(
-                                clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
-                                periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
-                                selectorColor = MaterialTheme.colorScheme.primary
-                            )
+            uiState.timePickerEvent?.let { pickerEvent ->
+                TimePickerDialog(
+                    onDismiss = { actions.dismissTimePicker() },
+                    onConfirm = {
+                        actions.onTimeEdited(
+                            type = pickerEvent.type,
+                            hour = timePickerState.hour,
+                            minute = timePickerState.minute
                         )
                     }
+                ) {
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors(
+                            clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                            periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
+                            selectorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
                 }
             }
         }

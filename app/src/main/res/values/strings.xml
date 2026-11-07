@@ -15,8 +15,6 @@
     <string name="minutes_short">min</string>
     <string name="hours_short">h</string>
     <string name="hours_minutes_format">%1$dh %2$dmin</string>
-    <string name="session_restored">Previous session restored.</string>
-    <string name="notification_permission_needed">%1$s: %2$s (Notification permission needed)</string>
     <string name="error_must_enter_first">You must record your entry time first for this session!</string>
     <string name="error_must_enter_first_short">You must record your entry time first.</string>
     <string name="error_must_enter_first_exclamation">You must record your entry time first!</string>
@@ -33,24 +31,15 @@
     <string name="error_must_start_pause_first">You must start pause %1$d first.</string>
     <string name="error_must_enter_before_pause">Record entry time first to add a pause.</string>
     <string name="error_pause_already_started">Pause %1$d already started and not finished.</string>
-    <string name="error_session_save_failed">Error saving session.</string>
-    <string name="error_exit_recorded_no_total">Exit recorded, but unable to calculate total worked time.</string>
     
     <!-- Success messages -->
     <string name="enter_modified">Entry modified: %1$s</string>
-    <string name="new_entry_recorded">New entry recorded: %1$s</string>
     <string name="pause_start_modified">Pause %1$d start modified: %2$s</string>
     <string name="pause_start_modified_next_day">Pause %1$d start (next day) modified: %2$s</string>
     <string name="pause_end_modified">Pause %1$d end modified: %2$s</string>
     <string name="pause_end_modified_next_day">Pause %1$d end (next day) modified: %2$s</string>
-    <string name="new_pause_added">New pause added. Record start and end.</string>
-    <string name="pause_start_recorded">Pause %1$d start: %2$s</string>
-    <string name="pause_end_recorded">Pause %1$d end: %2$s. Duration: %3$d min</string>
     
     <!-- Message prefixes for clearing logic -->
-    <string name="error_prefix">Error:</string>
-    <string name="session_saved">Session saved</string>
-    <string name="session_saved_with_total">Session saved. Total: %1$s</string>
     
     <!-- SettingsScreen strings -->
     <string name="share_history_via">Share history via...</string>
@@ -73,19 +62,13 @@
     <string name="exit_time">Exit: %1$s</string>
     <string name="total_worked_hours">Total worked hours: %1$s</string>
     <string name="daily_hours_set">Daily hours set: %1$s</string>
-    <string name="home">Home</string>
     
     <!-- SettingsViewModel strings -->
     <string name="error_invalid_hours_value">Invalid hours value (0-24).</string>
     <string name="daily_hours_updated">Daily hours updated!</string>
-    <string name="error_during_update">Error during update.</string>
     <string name="history_cleared_successfully">History cleared successfully!</string>
-    <string name="error_during_clear">Error during history clearing.</string>
     <string name="no_history_to_share">No history to share!</string>
-    <string name="history_ready_to_share">History is ready to be shared!</string>
     <string name="work_history">Work History</string>
-    <string name="invalid_date">Invalid Date</string>
-    <string name="target_hours">Target hours</string>
     
     <!-- TimePickers strings -->
     <string name="dismiss">Dismiss</string>
