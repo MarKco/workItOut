@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Keep line numbers for readable crash stack traces.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# kotlinx.serialization: keep generated serializers for @Serializable models.
+-keepattributes *Annotation*, InnerClasses
+-keepclassmembers class com.ilsecondodasinistra.workitout.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.ilsecondodasinistra.workitout.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
