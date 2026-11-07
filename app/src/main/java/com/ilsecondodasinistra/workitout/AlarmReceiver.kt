@@ -19,7 +19,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val exitTime = TimeFormats.time(intent.getLongExtra(EXTRA_TRIGGER_AT, -1).takeIf { it > 0 })
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setSmallIcon(R.drawable.ic_stat_exit)
             .setContentTitle(context.getString(R.string.notification_exit_time_title))
             .setContentText(context.getString(R.string.notification_exit_time_body, exitTime))
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -12,7 +12,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -50,23 +50,36 @@ private val LightPurpleColorScheme = lightColorScheme(
     scrim = LightPurpleScrim,
 )
 
-// For dark theme, you'd define a corresponding DarkPurpleColorScheme
-// For simplicity, we'll just use a slightly modified standard dark theme
-// or you can create one from the Material Theme Builder.
+// Baseline Material 3 dark scheme, used on Android 8-11 where dynamic color is unavailable.
 private val DarkPurpleColorScheme = darkColorScheme(
-    primary = Purple80, // Example, customize these
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    background = Color(0xFF1C1B1F),
-    surface = Color(0xFF2B2930), // Darker purple surface
-    onPrimary = Purple40,
-    onSecondary = PurpleGrey40,
-    onTertiary = Pink40,
-    onBackground = LightPurpleOnPrimary, // Light text on dark background
-    onSurface = LightPurpleOnPrimary,    // Light text on dark surface
-    primaryContainer = Color(0xFF4A4458),
-    onPrimaryContainer = LightPurplePrimaryContainer
-    // ... other dark theme colors
+    primary = Color(0xFFD0BCFF),
+    onPrimary = Color(0xFF381E72),
+    primaryContainer = Color(0xFF4F378B),
+    onPrimaryContainer = Color(0xFFEADDFF),
+    secondary = Color(0xFFCCC2DC),
+    onSecondary = Color(0xFF332D41),
+    secondaryContainer = Color(0xFF4A4458),
+    onSecondaryContainer = Color(0xFFE8DEF8),
+    tertiary = Color(0xFFEFB8C8),
+    onTertiary = Color(0xFF492532),
+    tertiaryContainer = Color(0xFF633B48),
+    onTertiaryContainer = Color(0xFFFFD8E4),
+    error = Color(0xFFF2B8B5),
+    onError = Color(0xFF601410),
+    errorContainer = Color(0xFF8C1D18),
+    onErrorContainer = Color(0xFFF9DEDC),
+    background = Color(0xFF141218),
+    onBackground = Color(0xFFE6E0E9),
+    surface = Color(0xFF141218),
+    onSurface = Color(0xFFE6E0E9),
+    surfaceVariant = Color(0xFF49454F),
+    onSurfaceVariant = Color(0xFFCAC4D0),
+    outline = Color(0xFF938F99),
+    outlineVariant = Color(0xFF49454F),
+    inverseSurface = Color(0xFFE6E0E9),
+    inverseOnSurface = Color(0xFF322F35),
+    inversePrimary = Color(0xFF6750A4),
+    scrim = Color(0xFF000000),
 )
 
 @Composable
@@ -84,15 +97,14 @@ fun WorkItOutM3Theme(
         darkTheme -> DarkPurpleColorScheme // Your custom dark purple theme
         else -> LightPurpleColorScheme      // Your custom light purple theme
     }
+    // The app bar is drawn in the primary color behind a transparent status bar:
+    // pick light or dark status bar icons to stay readable on it.
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb() // Or use surface for less emphasis
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            // For navigation bar (optional)
-            // window.navigationBarColor = colorScheme.surface.toArgb()
-            // WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+                colorScheme.primary.luminance() > 0.5f
         }
     }
 
