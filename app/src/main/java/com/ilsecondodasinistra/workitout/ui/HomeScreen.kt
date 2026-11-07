@@ -41,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
@@ -109,15 +110,22 @@ fun HomeScreen(
     }
 
     val alarmPermissionText = stringResource(R.string.alarm_permission_message)
+    val alarmSettingsLabel = stringResource(R.string.alarm_permission_settings_button)
     LaunchedEffect(uiState.alarmPermissionMissing) {
         if (uiState.alarmPermissionMissing) {
-            Toast.makeText(context, alarmPermissionText, Toast.LENGTH_LONG).show()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    .setData(Uri.fromParts("package", context.packageName, null))
-                runCatching { context.startActivity(intent) }
-            }
             actions.alarmPermissionHandled()
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = alarmPermissionText,
+                    actionLabel = alarmSettingsLabel,
+                    duration = SnackbarDuration.Long,
+                )
+                if (result == SnackbarResult.ActionPerformed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        .setData(Uri.fromParts("package", context.packageName, null))
+                    runCatching { context.startActivity(intent) }
+                }
+            }
         }
     }
 

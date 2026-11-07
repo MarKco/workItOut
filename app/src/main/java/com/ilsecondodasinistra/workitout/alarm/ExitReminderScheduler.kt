@@ -13,7 +13,11 @@ const val EXTRA_TRIGGER_AT = "trigger_at"
 
 /** Schedules the "time to leave" notification. */
 interface ExitReminderScheduler {
-    /** @return false if the reminder could not be scheduled (missing exact-alarm permission). */
+    /**
+     * Schedules the reminder, replacing any previous one.
+     * @return true if it is exact (or already in the past); false if the exact-alarm permission
+     * is missing and the reminder fell back to an inexact alarm that may fire a few minutes late.
+     */
     fun schedule(triggerAtMillis: Long): Boolean
     fun cancel()
 }
@@ -27,14 +31,16 @@ class AlarmManagerExitReminderScheduler(private val context: Context) : ExitRemi
 
     override fun schedule(triggerAtMillis: Long): Boolean {
         if (triggerAtMillis <= System.currentTimeMillis()) return true
-        if (!canScheduleExact()) return false
-        val intent = Intent(context, AlarmReceiver::class.java).putExtra(EXTRA_TRIGGER_AT, triggerAtMillis)
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerAtMillis,
-            pendingIntent(intent),
+        val pendingIntent = pendingIntent(
+            Intent(context, AlarmReceiver::class.java).putExtra(EXTRA_TRIGGER_AT, triggerAtMillis),
         )
-        return true
+        val exact = canScheduleExact()
+        if (exact) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        }
+        return exact
     }
 
     override fun cancel() {

@@ -102,9 +102,7 @@
     <string name="button_exit">Exit</string>
 
     <!-- Alarm permission dialog -->
-    <string name="alarm_permission_title">Allow alarm permission</string>
     <string name="alarm_permission_message">To ensure precise notifications, please allow the app to schedule exact alarms. You can enable this in the system settings.</string>
     <string name="alarm_permission_settings_button">Go to settings</string>
-    <string name="alarm_permission_cancel_button">Cancel</string>
     <string name="reset_all">reset</string>
 </resources>

@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:name=".WorkItOutApp"
         android:allowBackup="true"
@@ -17,6 +18,15 @@
         <receiver
             android:exported="false"
             android:name="com.ilsecondodasinistra.workitout.AlarmReceiver" />
+        <receiver
+            android:name=".ReminderRestoreReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <activity
             android:exported="true"
             android:label="@string/app_name"

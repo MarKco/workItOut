@@ -1,14 +1,13 @@
 package com.ilsecondodasinistra.workitout.ui
 
 import com.ilsecondodasinistra.workitout.R
-import com.ilsecondodasinistra.workitout.alarm.ExitReminderScheduler
 import com.ilsecondodasinistra.workitout.data.ActiveSession
-import com.ilsecondodasinistra.workitout.data.HistoryRepository
 import com.ilsecondodasinistra.workitout.data.PausePair
-import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
+import com.ilsecondodasinistra.workitout.testutil.FakeReminder
+import com.ilsecondodasinistra.workitout.testutil.FakeRepository
+import com.ilsecondodasinistra.workitout.testutil.MutableClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -21,41 +20,9 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
-
-    private class FakeRepository : HistoryRepository {
-        override val history = MutableStateFlow<List<WorkHistoryEntry>>(emptyList())
-        override val dailyHours = MutableStateFlow(8.0)
-        override val activeSession = MutableStateFlow<ActiveSession?>(null)
-        override suspend fun addEntry(entry: WorkHistoryEntry) {
-            history.value = listOf(entry) + history.value.filterNot { it.id == entry.id }
-        }
-        override suspend fun replaceHistory(entries: List<WorkHistoryEntry>) { history.value = entries }
-        override suspend fun clearHistory() { history.value = emptyList() }
-        override suspend fun setDailyHours(hours: Double) { dailyHours.value = hours }
-        override suspend fun saveActiveSession(session: ActiveSession?) { activeSession.value = session }
-    }
-
-    private class FakeReminder(var canSchedule: Boolean = true) : ExitReminderScheduler {
-        val scheduled = mutableListOf<Long>()
-        var cancelCount = 0
-        override fun schedule(triggerAtMillis: Long): Boolean {
-            if (!canSchedule) return false
-            scheduled += triggerAtMillis
-            return true
-        }
-        override fun cancel() { cancelCount++ }
-    }
-
-    private class MutableClock(var now: Instant, private val zone: ZoneId = ZoneOffset.UTC) : Clock() {
-        override fun getZone(): ZoneId = zone
-        override fun withZone(zone: ZoneId): Clock = MutableClock(now, zone)
-        override fun instant(): Instant = now
-    }
 
     private val hour = 3_600_000L
     private val minute = 60_000L
