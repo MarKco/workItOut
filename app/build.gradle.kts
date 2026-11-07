@@ -62,6 +62,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
 
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
