@@ -6,8 +6,11 @@ App Android per tenere traccia delle ore di lavoro: timbri ingresso, pause e usc
 
 - Ingresso, più pause (inizio/fine), uscita; ogni orario è modificabile a mano
 - Uscita stimata = ingresso + ore giornaliere + durata delle pause
-- Notifica all'orario di uscita (allarme esatto, serve il permesso "Sveglie e promemoria")
-- Storico delle giornate e condivisione come testo
+- Notifica all'orario di uscita; con il permesso "Sveglie e promemoria" è puntuale, senza ricade su un allarme inesatto. Viene ripianificata dopo riavvio o aggiornamento
+- Storico: aggiungi, modifica (anche pause e date) ed elimina giornate; condividi come testo o esporta in CSV
+- Statistiche: ore di settimana, mese e totale contro l'obiettivo, saldo straordinari, grafico degli ultimi 14 giorni
+- Giorni lavorativi configurabili (le ore negli altri giorni contano come straordinario)
+- Backup e ripristino di storico e impostazioni in un file JSON
 - Italiano e inglese
 
 ## Struttura
@@ -15,10 +18,10 @@ App Android per tenere traccia delle ore di lavoro: timbri ingresso, pause e usc
 ```
 app/src/main/java/com/ilsecondodasinistra/workitout/
 ├── AppContainer.kt      DI manuale: repository e scheduler
-├── alarm/               notifica di uscita (AlarmManager)
+├── alarm/               promemoria di uscita (AlarmManager) e ripianificazione
 ├── data/                modelli e HistoryRepository (Preferences DataStore)
-├── domain/              calcoli e formattazione, senza dipendenze Android
-└── ui/                  Compose: ViewModel + schermate (Home, Impostazioni)
+├── domain/              calcoli, statistiche, CSV e backup, senza dipendenze Android
+└── ui/                  Compose: ViewModel + schermate (Home, Storico, Modifica giornata, Statistiche, Impostazioni)
 ```
 
 Scelte principali: Jetpack Compose + Material 3, Navigation 3, un solo modulo, nessun framework di DI. Gli orari sono sempre epoch millisecondi; la conversione in testo avviene solo in `domain/TimeFormats`.

@@ -42,6 +42,19 @@ object WorkTimeCalculator {
         return "${hours}h ${minutes}m"
     }
 
+    /** "+1h 30m" / "-45m" / "0m": signed difference, used for overtime balances. */
+    fun formatBalance(millis: Long): String {
+        val abs = kotlin.math.abs(millis)
+        val hours = TimeUnit.MILLISECONDS.toHours(abs)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(abs) % 60
+        val body = if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+        return when {
+            hours == 0L && minutes == 0L -> body
+            millis > 0 -> "+$body"
+            else -> "-$body"
+        }
+    }
+
     /**
      * Times picked on a clock face have no date. If [candidate] falls before [reference]
      * the user means the next day (e.g. exit at 01:00 after entering at 22:00).

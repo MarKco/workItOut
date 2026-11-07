@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,19 +31,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel as composeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.ilsecondodasinistra.workitout.ui.EditEntryScreen
+import com.ilsecondodasinistra.workitout.ui.EditEntryViewModel
+import com.ilsecondodasinistra.workitout.ui.HistoryScreen
+import com.ilsecondodasinistra.workitout.ui.HistoryViewModel
 import com.ilsecondodasinistra.workitout.ui.HomeRoute
 import com.ilsecondodasinistra.workitout.ui.HomeViewModel
 import com.ilsecondodasinistra.workitout.ui.SettingsScreen
 import com.ilsecondodasinistra.workitout.ui.SettingsViewModel
+import com.ilsecondodasinistra.workitout.ui.StatsRoute
+import com.ilsecondodasinistra.workitout.ui.StatsViewModel
 import com.ilsecondodasinistra.workitout.ui.stringProvider
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.serialization.Serializable
@@ -54,6 +60,16 @@ data object HomeKey : NavKey
 @Serializable
 data object SettingsKey : NavKey
 
+@Serializable
+data object HistoryKey : NavKey
+
+@Serializable
+data object StatsKey : NavKey
+
+/** [id] null means "add a new day". */
+@Serializable
+data class EditEntryKey(val id: String? = null) : NavKey
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkItOutAppEntry() {
@@ -61,10 +77,10 @@ fun WorkItOutAppEntry() {
         val context = LocalContext.current
         val container = (context.applicationContext as WorkItOutApp).container
         val backStack = rememberNavBackStack(HomeKey)
-        val onHome = backStack.lastOrNull() != SettingsKey
+        val current = backStack.lastOrNull() ?: HomeKey
 
         // The reset button lives in the top bar, so Home's ViewModel is owned by the activity.
-        val homeViewModel: HomeViewModel = composeViewModel(
+        val homeViewModel: HomeViewModel = viewModel(
             factory = viewModelFactory {
                 initializer { HomeViewModel(container.historyRepository, container.exitReminderScheduler) }
             },
@@ -77,56 +93,55 @@ fun WorkItOutAppEntry() {
                 TopAppBar(
                     title = {
                         Text(
-                            text = stringResource(if (onHome) R.string.app_name else R.string.settings),
+                            text = stringResource(
+                                when (current) {
+                                    SettingsKey -> R.string.settings
+                                    HistoryKey -> R.string.history
+                                    StatsKey -> R.string.statistics
+                                    is EditEntryKey -> if (current.id == null) R.string.add_day else R.string.edit_day
+                                    else -> R.string.app_name
+                                },
+                            ),
                             style = MaterialTheme.typography.headlineSmall,
                         )
                     },
                     actions = {
-                        // Reset button (only on home page)
-                        if (onHome) {
+                        if (current == HomeKey) {
                             IconButton(onClick = homeViewModel::resetAll) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = stringResource(R.string.reset_all)
-                                )
+                                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reset_all))
                             }
-                        }
-                        // Settings/Home navigation button
-                        IconButton(onClick = {
-                            if (onHome) backStack.add(SettingsKey) else backStack.removeLastOrNull()
-                        }) {
-                            Icon(
-                                imageVector = if (onHome) Icons.Filled.Settings else Icons.Filled.Home,
-                                contentDescription = if (onHome) stringResource(R.string.settings) else stringResource(R.string.home)
-                            )
+                            IconButton(onClick = { backStack.add(HistoryKey) }) {
+                                Icon(painterResource(R.drawable.ic_history), contentDescription = stringResource(R.string.history))
+                            }
+                            IconButton(onClick = { backStack.add(StatsKey) }) {
+                                Icon(painterResource(R.drawable.ic_bar_chart), contentDescription = stringResource(R.string.statistics))
+                            }
+                            IconButton(onClick = { backStack.add(SettingsKey) }) {
+                                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary // Color for the nav icon
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
-                    // Navigation Icon (App Logo)
                     navigationIcon = {
-                        // Add some padding to the logo if needed
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_launcher_for_topbar), // Replace with your actual drawable resource ID
-                            contentDescription = stringResource(R.string.app_name), // App name as content description
-                            modifier = Modifier
-                                .padding(start = 12.dp, end = 8.dp) // Adjust padding as needed
-                                .size(32.dp), // Adjust size as needed
-                            contentScale = ContentScale.Fit,
-                            // If your logo is a single color and needs to be tinted by the theme:
-                            // colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary)
-                        )
-                        // If you want it to be an IconButton (e.g., if it were a back arrow)
-                        // IconButton(onClick = { /* Potentially go to a main dashboard or do nothing */ }) {
-                        //     Icon(
-                        //         painter = painterResource(id = R.drawable.ic_workitout_logo),
-                        //         contentDescription = stringResource(R.string.app_name)
-                        //     )
-                        // }
+                        if (current == HomeKey) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_launcher_for_topbar),
+                                contentDescription = stringResource(R.string.app_name),
+                                modifier = Modifier
+                                    .padding(start = 12.dp, end = 8.dp)
+                                    .size(32.dp),
+                                contentScale = ContentScale.Fit,
+                            )
+                        } else {
+                            IconButton(onClick = { backStack.removeLastOrNull() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                            }
+                        }
                     },
                 )
             },
@@ -135,13 +150,9 @@ fun WorkItOutAppEntry() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                color = MaterialTheme.colorScheme.background
+                color = MaterialTheme.colorScheme.background,
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     NavDisplay(
                         backStack = backStack,
                         onBack = { backStack.removeLastOrNull() },
@@ -150,16 +161,42 @@ fun WorkItOutAppEntry() {
                             rememberViewModelStoreNavEntryDecorator(),
                         ),
                         entryProvider = entryProvider {
-                            entry<HomeKey> { HomeRoute(homeViewModel) }
+                            entry<HomeKey> {
+                                Column(Modifier.padding(16.dp)) { HomeRoute(homeViewModel) }
+                            }
                             entry<SettingsKey> {
-                                val settingsViewModel: SettingsViewModel = composeViewModel(
+                                val vm: SettingsViewModel = viewModel(
+                                    factory = viewModelFactory { initializer { SettingsViewModel(container.historyRepository) } },
+                                )
+                                SettingsScreen(vm)
+                            }
+                            entry<HistoryKey> {
+                                val vm: HistoryViewModel = viewModel(
                                     factory = viewModelFactory {
                                         initializer {
-                                            SettingsViewModel(container.historyRepository, context.applicationContext.stringProvider())
+                                            HistoryViewModel(container.historyRepository, context.applicationContext.stringProvider())
                                         }
                                     },
                                 )
-                                SettingsScreen(settingsViewModel)
+                                HistoryScreen(
+                                    viewModel = vm,
+                                    onEditEntry = { id -> backStack.add(EditEntryKey(id)) },
+                                    onAddEntry = { backStack.add(EditEntryKey(null)) },
+                                )
+                            }
+                            entry<StatsKey> {
+                                val vm: StatsViewModel = viewModel(
+                                    factory = viewModelFactory { initializer { StatsViewModel(container.historyRepository) } },
+                                )
+                                StatsRoute(vm)
+                            }
+                            entry<EditEntryKey> { key ->
+                                val vm: EditEntryViewModel = viewModel(
+                                    factory = viewModelFactory {
+                                        initializer { EditEntryViewModel(container.historyRepository, key.id) }
+                                    },
+                                )
+                                EditEntryScreen(vm, onClose = { backStack.removeLastOrNull() })
                             }
                         },
                     )

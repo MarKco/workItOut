@@ -153,4 +153,13 @@ class DataStoreHistoryRepositoryTest {
         dataStore.edit { it[stringPreferencesKey("work_history_list_json")] = "{not json" }
         assertEquals(0, repository.history.first().size)
     }
+
+    @Test
+    fun workDays_defaultToWeekdaysAndRoundTrip() = runBlocking {
+        assertEquals(DEFAULT_WORK_DAYS, repository.workDays.first())
+        repository.setWorkDays(setOf(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.MONDAY))
+        assertEquals(setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.SATURDAY), repository.workDays.first())
+        repository.setWorkDays(emptySet())
+        assertEquals(emptySet<java.time.DayOfWeek>(), repository.workDays.first())
+    }
 }

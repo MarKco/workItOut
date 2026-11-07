@@ -15,12 +15,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.IOException
+import java.time.DayOfWeek
 
 const val DEFAULT_DAILY_HOURS = 8.0
+
+/** Monday to Friday. */
+val DEFAULT_WORK_DAYS: Set<DayOfWeek> = setOf(
+    DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY,
+)
 
 interface HistoryRepository {
     val history: Flow<List<WorkHistoryEntry>>
     val dailyHours: Flow<Double>
+    val workDays: Flow<Set<DayOfWeek>>
     val activeSession: Flow<ActiveSession?>
 
     /** Newest entry goes first; an entry with the same id is replaced. */
@@ -28,6 +35,7 @@ interface HistoryRepository {
     suspend fun replaceHistory(entries: List<WorkHistoryEntry>)
     suspend fun clearHistory()
     suspend fun setDailyHours(hours: Double)
+    suspend fun setWorkDays(days: Set<DayOfWeek>)
     suspend fun saveActiveSession(session: ActiveSession?)
 }
 
@@ -42,6 +50,8 @@ class DataStoreHistoryRepository(
     private object Keys {
         val HISTORY_JSON = stringPreferencesKey("work_history_list_json")
         val DAILY_HOURS = doublePreferencesKey("daily_hours")
+        /** Comma separated [DayOfWeek] names; absent means [DEFAULT_WORK_DAYS]. */
+        val WORK_DAYS = stringPreferencesKey("work_days")
         val ENTER_TIME = longPreferencesKey("current_enter_time")
 
         /** Legacy: pauses as an unordered string set, one JSON object per pause. */
@@ -67,6 +77,10 @@ class DataStoreHistoryRepository(
 
     override val dailyHours: Flow<Double> =
         safeData.map { it[Keys.DAILY_HOURS] ?: DEFAULT_DAILY_HOURS }.distinctUntilChanged()
+
+    override val workDays: Flow<Set<DayOfWeek>> =
+        safeData.map { prefs -> prefs[Keys.WORK_DAYS]?.let(::decodeWorkDays) ?: DEFAULT_WORK_DAYS }
+            .distinctUntilChanged()
 
     override val activeSession: Flow<ActiveSession?> =
         safeData.map { prefs ->
@@ -94,6 +108,10 @@ class DataStoreHistoryRepository(
         dataStore.edit { it[Keys.DAILY_HOURS] = hours }
     }
 
+    override suspend fun setWorkDays(days: Set<DayOfWeek>) {
+        dataStore.edit { it[Keys.WORK_DAYS] = days.sorted().joinToString(",") { day -> day.name } }
+    }
+
     override suspend fun saveActiveSession(session: ActiveSession?) {
         dataStore.edit { prefs ->
             prefs.remove(Keys.PAUSES_LEGACY_SET)
@@ -115,6 +133,9 @@ class DataStoreHistoryRepository(
         if (raw.isNullOrBlank()) return emptyList()
         return runCatching { json.decodeFromString(historySerializer, raw) }.getOrDefault(emptyList())
     }
+
+    private fun decodeWorkDays(raw: String): Set<DayOfWeek> =
+        raw.split(',').mapNotNull { name -> DayOfWeek.entries.firstOrNull { it.name == name.trim() } }.toSet()
 
     private fun decodePauses(prefs: Preferences): List<PausePair> {
         prefs[Keys.PAUSES_JSON]?.let { raw ->

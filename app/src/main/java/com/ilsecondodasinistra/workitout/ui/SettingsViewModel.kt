@@ -3,33 +3,40 @@ package com.ilsecondodasinistra.workitout.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.workitout.R
+import com.ilsecondodasinistra.workitout.data.DEFAULT_WORK_DAYS
 import com.ilsecondodasinistra.workitout.data.HistoryRepository
-import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
-import com.ilsecondodasinistra.workitout.domain.HistoryTextExporter
+import com.ilsecondodasinistra.workitout.domain.BackupFile
+import com.ilsecondodasinistra.workitout.domain.HistoryBackup
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.time.Clock
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.util.Locale
 
 data class SettingsUiState(
     val dailyHoursInput: String = "8",
-    val history: List<WorkHistoryEntry> = emptyList(),
+    val workDays: Set<DayOfWeek> = DEFAULT_WORK_DAYS,
     val message: UiMessage? = null,
-    val showClearConfirmDialog: Boolean = false,
-    val shareText: String? = null,
+    /** A parsed backup waiting for the user to confirm replacing the current data. */
+    val pendingRestore: BackupFile? = null,
 )
 
 class SettingsViewModel(
     private val repository: HistoryRepository,
-    private val strings: StringProvider,
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    private val hoursInputFormat = DecimalFormat("#.##")
+    private val hoursInputFormat = DecimalFormat("#.##", DecimalFormatSymbols(Locale.ROOT)) // always "7.5": the input only accepts a dot
     private val validHoursInput = Regex("^\\d*\\.?\\d{0,2}$")
 
     init {
@@ -39,7 +46,7 @@ class SettingsViewModel(
             }
         }
         viewModelScope.launch {
-            repository.history.collect { history -> _uiState.update { it.copy(history = history) } }
+            repository.workDays.collect { days -> _uiState.update { it.copy(workDays = days) } }
         }
     }
 
@@ -59,30 +66,47 @@ class SettingsViewModel(
         }
     }
 
-    fun requestClearHistory() = _uiState.update { it.copy(showClearConfirmDialog = true) }
+    fun toggleWorkDay(day: DayOfWeek) {
+        val days = _uiState.value.workDays.let { if (day in it) it - day else it + day }
+        viewModelScope.launch { repository.setWorkDays(days) }
+    }
 
-    fun cancelClearHistory() = _uiState.update { it.copy(showClearConfirmDialog = false) }
+    // --- Backup -----------------------------------------------------------------------------
 
-    fun confirmClearHistory() {
+    fun backupFileName(): String = "workitout-backup-${LocalDate.now(clock)}.json"
+
+    suspend fun createBackup(): String = HistoryBackup.encode(
+        history = repository.history.first(),
+        dailyHours = repository.dailyHours.first(),
+        workDays = repository.workDays.first(),
+        exportedAt = clock.millis(),
+    )
+
+    fun onBackupSaved() = showMessage(R.string.backup_saved)
+
+    fun onBackupIoError() = showMessage(R.string.backup_io_error)
+
+    /** Validates the chosen file and asks for confirmation before anything is overwritten. */
+    fun onBackupRead(text: String) {
+        HistoryBackup.decode(text)
+            .onSuccess { file -> _uiState.update { it.copy(pendingRestore = file) } }
+            .onFailure { showMessage(R.string.backup_invalid) }
+    }
+
+    fun cancelRestore() = _uiState.update { it.copy(pendingRestore = null) }
+
+    fun confirmRestore() {
+        val file = _uiState.value.pendingRestore ?: return
+        _uiState.update { it.copy(pendingRestore = null) }
         viewModelScope.launch {
-            repository.clearHistory()
-            _uiState.update {
-                it.copy(message = UiMessage(R.string.history_cleared_successfully), showClearConfirmDialog = false)
-            }
+            repository.replaceHistory(file.history.sortedByDescending { it.enterTime })
+            repository.setDailyHours(file.dailyHours)
+            repository.setWorkDays(file.workDaySet())
+            showMessage(R.string.backup_restored)
         }
     }
-
-    fun shareHistory() {
-        val history = _uiState.value.history
-        if (history.isEmpty()) {
-            _uiState.update { it.copy(message = UiMessage(R.string.no_history_to_share)) }
-            return
-        }
-        val text = HistoryTextExporter.export(history, strings)
-        _uiState.update { it.copy(shareText = text) }
-    }
-
-    fun onShareLaunched() = _uiState.update { it.copy(shareText = null) }
 
     fun messageShown() = _uiState.update { it.copy(message = null) }
+
+    private fun showMessage(resId: Int) = _uiState.update { it.copy(message = UiMessage(resId)) }
 }

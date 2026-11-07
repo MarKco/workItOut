@@ -92,4 +92,13 @@ class WorkTimeCalculatorTest {
         val rolled = WorkTimeCalculator.rollToNextDayIfBefore(picked, enter, zone)
         assertEquals(Instant.parse("2026-03-29T01:00:00Z").toEpochMilli(), rolled)
     }
+
+    @Test
+    fun formatBalance_isSigned() {
+        assertEquals("+1h 30m", WorkTimeCalculator.formatBalance(hour + 30 * minute))
+        assertEquals("-45m", WorkTimeCalculator.formatBalance(-45 * minute))
+        assertEquals("-2h 0m", WorkTimeCalculator.formatBalance(-2 * hour))
+        assertEquals("0m", WorkTimeCalculator.formatBalance(0))
+        assertEquals("0m", WorkTimeCalculator.formatBalance(30_000))
+    }
 }

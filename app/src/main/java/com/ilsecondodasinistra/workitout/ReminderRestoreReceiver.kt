@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 /** Restores the exit reminder after reboot, app update, or when exact alarms get allowed. */
 class ReminderRestoreReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action !in HANDLED_ACTIONS) return
         val container = (context.applicationContext as WorkItOutApp).container
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
@@ -20,5 +21,13 @@ class ReminderRestoreReceiver : BroadcastReceiver() {
                 pending.finish()
             }
         }
+    }
+
+    private companion object {
+        val HANDLED_ACTIONS = setOf(
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED",
+        )
     }
 }
