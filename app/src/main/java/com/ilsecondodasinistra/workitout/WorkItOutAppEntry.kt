@@ -1,7 +1,10 @@
 package com.ilsecondodasinistra.workitout
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,59 +25,66 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import com.ilsecondodasinistra.workitout.ui.HomeScreen
+import androidx.lifecycle.viewmodel.compose.viewModel as composeViewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import com.ilsecondodasinistra.workitout.ui.HomeRoute
 import com.ilsecondodasinistra.workitout.ui.HomeViewModel
 import com.ilsecondodasinistra.workitout.ui.SettingsScreen
+import com.ilsecondodasinistra.workitout.ui.SettingsViewModel
+import com.ilsecondodasinistra.workitout.ui.stringProvider
 import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
+import kotlinx.serialization.Serializable
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@Serializable
+data object HomeKey : NavKey
+
+@Serializable
+data object SettingsKey : NavKey
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkItOutAppEntry() {
     WorkItOutM3Theme {
-        var currentPage by remember { mutableStateOf("home") }
-        var resetRequested by remember { mutableStateOf(false) }
-
         val context = LocalContext.current
-        val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            null
-        }
+        val container = (context.applicationContext as WorkItOutApp).container
+        val backStack = rememberNavBackStack(HomeKey)
+        val onHome = backStack.lastOrNull() != SettingsKey
 
-        LaunchedEffect(key1 = notificationPermissionState) {
-            if (notificationPermissionState != null && !notificationPermissionState.status.isGranted) {
-                notificationPermissionState.launchPermissionRequest()
-            }
-        }
+        // The reset button lives in the top bar, so Home's ViewModel is owned by the activity.
+        val homeViewModel: HomeViewModel = composeViewModel(
+            factory = viewModelFactory {
+                initializer { HomeViewModel(container.historyRepository, container.exitReminderScheduler) }
+            },
+        )
+
+        RequestNotificationPermission()
 
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            text = if (currentPage == "home") stringResource(R.string.app_name) else stringResource(R.string.settings),
+                            text = stringResource(if (onHome) R.string.app_name else R.string.settings),
                             style = MaterialTheme.typography.headlineSmall,
                         )
                     },
                     actions = {
                         // Reset button (only on home page)
-                        if (currentPage == "home") {
-                            IconButton(onClick = { resetRequested = true }) {
+                        if (onHome) {
+                            IconButton(onClick = homeViewModel::resetAll) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = stringResource(R.string.reset_all)
@@ -83,11 +93,11 @@ fun WorkItOutAppEntry() {
                         }
                         // Settings/Home navigation button
                         IconButton(onClick = {
-                            currentPage = if (currentPage == "home") "settings" else "home"
+                            if (onHome) backStack.add(SettingsKey) else backStack.removeLastOrNull()
                         }) {
                             Icon(
-                                imageVector = if (currentPage == "home") Icons.Filled.Settings else Icons.Filled.Home,
-                                contentDescription = if (currentPage == "home") stringResource(R.string.settings) else stringResource(R.string.home)
+                                imageVector = if (onHome) Icons.Filled.Settings else Icons.Filled.Home,
+                                contentDescription = if (onHome) stringResource(R.string.settings) else stringResource(R.string.home)
                             )
                         }
                     },
@@ -132,43 +142,41 @@ fun WorkItOutAppEntry() {
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    if (currentPage == "home") {
-                        HomeScreen(
-                            resetRequested = resetRequested,
-                            onResetHandled = { resetRequested = false }
-                        )
-                    } else {
-                        SettingsScreen()
-                    }
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { backStack.removeLastOrNull() },
+                        entryDecorators = listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                        ),
+                        entryProvider = entryProvider {
+                            entry<HomeKey> { HomeRoute(homeViewModel) }
+                            entry<SettingsKey> {
+                                val settingsViewModel: SettingsViewModel = composeViewModel(
+                                    factory = viewModelFactory {
+                                        initializer {
+                                            SettingsViewModel(container.historyRepository, context.applicationContext.stringProvider())
+                                        }
+                                    },
+                                )
+                                SettingsScreen(settingsViewModel)
+                            }
+                        },
+                    )
                 }
             }
         }
     }
 }
 
-// Make sure you have this in your strings.xml
-// <string name="app_name">WorkItOut</string>
-// <string name="settings">Impostazioni</string>
-
-
-// Create a dummy drawable for preview if you don't have the actual logo yet
-// For example, in res/drawable/ic_workitout_logo_preview.xml:
-/*
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-  <path
-      android:fillColor="@android:color/white"
-      android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8S16.41,20 12,20zM12.5,7H11v6l5.25,3.15 0.75,-1.23 -4.5,-2.67z"/>
-</vector>
-*/
-
-@Preview(showBackground = true)
 @Composable
-fun WorkItOutAppEntryPreview() {
-    // In preview, provide a fallback drawable or ensure your real one exists
-    // For the R.drawable.ic_workitout_logo to resolve in preview, ensure it's in a common source set or use a specific preview drawable.
-    WorkItOutAppEntry()
+private fun RequestNotificationPermission() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        val granted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!granted) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
 }

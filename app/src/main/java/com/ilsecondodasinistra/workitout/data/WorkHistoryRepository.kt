@@ -1,6 +1,5 @@
 package com.ilsecondodasinistra.workitout.data
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -9,157 +8,121 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
-// Create a DataStore instance
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "work_history_datastore")
+const val DEFAULT_DAILY_HOURS = 8.0
 
 interface HistoryRepository {
-    fun getAllHistoryFlow(): Flow<List<WorkHistoryEntry>>
-    suspend fun addWorkHistoryEntry(entry: WorkHistoryEntry)
-    suspend fun clearAllHistory()
-    fun getDailyHours(): Flow<Double>
-    suspend fun saveDailyHours(hours: Double)
+    val history: Flow<List<WorkHistoryEntry>>
+    val dailyHours: Flow<Double>
+    val activeSession: Flow<ActiveSession?>
 
-    // Methods for current session persistence
-    suspend fun saveCurrentSession(enterTimeMillis: Long?, exitTimeMillis: Long?, currentPausesJson: Set<String>?)
-    fun getCurrentSession(): Flow<Triple<Long?, Long?, Set<String>?>> // Triple: Enter, Exit, Pauses JSON Set
+    /** Newest entry goes first; an entry with the same id is replaced. */
+    suspend fun addEntry(entry: WorkHistoryEntry)
+    suspend fun replaceHistory(entries: List<WorkHistoryEntry>)
+    suspend fun clearHistory()
+    suspend fun setDailyHours(hours: Double)
+    suspend fun saveActiveSession(session: ActiveSession?)
 }
 
-class DataStoreHistoryRepository(private val context: Context) : HistoryRepository {
+/**
+ * [HistoryRepository] backed by Preferences DataStore. The key names and value formats are kept
+ * compatible with every version released so far, so existing users keep their data.
+ */
+class DataStoreHistoryRepository(
+    private val dataStore: DataStore<Preferences>,
+) : HistoryRepository {
 
-    // Make PreferencesKeys a companion object or a top-level object if preferred
-    // For consistency with typical DataStore examples, keeping it as an inner object.
-    private object PreferencesKeys {
-        val WORK_HISTORY_LIST_JSON = stringPreferencesKey("work_history_list_json")
+    private object Keys {
+        val HISTORY_JSON = stringPreferencesKey("work_history_list_json")
         val DAILY_HOURS = doublePreferencesKey("daily_hours")
+        val ENTER_TIME = longPreferencesKey("current_enter_time")
 
-        // Keys for current session
-        val CURRENT_ENTER_TIME = longPreferencesKey("current_enter_time")
-        val CURRENT_EXIT_TIME = longPreferencesKey("current_exit_time")
-        val CURRENT_PAUSES_JSON = stringSetPreferencesKey("current_pauses_json")
+        /** Legacy: pauses as an unordered string set, one JSON object per pause. */
+        val PAUSES_LEGACY_SET = stringSetPreferencesKey("current_pauses_json")
+
+        /** Current: pauses as one ordered JSON array. */
+        val PAUSES_JSON = stringPreferencesKey("current_pauses_list_json")
     }
 
-    // This Json instance is for kotlinx.serialization, used for WorkHistoryEntry
     private val json = Json {
-        prettyPrint = true
-        isLenient = true
         ignoreUnknownKeys = true
+        isLenient = true
+    }
+    private val historySerializer = ListSerializer(WorkHistoryEntry.serializer())
+    private val pausesSerializer = ListSerializer(PausePair.serializer())
+
+    private val safeData: Flow<Preferences> = dataStore.data.catch { e ->
+        if (e is IOException) emit(emptyPreferences()) else throw e
     }
 
-    override fun getAllHistoryFlow(): Flow<List<WorkHistoryEntry>> {
-        return context.dataStore.data
-            .catch { exception ->
-                if (exception is IOException) {
-                    emit(emptyPreferences())
-                } else {
-                    throw exception
-                }
-            }
-            .map { preferences ->
-                val jsonString = preferences[PreferencesKeys.WORK_HISTORY_LIST_JSON]
-                if (jsonString != null && jsonString.isNotBlank()) {
-                    try {
-                        json.decodeFromString(ListSerializer(WorkHistoryEntry.serializer()), jsonString)
-                    } catch (e: Exception) {
-                        e.printStackTrace() // Log the error
-                        emptyList<WorkHistoryEntry>() // Return empty list on error
-                    }
-                } else {
-                    emptyList<WorkHistoryEntry>()
-                }
-            }
-    }
+    override val history: Flow<List<WorkHistoryEntry>> =
+        safeData.map { decodeHistory(it[Keys.HISTORY_JSON]) }.distinctUntilChanged()
 
-    override suspend fun addWorkHistoryEntry(entry: WorkHistoryEntry) {
-        context.dataStore.edit { preferences ->
-            val currentJsonString = preferences[PreferencesKeys.WORK_HISTORY_LIST_JSON]
-            val currentList: MutableList<WorkHistoryEntry> = if (currentJsonString != null && currentJsonString.isNotBlank()) {
-                try {
-                    json.decodeFromString(ListSerializer(WorkHistoryEntry.serializer()), currentJsonString).toMutableList()
-                } catch (e: Exception) {
-                    e.printStackTrace() // Log the error
-                    mutableListOf() // Return new list on error
-                }
-            } else {
-                mutableListOf()
-            }
-            currentList.add(0, entry) // Add new entries to the beginning
-            preferences[PreferencesKeys.WORK_HISTORY_LIST_JSON] = json.encodeToString(ListSerializer(WorkHistoryEntry.serializer()), currentList)
+    override val dailyHours: Flow<Double> =
+        safeData.map { it[Keys.DAILY_HOURS] ?: DEFAULT_DAILY_HOURS }.distinctUntilChanged()
+
+    override val activeSession: Flow<ActiveSession?> =
+        safeData.map { prefs ->
+            val enter = prefs[Keys.ENTER_TIME] ?: return@map null
+            ActiveSession(enter, decodePauses(prefs))
+        }.distinctUntilChanged()
+
+    override suspend fun addEntry(entry: WorkHistoryEntry) {
+        dataStore.edit { prefs ->
+            val others = decodeHistory(prefs[Keys.HISTORY_JSON]).filterNot { it.id == entry.id }
+            val updated = listOf(entry) + others
+            prefs[Keys.HISTORY_JSON] = json.encodeToString(historySerializer, updated)
         }
     }
 
-    override suspend fun clearAllHistory() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(PreferencesKeys.WORK_HISTORY_LIST_JSON)
-            // preferences.remove(PreferencesKeys.DAILY_HOURS) // Decide if daily hours should be cleared too
-        }
+    override suspend fun replaceHistory(entries: List<WorkHistoryEntry>) {
+        dataStore.edit { it[Keys.HISTORY_JSON] = json.encodeToString(historySerializer, entries) }
     }
 
-    override fun getDailyHours(): Flow<Double> {
-        return context.dataStore.data
-            .catch { exception ->
-                if (exception is IOException) {
-                    emit(emptyPreferences())
+    override suspend fun clearHistory() {
+        dataStore.edit { it.remove(Keys.HISTORY_JSON) }
+    }
+
+    override suspend fun setDailyHours(hours: Double) {
+        dataStore.edit { it[Keys.DAILY_HOURS] = hours }
+    }
+
+    override suspend fun saveActiveSession(session: ActiveSession?) {
+        dataStore.edit { prefs ->
+            prefs.remove(Keys.PAUSES_LEGACY_SET)
+            if (session == null) {
+                prefs.remove(Keys.ENTER_TIME)
+                prefs.remove(Keys.PAUSES_JSON)
+            } else {
+                prefs[Keys.ENTER_TIME] = session.enterTime
+                if (session.pauses.isEmpty()) {
+                    prefs.remove(Keys.PAUSES_JSON)
                 } else {
-                    throw exception
+                    prefs[Keys.PAUSES_JSON] = json.encodeToString(pausesSerializer, session.pauses)
                 }
-            }
-            .map { preferences ->
-                preferences[PreferencesKeys.DAILY_HOURS] ?: 8.0 // Default to 8.0 if not set
-            }
-    }
-
-    override suspend fun saveDailyHours(hours: Double) {
-        context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.DAILY_HOURS] = hours
-        }
-    }
-
-    // Implementation for current session persistence
-    override suspend fun saveCurrentSession(enterTimeMillis: Long?, exitTimeMillis: Long?, currentPausesJson: Set<String>?) {
-        context.dataStore.edit { preferences ->
-            if (enterTimeMillis == null) {
-                preferences.remove(PreferencesKeys.CURRENT_ENTER_TIME)
-            } else {
-                preferences[PreferencesKeys.CURRENT_ENTER_TIME] = enterTimeMillis
-            }
-
-            if (exitTimeMillis == null) {
-                preferences.remove(PreferencesKeys.CURRENT_EXIT_TIME)
-            } else {
-                preferences[PreferencesKeys.CURRENT_EXIT_TIME] = exitTimeMillis
-            }
-
-            if (currentPausesJson == null || currentPausesJson.isEmpty()) { // Also check for isEmpty
-                preferences.remove(PreferencesKeys.CURRENT_PAUSES_JSON)
-            } else {
-                preferences[PreferencesKeys.CURRENT_PAUSES_JSON] = currentPausesJson
             }
         }
     }
 
-    override fun getCurrentSession(): Flow<Triple<Long?, Long?, Set<String>?>> {
-        return context.dataStore.data
-            .catch { exception ->
-                if (exception is IOException) {
-                    emit(emptyPreferences())
-                } else {
-                    throw exception
-                }
-            }
-            .map { preferences ->
-                val enterTime = preferences[PreferencesKeys.CURRENT_ENTER_TIME]
-                val exitTime = preferences[PreferencesKeys.CURRENT_EXIT_TIME]
-                val pausesJson = preferences[PreferencesKeys.CURRENT_PAUSES_JSON]
-                Triple(enterTime, exitTime, pausesJson)
-            }
+    private fun decodeHistory(raw: String?): List<WorkHistoryEntry> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return runCatching { json.decodeFromString(historySerializer, raw) }.getOrDefault(emptyList())
+    }
+
+    private fun decodePauses(prefs: Preferences): List<PausePair> {
+        prefs[Keys.PAUSES_JSON]?.let { raw ->
+            return runCatching { json.decodeFromString(pausesSerializer, raw) }.getOrDefault(emptyList())
+        }
+        // Legacy set has no order: restore chronological order from the pause start times.
+        return prefs[Keys.PAUSES_LEGACY_SET].orEmpty()
+            .mapNotNull { runCatching { json.decodeFromString(PausePair.serializer(), it) }.getOrNull() }
+            .sortedBy { it.start ?: Long.MAX_VALUE }
     }
 }

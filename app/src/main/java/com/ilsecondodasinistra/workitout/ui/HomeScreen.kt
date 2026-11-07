@@ -1,9 +1,13 @@
 package com.ilsecondodasinistra.workitout.ui
 
-//import androidx.lifecycle.viewmodel.compose.viewModel // Already imported via IHomeViewModel
-// Add this import
-import IHomeViewModel
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
+import com.ilsecondodasinistra.workitout.R
+import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,9 +45,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,54 +54,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleObserver
-import com.ilsecondodasinistra.workitout.R
-import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.workitout.data.PausePair
+import com.ilsecondodasinistra.workitout.domain.TimeFormats
+import com.ilsecondodasinistra.workitout.domain.WorkTimeCalculator
+
+@Composable
+fun HomeRoute(viewModel: HomeViewModel) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    HomeScreen(uiState = uiState, actions = viewModel)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: IHomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel<HomeViewModel>(),
-    resetRequested: Boolean = false,
-    onResetHandled: () -> Unit = {}
+    uiState: HomeUiState,
+    actions: HomeActions,
 ) {
-    val uiState by homeViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val timePickerState = rememberTimePickerState(is24Hour = true)
-    var showTimePickerDialog by remember { mutableStateOf(false) }
-
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Get string resources in Composable context
-    val notificationTitle = stringResource(R.string.notification_exit_time_title)
-    val notificationBodyTemplate = stringResource(R.string.notification_exit_time_body)
-
-    // Observe lifecycle events to call ViewModel's onResume
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            // We only need to tell the ViewModel about the resume event,
-            // as it implements DefaultLifecycleObserver and will call its own onResume.
-        }
-        lifecycleOwner.lifecycle.addObserver(homeViewModel as LifecycleObserver) // Add ViewModel as an observer
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(homeViewModel as LifecycleObserver) // Clean up
-        }
-    }
-
-    // Handle showing TimePickerDialog based on ViewModel event
     LaunchedEffect(uiState.timePickerEvent) {
         uiState.timePickerEvent?.let { event ->
             timePickerState.hour = event.initialHour
@@ -107,67 +88,35 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(uiState.timePickerEvent) {
-        showTimePickerDialog = uiState.timePickerEvent != null
-    }
-
-    // Handle messages (Snackbar)
     LaunchedEffect(uiState.message) {
-        if (uiState.message.isNotEmpty()) {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = uiState.message,
-                    duration = SnackbarDuration.Short
-                )
-            }
-            homeViewModel.clearMessage() // Clear regular message after showing
+        uiState.message?.let { message ->
+            val text = message.resolve(context)
+            scope.launch { snackbarHostState.showSnackbar(message = text, duration = SnackbarDuration.Short) }
+            actions.messageShown()
         }
     }
 
-    // Handle reset request from parent
-    LaunchedEffect(resetRequested) {
-        if (resetRequested) {
-            (homeViewModel as? HomeViewModel)?.resetAll(context)
-            onResetHandled()
-        }
-    }
-
-    val messageForAlarmPermission = stringResource(R.string.alarm_permission_message)
-    val toastText = stringResource(R.string.notification_exit_time_body, homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
-
-    // Schedule alarm when calculatedExitTime changes and is valid
+    val expectedExitToast = stringResource(
+        R.string.notification_exit_time_body,
+        TimeFormats.time(uiState.calculatedExitTime),
+    )
     LaunchedEffect(uiState.calculatedExitTime) {
-        val calculatedExitTime = uiState.calculatedExitTime
-        if (calculatedExitTime != null && calculatedExitTime.time > System.currentTimeMillis()) {
-            Toast.makeText(
-                context,
-                toastText,
-                Toast.LENGTH_SHORT
-            ).show()
+        val exit = uiState.calculatedExitTime
+        if (exit != null && exit > System.currentTimeMillis()) {
+            Toast.makeText(context, expectedExitToast, Toast.LENGTH_SHORT).show()
+        }
+    }
 
-            // Check for exact alarm permission (Android 12+)
-            val hasExactAlarmPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-                alarmManager.canScheduleExactAlarms()
-            } else {
-                true
+    val alarmPermissionText = stringResource(R.string.alarm_permission_message)
+    LaunchedEffect(uiState.alarmPermissionMissing) {
+        if (uiState.alarmPermissionMissing) {
+            Toast.makeText(context, alarmPermissionText, Toast.LENGTH_LONG).show()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    .setData(Uri.fromParts("package", context.packageName, null))
+                runCatching { context.startActivity(intent) }
             }
-            if (hasExactAlarmPermission) {
-                (homeViewModel as? HomeViewModel)?.scheduleExitAlarmIfNeeded(
-                    context,
-                    notificationTitle,
-                    notificationBodyTemplate.format(homeViewModel.formatTimeToDisplay(calculatedExitTime))
-                )
-            } else {
-                Toast.makeText(
-                    context,
-                    messageForAlarmPermission,
-                    Toast.LENGTH_LONG
-                ).show()
-                // Redirect to exact alarm permission settings
-                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                context.startActivity(intent)
-            }
+            actions.alarmPermissionHandled()
         }
     }
 
@@ -194,9 +143,9 @@ fun HomeScreen(
                     TimeButtonM3(
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                         buttonType = ButtonType.Enter,
-                        time = homeViewModel.formatTimeToDisplay(uiState.enterTime),
-                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Enter) },
-                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Enter) },
+                        time = TimeFormats.time(uiState.enterTime),
+                        onClick = { actions.press(ButtonType.Enter) },
+                        onEditClick = { actions.requestTimeEdit(ButtonType.Enter) },
                         enabled = true,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -209,14 +158,14 @@ fun HomeScreen(
                             index = idx,
                             pause = pause,
                             enabled = uiState.enterTime != null,
-                            onToLunch = { homeViewModel.handlePauseStart(idx) },
-                            onFromLunch = { homeViewModel.handlePauseEnd(idx) },
-                            onEditToLunch = { homeViewModel.handlePauseEditStart(idx) },
-                            onEditFromLunch = { homeViewModel.handlePauseEditEnd(idx) }
+                            onToLunch = { actions.startPause(idx) },
+                            onFromLunch = { actions.endPause(idx) },
+                            onEditToLunch = { actions.requestPauseStartEdit(idx) },
+                            onEditFromLunch = { actions.requestPauseEndEdit(idx) }
                         )
                     }
                     ElevatedButton(
-                        onClick = { homeViewModel.handleAddPause() },
+                        onClick = { actions.addPause() },
                         enabled = uiState.enterTime != null && (uiState.pauses.isEmpty() || uiState.pauses.last().end != null),
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(
@@ -236,9 +185,9 @@ fun HomeScreen(
                     TimeButtonM3(
                         modifier = Modifier.padding(vertical = 24.dp),
                         buttonType = ButtonType.Exit,
-                        time = homeViewModel.formatTimeToDisplay(uiState.exitTime),
-                        onClick = { homeViewModel.handleTimeButtonPress(ButtonType.Exit) },
-                        onEditClick = { homeViewModel.handleTimeEditRequest(ButtonType.Exit) },
+                        time = TimeFormats.time(uiState.exitTime),
+                        onClick = { actions.press(ButtonType.Exit) },
+                        onEditClick = { actions.requestTimeEdit(ButtonType.Exit) },
                         enabled = uiState.enterTime != null,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.tertiary,
@@ -270,19 +219,18 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             SummaryTextRow(stringResource(R.string.daily_hours), "${"%.1f".format(uiState.dailyHours)}h")
-                            SummaryTextRow(stringResource(R.string.estimated_exit), homeViewModel.formatTimeToDisplay(uiState.calculatedExitTime))
+                            SummaryTextRow(stringResource(R.string.estimated_exit), TimeFormats.time(uiState.calculatedExitTime))
                             SummaryTextRow(stringResource(R.string.total_today), uiState.totalWorkedTime ?: "N/A", isBold = true)
                         }
                     }
                 }
 
-                if (showTimePickerDialog && uiState.timePickerEvent != null) {
-                    val currentDialogEvent = uiState.timePickerEvent
+                uiState.timePickerEvent?.let { pickerEvent ->
                     TimePickerDialog(
-                        onDismiss = { homeViewModel.onDialogDismissed() },
+                        onDismiss = { actions.dismissTimePicker() },
                         onConfirm = {
-                            homeViewModel.onTimeEdited(
-                                buttonType = currentDialogEvent!!.type,
+                            actions.onTimeEdited(
+                                type = pickerEvent.type,
                                 hour = timePickerState.hour,
                                 minute = timePickerState.minute
                             )
@@ -399,7 +347,7 @@ fun PausePairRow(
         ) {
             TimeButtonM3(
                 buttonType = ButtonType.ToLunch,
-                time = pause.start?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
+                time = TimeFormats.time(pause.start),
                 onClick = onToLunch,
                 onEditClick = onEditToLunch,
                 enabled = enabled,
@@ -410,7 +358,7 @@ fun PausePairRow(
             )
             TimeButtonM3(
                 buttonType = ButtonType.FromLunch,
-                time = pause.end?.let { SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(it) } ?: "N/A",
+                time = TimeFormats.time(pause.end),
                 onClick = onFromLunch,
                 onEditClick = onEditFromLunch,
                 enabled = enabled,
@@ -425,8 +373,9 @@ fun PausePairRow(
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(stringResource(R.string.pause_number, index + 1))
-            if (pause.durationMinutes != null && pause.durationMinutes > 0) {
-                val totalMinutes = pause.durationMinutes
+            val durationMinutes = WorkTimeCalculator.pauseMinutes(pause)
+            if (durationMinutes != null) {
+                val totalMinutes = durationMinutes
                 val durationText = if (totalMinutes < 60) {
                     "$totalMinutes ${stringResource(R.string.minutes_short)}"
                 } else {
@@ -449,27 +398,25 @@ fun PausePairRow(
     }
 }
 
-@Preview(showBackground = true, name = "HomeScreen Logged In")
+
+@Preview(showBackground = true, name = "Home - session in progress")
 @Composable
-fun HomeScreenPreview_LoggedIn() {
+private fun HomeScreenInProgressPreview() {
+    val now = System.currentTimeMillis()
     WorkItOutM3Theme {
-        HomeScreen(homeViewModel = PreviewHomeViewModel())
+        HomeScreen(
+            uiState = HomeUiState(
+                enterTime = now - 4 * 3_600_000L,
+                pauses = listOf(PausePair(now - 2 * 3_600_000L, now - 90 * 60_000L)),
+                calculatedExitTime = now + 4 * 3_600_000L,
+            ),
+            actions = HomeActions.None,
+        )
     }
 }
 
-@Preview(showBackground = true, name = "HomeScreen Initial")
+@Preview(showBackground = true, name = "Home - empty")
 @Composable
-fun HomeScreenPreview_Initial() {
-    WorkItOutM3Theme {
-        val initialVm = PreviewHomeViewModel().apply {
-            (this._uiState).value = getPreviewHomeUiState(
-                enterTime = null,
-                pauses = emptyList(), // Corrected
-                exitTime = null,
-                calculatedExitTime = null,
-                totalWorkedTime = null
-            )
-        }
-        HomeScreen(homeViewModel = initialVm)
-    }
+private fun HomeScreenEmptyPreview() {
+    WorkItOutM3Theme { HomeScreen(uiState = HomeUiState(), actions = HomeActions.None) }
 }

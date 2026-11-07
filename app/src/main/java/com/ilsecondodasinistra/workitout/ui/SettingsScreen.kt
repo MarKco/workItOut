@@ -1,7 +1,7 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -31,13 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,64 +48,53 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
+import com.ilsecondodasinistra.workitout.domain.TimeFormats
 import com.ilsecondodasinistra.workitout.R
-import com.ilsecondodasinistra.workitout.ui.theme.WorkItOutM3Theme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    settingsViewModel: SettingsViewModel = viewModel()
-) {
-    val uiState by settingsViewModel.uiState.collectAsState()
+fun SettingsScreen(settingsViewModel: SettingsViewModel) {
+    val uiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Get string resources in Composable context
     val shareHistoryVia = stringResource(R.string.share_history_via)
     val errorCannotStartSharing = stringResource(R.string.error_cannot_start_sharing)
 
-    // Handle messages
     LaunchedEffect(uiState.message) {
-        if (uiState.message.isNotEmpty()) {
-            scope.launch {
-                snackbarHostState.showSnackbar(message = uiState.message)
-            }
-            settingsViewModel.clearMessage()
+        uiState.message?.let { message ->
+            val text = message.resolve(context)
+            scope.launch { snackbarHostState.showSnackbar(message = text) }
+            settingsViewModel.messageShown()
         }
     }
 
-    // Handle share intent event
-    LaunchedEffect(uiState.shareIntentEvent) {
-        uiState.shareIntentEvent?.let { event ->
-            try {
-                val sendIntent: Intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, event.textToShare)
-                    type = "text/plain"
-                }
-                val shareIntent = Intent.createChooser(sendIntent, shareHistoryVia)
-                context.startActivity(shareIntent)
-            } catch (e: Exception) {
-                Log.e("SettingsScreen", "Error sharing history: ${e.message}", e)
-                scope.launch {
-                    snackbarHostState.showSnackbar(message = errorCannotStartSharing)
-                }
+    LaunchedEffect(uiState.shareText) {
+        uiState.shareText?.let { text ->
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_TEXT, text)
+                type = "text/plain"
             }
-            settingsViewModel.onShareIntentLaunched()
+            try {
+                context.startActivity(Intent.createChooser(sendIntent, shareHistoryVia))
+            } catch (_: ActivityNotFoundException) {
+                snackbarHostState.showSnackbar(message = errorCannotStartSharing)
+            }
+            settingsViewModel.onShareLaunched()
         }
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInputString)) }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInput)) }
     // Sync with ViewModel state if it changes externally
-    LaunchedEffect(uiState.dailyHoursInputString) {
-        if (textFieldValue.text != uiState.dailyHoursInputString) {
-            textFieldValue = textFieldValue.copy(text = uiState.dailyHoursInputString)
+    LaunchedEffect(uiState.dailyHoursInput) {
+        if (textFieldValue.text != uiState.dailyHoursInput) {
+            textFieldValue = textFieldValue.copy(text = uiState.dailyHoursInput)
         }
     }
 
@@ -237,11 +224,8 @@ fun SettingsScreen(
                     contentPadding = PaddingValues(vertical = 8.dp), // Padding inside the list, top and bottom
                     verticalArrangement = Arrangement.spacedBy(12.dp), // Spacing between history items
                 ) {
-                    itemsIndexed(
-                        items = uiState.history,
-                        key = { index, _ -> "history_item_$index" }
-                    ) { _, record ->
-                        HistoryItemCard(record = record, settingsViewModel = settingsViewModel)
+                    items(items = uiState.history, key = { it.id }) { entry ->
+                        HistoryItemCard(entry = entry)
                     }
                 }
             }
@@ -268,32 +252,28 @@ fun SettingsScreen(
 }
 
 @Composable
-fun HistoryItemCard(record: Map<String, Any?>, settingsViewModel: SettingsViewModel) {
+fun HistoryItemCard(entry: WorkHistoryEntry) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.background
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(Modifier.padding(12.dp)) {
-            val enterTime = record["enterTime"] as? Long
-            val dateString = enterTime?.let {
-                java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date(it))
-            } ?: (record["id"]?.toString() ?: "N/A")
             Text(
-                text = stringResource(R.string.date, dateString),
+                text = stringResource(R.string.date, TimeFormats.date(entry.enterTime)),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
-            HistoryDetailText(stringResource(R.string.entry_time, settingsViewModel.formatLongTimestampToDisplay(record["enterTime"] as? Long)))
-            HistoryDetailText(stringResource(R.string.pause_start, settingsViewModel.formatLongTimestampToDisplay(record["toLunchTime"] as? Long)))
-            HistoryDetailText(stringResource(R.string.pause_end, settingsViewModel.formatLongTimestampToDisplay(record["fromLunchTime"] as? Long)))
-            HistoryDetailText(stringResource(R.string.exit_time, settingsViewModel.formatLongTimestampToDisplay(record["exitTime"] as? Long)))
-            HistoryDetailText(stringResource(R.string.total_worked_hours, record["totalWorkedTime"] ?: "N/A"))
-            HistoryDetailText(stringResource(R.string.daily_hours_set, record["dailyHours"] ?: "N/A"))
+            HistoryDetailText(stringResource(R.string.entry_time, TimeFormats.time(entry.enterTime)))
+            entry.pauses.forEach { pause ->
+                HistoryDetailText(stringResource(R.string.pause_start, TimeFormats.time(pause.start)))
+                HistoryDetailText(stringResource(R.string.pause_end, TimeFormats.time(pause.end)))
+            }
+            HistoryDetailText(stringResource(R.string.exit_time, TimeFormats.time(entry.exitTime)))
+            HistoryDetailText(stringResource(R.string.total_worked_hours, entry.totalWorkedTime))
+            HistoryDetailText(stringResource(R.string.daily_hours_set, entry.dailyHoursTarget))
         }
     }
 }
@@ -306,15 +286,4 @@ fun HistoryDetailText(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
         modifier = Modifier.padding(vertical = 2.dp)
     )
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun SettingsScreenPreview() {
-    WorkItOutM3Theme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            SettingsScreen()
-        }
-    }
 }
