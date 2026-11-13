@@ -6,7 +6,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +28,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -152,8 +156,10 @@ fun WorkItOutAppEntry() {
                     .padding(paddingValues),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
+                // On tablets and foldables keep the content a readable width instead of stretching it.
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     NavDisplay(
+                        modifier = Modifier.widthIn(max = 640.dp).fillMaxHeight(),
                         backStack = backStack,
                         onBack = { backStack.removeLastOrNull() },
                         entryDecorators = listOf(
