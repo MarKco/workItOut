@@ -5,11 +5,8 @@
     <!-- HomeScreen strings -->
     <string name="notification_exit_time_title">Time to leave!</string>
     <string name="notification_exit_time_body">Your expected exit time is %1$s</string>
-    <string name="add_pause">Add pause</string>
-    <string name="daily_hours">Daily hours:</string>
-    <string name="estimated_exit">Estimated exit:</string>
-    <string name="total_today">Total today:</string>
     <string name="edit_button_description">Edit %1$s</string>
+    <string name="add_pause">Add pause</string>
     <string name="pause_number">Pause %1$d</string>
     <string name="duration">Duration: %1$s</string>
     <string name="minutes_short">min</string>
@@ -129,4 +126,17 @@
     <string name="error_draft_exit_not_after_enter">Exit must be different from entry</string>
     <string name="error_draft_invalid_target">Target hours must be between 0 and 24</string>
     <string name="back">Back</string>
+
+    <!-- Home redesign -->
+    <string name="status_not_started">Not started</string>
+    <string name="status_working">In progress</string>
+    <string name="status_on_pause">On break</string>
+    <string name="status_done">Day complete</string>
+    <string name="hero_of_target">of %1$s</string>
+    <string name="hero_estimated_exit">Estimated exit</string>
+    <string name="hero_remaining">Remaining</string>
+    <string name="hero_overtime">Overtime</string>
+    <string name="action_start_pause">Start break</string>
+    <string name="action_end_pause">End break</string>
+    <string name="timeline_estimated">estimated</string>
 </resources>

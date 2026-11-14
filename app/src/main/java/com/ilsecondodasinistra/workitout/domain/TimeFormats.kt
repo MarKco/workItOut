@@ -15,5 +15,6 @@ object TimeFormats {
         millis?.let { formatter(pattern).format(Instant.ofEpochMilli(it).atZone(zone)) } ?: PLACEHOLDER
 
     fun time(millis: Long?, zone: ZoneId = ZoneId.systemDefault()) = format(millis, "HH:mm:ss", zone)
+    fun timeShort(millis: Long?, zone: ZoneId = ZoneId.systemDefault()) = format(millis, "HH:mm", zone)
     fun date(millis: Long?, zone: ZoneId = ZoneId.systemDefault()) = format(millis, "dd/MM/yyyy", zone)
 }

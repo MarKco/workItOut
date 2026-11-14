@@ -101,4 +101,22 @@ class WorkTimeCalculatorTest {
         assertEquals("0m", WorkTimeCalculator.formatBalance(0))
         assertEquals("0m", WorkTimeCalculator.formatBalance(30_000))
     }
+
+    @Test
+    fun workedSoFar_subtractsClosedPauses() {
+        val pauses = listOf(PausePair(2 * hour, 3 * hour))
+        assertEquals(4 * hour, WorkTimeCalculator.workedSoFarMillis(0, 5 * hour, pauses))
+    }
+
+    @Test
+    fun workedSoFar_freezesWhileOnOpenPause() {
+        val pauses = listOf(PausePair(2 * hour, null))
+        assertEquals(2 * hour, WorkTimeCalculator.workedSoFarMillis(0, 2 * hour + 10 * minute, pauses))
+        assertEquals(2 * hour, WorkTimeCalculator.workedSoFarMillis(0, 4 * hour, pauses))
+    }
+
+    @Test
+    fun workedSoFar_isZeroBeforeEnter() {
+        assertEquals(0, WorkTimeCalculator.workedSoFarMillis(hour, 0, emptyList()))
+    }
 }

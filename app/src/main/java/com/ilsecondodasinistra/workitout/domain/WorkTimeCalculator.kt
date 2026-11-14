@@ -35,6 +35,20 @@ object WorkTimeCalculator {
         return (exitTime - enterTime - totalPauseMillis(pauses)).coerceAtLeast(0)
     }
 
+    /**
+     * Time worked from [enterTime] up to [now], minus pauses. A pause still open (started, not ended)
+     * counts as paused until [now], so the total stands still while the user is on a break.
+     */
+    fun workedSoFarMillis(enterTime: Long, now: Long, pauses: List<PausePair>): Long {
+        if (now <= enterTime) return 0
+        val paused = pauses.sumOf { pause ->
+            val start = pause.start ?: return@sumOf 0L
+            val end = pause.end ?: now
+            if (end > start) end - start else 0L
+        }
+        return (now - enterTime - paused).coerceAtLeast(0)
+    }
+
     /** "7h 30m" */
     fun formatDuration(millis: Long): String {
         val hours = TimeUnit.MILLISECONDS.toHours(millis)

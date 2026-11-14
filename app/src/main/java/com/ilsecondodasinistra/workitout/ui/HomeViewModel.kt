@@ -56,6 +56,7 @@ interface HomeActions {
     fun onTimeEdited(type: ButtonType, hour: Int, minute: Int) {}
     fun dismissTimePicker() {}
     fun addPause() {}
+    fun startNewPause() {}
     fun startPause(index: Int) {}
     fun endPause(index: Int) {}
     fun requestPauseStartEdit(index: Int) {}
@@ -160,6 +161,15 @@ class HomeViewModel(
     override fun addPause() {
         if (_uiState.value.enterTime == null) return showMessage(R.string.error_must_enter_before_pause)
         update { it.copy(pauses = it.pauses + PausePair()) }
+        persistSession()
+    }
+
+    /** Starts a new pause right now. */
+    override fun startNewPause() {
+        val state = _uiState.value
+        if (state.enterTime == null) return showMessage(R.string.error_must_enter_before_pause)
+        if (state.exitTime != null) return
+        update { it.copy(pauses = it.pauses + PausePair(start = clock.millis())) }
         persistSession()
     }
 

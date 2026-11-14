@@ -1,47 +1,64 @@
-package com.ilsecondodasinistra.workitout.ui.theme // Adjust package name
+package com.ilsecondodasinistra.workitout.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Define your purple palette
-val Purple80 = Color(0xFFD0BCFF) // Light Purple - OnPrimaryContainer, etc.
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Warm orange palette, matching the launcher icon. Neutrals are tinted orange-brown
+// (not purple-grey) so surfaces feel warm too.
 
-val Purple40 = Color(0xFF6650a4) // Main Purple - Primary
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Light
+val OrangeLightPrimary = Color(0xFF9C4A00)
+val OrangeLightOnPrimary = Color(0xFFFFFFFF)
+val OrangeLightPrimaryContainer = Color(0xFFFFDCC4)
+val OrangeLightOnPrimaryContainer = Color(0xFF321300)
+val OrangeLightSecondary = Color(0xFF755846)
+val OrangeLightOnSecondary = Color(0xFFFFFFFF)
+val OrangeLightSecondaryContainer = Color(0xFFF7E0D2)
+val OrangeLightOnSecondaryContainer = Color(0xFF2B170A)
+val OrangeLightTertiary = Color(0xFF5F6134)
+val OrangeLightOnTertiary = Color(0xFFFFFFFF)
+val OrangeLightTertiaryContainer = Color(0xFFE4E6AD)
+val OrangeLightOnTertiaryContainer = Color(0xFF1C1D00)
+val OrangeLightBackground = Color(0xFFFFF8F5)
+val OrangeLightOnBackground = Color(0xFF211A15)
+val OrangeLightSurfaceVariant = Color(0xFFF4DED2)
+val OrangeLightOnSurfaceVariant = Color(0xFF52443B)
+val OrangeLightOutline = Color(0xFF85746A)
+val OrangeLightOutlineVariant = Color(0xFFD7C3B8)
+val OrangeLightInverseSurface = Color(0xFF372F2A)
+val OrangeLightInverseOnSurface = Color(0xFFFDEEE6)
+val OrangeLightInversePrimary = Color(0xFFFFB783)
+val OrangeLightSurfaceDim = Color(0xFFE6D7CD)
+val OrangeLightSurfaceContainerLowest = Color(0xFFFFFFFF)
+val OrangeLightSurfaceContainerLow = Color(0xFFFFF1E9)
+val OrangeLightSurfaceContainer = Color(0xFFFAEBE1)
+val OrangeLightSurfaceContainerHigh = Color(0xFFF4E5DB)
+val OrangeLightSurfaceContainerHighest = Color(0xFFEEDFD5)
 
-// Custom Purple Shades for our Theme
-val LightPurplePrimary = Color(0xFF6750A4) // Main primary
-val LightPurpleOnPrimary = Color(0xFFFFFFFF)
-val LightPurplePrimaryContainer = Color(0xFFEADDFF) // Lighter background for primary elements
-val LightPurpleOnPrimaryContainer = Color(0xFF21005D)
-
-val LightPurpleSecondary = Color(0xFF625B71)
-val LightPurpleOnSecondary = Color(0xFFFFFFFF)
-val LightPurpleSecondaryContainer = Color(0xFFE8DEF8)
-val LightPurpleOnSecondaryContainer = Color(0xFF1D192B)
-
-val LightPurpleTertiary = Color(0xFF7D5260)
-val LightPurpleOnTertiary = Color(0xFFFFFFFF)
-val LightPurpleTertiaryContainer = Color(0xFFFFD8E4)
-val LightPurpleOnTertiaryContainer = Color(0xFF31111D)
-
-val LightPurpleError = Color(0xFFB3261E)
-val LightPurpleErrorContainer = Color(0xFFF9DEDC)
-val LightPurpleOnError = Color(0xFFFFFFFF)
-val LightPurpleOnErrorContainer = Color(0xFF410E0B)
-
-val LightPurpleBackground = Color(0xFFF3EDF7) // Lighter background for the whole screen
-val LightPurpleOnBackground = Color(0xFF1C1B1F)
-val LightPurpleSurface = Color(0xFFFBF8FD)    // Surface for cards, sheets
-val LightPurpleOnSurface = Color(0xFF1C1B1F)
-val LightPurpleSurfaceVariant = Color(0xFFE7E0EC) // Borders, dividers
-val LightPurpleOnSurfaceVariant = Color(0xFF49454F)
-val LightPurpleOutline = Color(0xFF79747E)
-val LightPurpleInverseOnSurface = Color(0xFFF4EFF4)
-val LightPurpleInverseSurface = Color(0xFF313033)
-val LightPurpleInversePrimary = Color(0xFFD0BCFF)
-val LightPurpleSurfaceTint = Color(0xFF6750A4)
-val LightPurpleOutlineVariant = Color(0xFFCAC4D0)
-val LightPurpleScrim = Color(0xFF000000)
+// Dark
+val OrangeDarkPrimary = Color(0xFFFFB783)
+val OrangeDarkOnPrimary = Color(0xFF502500)
+val OrangeDarkPrimaryContainer = Color(0xFF723600)
+val OrangeDarkOnPrimaryContainer = Color(0xFFFFDCC4)
+val OrangeDarkSecondary = Color(0xFFE4BFA9)
+val OrangeDarkOnSecondary = Color(0xFF432B1B)
+val OrangeDarkSecondaryContainer = Color(0xFF5C4130)
+val OrangeDarkOnSecondaryContainer = Color(0xFFFFDBC8)
+val OrangeDarkTertiary = Color(0xFFC8CA93)
+val OrangeDarkOnTertiary = Color(0xFF303209)
+val OrangeDarkTertiaryContainer = Color(0xFF47491E)
+val OrangeDarkOnTertiaryContainer = Color(0xFFE4E6AD)
+val OrangeDarkBackground = Color(0xFF1A120D)
+val OrangeDarkOnBackground = Color(0xFFF0DFD6)
+val OrangeDarkSurfaceVariant = Color(0xFF52443B)
+val OrangeDarkOnSurfaceVariant = Color(0xFFD7C3B8)
+val OrangeDarkOutline = Color(0xFF9F8D82)
+val OrangeDarkOutlineVariant = Color(0xFF52443B)
+val OrangeDarkInverseSurface = Color(0xFFF0DFD6)
+val OrangeDarkInverseOnSurface = Color(0xFF322F35)
+val OrangeDarkInversePrimary = Color(0xFF9C4A00)
+val OrangeDarkSurfaceBright = Color(0xFF42372F)
+val OrangeDarkSurfaceContainerLowest = Color(0xFF140D08)
+val OrangeDarkSurfaceContainerLow = Color(0xFF231A14)
+val OrangeDarkSurfaceContainer = Color(0xFF271E18)
+val OrangeDarkSurfaceContainerHigh = Color(0xFF322822)
+val OrangeDarkSurfaceContainerHighest = Color(0xFF3D332D)

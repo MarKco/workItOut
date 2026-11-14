@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxSize
@@ -126,10 +125,10 @@ fun WorkItOutAppEntry() {
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     navigationIcon = {
                         if (current == HomeKey) {
@@ -168,7 +167,7 @@ fun WorkItOutAppEntry() {
                         ),
                         entryProvider = entryProvider {
                             entry<HomeKey> {
-                                Column(Modifier.padding(16.dp)) { HomeRoute(homeViewModel) }
+                                HomeRoute(homeViewModel)
                             }
                             entry<SettingsKey> {
                                 val vm: SettingsViewModel = viewModel(

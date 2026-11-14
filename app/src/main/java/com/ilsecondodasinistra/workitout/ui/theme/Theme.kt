@@ -1,7 +1,5 @@
 package com.ilsecondodasinistra.workitout.ui.theme
 
-import androidx.compose.material3.Shapes
-import androidx.compose.ui.graphics.Color
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -17,76 +15,79 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Using the custom light purple colors defined in Color.kt
-private val LightPurpleColorScheme = lightColorScheme(
-    primary = LightPurplePrimary,
-    onPrimary = LightPurpleOnPrimary,
-    primaryContainer = LightPurplePrimaryContainer,
-    onPrimaryContainer = LightPurpleOnPrimaryContainer,
-    secondary = LightPurpleSecondary,
-    onSecondary = LightPurpleOnSecondary,
-    secondaryContainer = LightPurpleSecondaryContainer,
-    onSecondaryContainer = LightPurpleOnSecondaryContainer,
-    tertiary = LightPurpleTertiary,
-    onTertiary = LightPurpleOnTertiary,
-    tertiaryContainer = LightPurpleTertiaryContainer,
-    onTertiaryContainer = LightPurpleOnTertiaryContainer,
-    error = LightPurpleError,
-    errorContainer = LightPurpleErrorContainer,
-    onError = LightPurpleOnError,
-    onErrorContainer = LightPurpleOnErrorContainer,
-    background = LightPurpleBackground,
-    onBackground = LightPurpleOnBackground,
-    surface = LightPurpleSurface,
-    onSurface = LightPurpleOnSurface,
-    surfaceVariant = LightPurpleSurfaceVariant,
-    onSurfaceVariant = LightPurpleOnSurfaceVariant,
-    outline = LightPurpleOutline,
-    inverseOnSurface = LightPurpleInverseOnSurface,
-    inverseSurface = LightPurpleInverseSurface,
-    inversePrimary = LightPurpleInversePrimary,
-    surfaceTint = LightPurpleSurfaceTint,
-    outlineVariant = LightPurpleOutlineVariant,
-    scrim = LightPurpleScrim,
+private val LightOrangeColorScheme = lightColorScheme(
+    primary = OrangeLightPrimary,
+    onPrimary = OrangeLightOnPrimary,
+    primaryContainer = OrangeLightPrimaryContainer,
+    onPrimaryContainer = OrangeLightOnPrimaryContainer,
+    secondary = OrangeLightSecondary,
+    onSecondary = OrangeLightOnSecondary,
+    secondaryContainer = OrangeLightSecondaryContainer,
+    onSecondaryContainer = OrangeLightOnSecondaryContainer,
+    tertiary = OrangeLightTertiary,
+    onTertiary = OrangeLightOnTertiary,
+    tertiaryContainer = OrangeLightTertiaryContainer,
+    onTertiaryContainer = OrangeLightOnTertiaryContainer,
+    background = OrangeLightBackground,
+    onBackground = OrangeLightOnBackground,
+    surface = OrangeLightBackground,
+    onSurface = OrangeLightOnBackground,
+    surfaceVariant = OrangeLightSurfaceVariant,
+    onSurfaceVariant = OrangeLightOnSurfaceVariant,
+    outline = OrangeLightOutline,
+    outlineVariant = OrangeLightOutlineVariant,
+    inverseSurface = OrangeLightInverseSurface,
+    inverseOnSurface = OrangeLightInverseOnSurface,
+    inversePrimary = OrangeLightInversePrimary,
+    surfaceTint = OrangeLightPrimary,
+    surfaceBright = OrangeLightBackground,
+    surfaceDim = OrangeLightSurfaceDim,
+    surfaceContainerLowest = OrangeLightSurfaceContainerLowest,
+    surfaceContainerLow = OrangeLightSurfaceContainerLow,
+    surfaceContainer = OrangeLightSurfaceContainer,
+    surfaceContainerHigh = OrangeLightSurfaceContainerHigh,
+    surfaceContainerHighest = OrangeLightSurfaceContainerHighest,
 )
 
-// Baseline Material 3 dark scheme, used on Android 8-11 where dynamic color is unavailable.
-private val DarkPurpleColorScheme = darkColorScheme(
-    primary = Color(0xFFD0BCFF),
-    onPrimary = Color(0xFF381E72),
-    primaryContainer = Color(0xFF4F378B),
-    onPrimaryContainer = Color(0xFFEADDFF),
-    secondary = Color(0xFFCCC2DC),
-    onSecondary = Color(0xFF332D41),
-    secondaryContainer = Color(0xFF4A4458),
-    onSecondaryContainer = Color(0xFFE8DEF8),
-    tertiary = Color(0xFFEFB8C8),
-    onTertiary = Color(0xFF492532),
-    tertiaryContainer = Color(0xFF633B48),
-    onTertiaryContainer = Color(0xFFFFD8E4),
-    error = Color(0xFFF2B8B5),
-    onError = Color(0xFF601410),
-    errorContainer = Color(0xFF8C1D18),
-    onErrorContainer = Color(0xFFF9DEDC),
-    background = Color(0xFF141218),
-    onBackground = Color(0xFFE6E0E9),
-    surface = Color(0xFF141218),
-    onSurface = Color(0xFFE6E0E9),
-    surfaceVariant = Color(0xFF49454F),
-    onSurfaceVariant = Color(0xFFCAC4D0),
-    outline = Color(0xFF938F99),
-    outlineVariant = Color(0xFF49454F),
-    inverseSurface = Color(0xFFE6E0E9),
-    inverseOnSurface = Color(0xFF322F35),
-    inversePrimary = Color(0xFF6750A4),
-    scrim = Color(0xFF000000),
+private val DarkOrangeColorScheme = darkColorScheme(
+    primary = OrangeDarkPrimary,
+    onPrimary = OrangeDarkOnPrimary,
+    primaryContainer = OrangeDarkPrimaryContainer,
+    onPrimaryContainer = OrangeDarkOnPrimaryContainer,
+    secondary = OrangeDarkSecondary,
+    onSecondary = OrangeDarkOnSecondary,
+    secondaryContainer = OrangeDarkSecondaryContainer,
+    onSecondaryContainer = OrangeDarkOnSecondaryContainer,
+    tertiary = OrangeDarkTertiary,
+    onTertiary = OrangeDarkOnTertiary,
+    tertiaryContainer = OrangeDarkTertiaryContainer,
+    onTertiaryContainer = OrangeDarkOnTertiaryContainer,
+    background = OrangeDarkBackground,
+    onBackground = OrangeDarkOnBackground,
+    surface = OrangeDarkBackground,
+    onSurface = OrangeDarkOnBackground,
+    surfaceVariant = OrangeDarkSurfaceVariant,
+    onSurfaceVariant = OrangeDarkOnSurfaceVariant,
+    outline = OrangeDarkOutline,
+    outlineVariant = OrangeDarkOutlineVariant,
+    inverseSurface = OrangeDarkInverseSurface,
+    inverseOnSurface = OrangeDarkInverseOnSurface,
+    inversePrimary = OrangeDarkInversePrimary,
+    surfaceTint = OrangeDarkPrimary,
+    surfaceBright = OrangeDarkSurfaceBright,
+    surfaceDim = OrangeDarkBackground,
+    surfaceContainerLowest = OrangeDarkSurfaceContainerLowest,
+    surfaceContainerLow = OrangeDarkSurfaceContainerLow,
+    surfaceContainer = OrangeDarkSurfaceContainer,
+    surfaceContainerHigh = OrangeDarkSurfaceContainerHigh,
+    surfaceContainerHighest = OrangeDarkSurfaceContainerHighest,
 )
 
 @Composable
 fun WorkItOutM3Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Wallpaper-based dynamic color (Android 12+) is opt-in: by default the app keeps its orange identity.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -94,17 +95,17 @@ fun WorkItOutM3Theme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkPurpleColorScheme // Your custom dark purple theme
-        else -> LightPurpleColorScheme      // Your custom light purple theme
+        darkTheme -> DarkOrangeColorScheme
+        else -> LightOrangeColorScheme
     }
-    // The app bar is drawn in the primary color behind a transparent status bar:
+    // The app bar blends into the background behind a transparent status bar:
     // pick light or dark status bar icons to stay readable on it.
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-                colorScheme.primary.luminance() > 0.5f
+                colorScheme.background.luminance() > 0.5f
         }
     }
 
