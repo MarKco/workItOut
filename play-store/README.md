@@ -12,7 +12,7 @@ screenshots/
 └── it-IT/            italiano, stessa struttura
 ```
 
-Ogni cartella contiene 7 immagini, in ordine di presentazione consigliato:
+Ogni cartella contiene 7 immagini (8 per il telefono), in ordine di presentazione consigliato:
 
 | File | Schermata |
 |------|-----------|
@@ -20,9 +20,10 @@ Ogni cartella contiene 7 immagini, in ordine di presentazione consigliato:
 | `02-history.png` | Storico delle giornate |
 | `03-edit-day.png` | Modifica di una giornata (due pause) |
 | `04-statistics.png` | Statistiche e grafico degli ultimi 14 giorni |
-| `05-settings.png` | Ore giornaliere, giorni lavorativi, backup |
+| `05-settings.png` | Ore giornaliere, giorni lavorativi, notifica, backup |
 | `06-statistics-dark.png` | Statistiche in tema scuro |
 | `07-home-dark.png` | Home in tema scuro |
+| `08-notification.png` | Notifica persistente della giornata (solo telefono) |
 
 Play Console accetta fino a 8 screenshot per tipo di dispositivo; per i tablet sono opzionali.
 
@@ -43,6 +44,9 @@ python3 play-store/tools/capture.py --serial emulator-5558 --device tablet-10   
 - Barra di stato pulita con la demo mode di Android (batteria piena, nessuna notifica)
 - Dati demo generati dallo script e scritti direttamente nel DataStore dell'app: 20 giornate lavorative
   negli ultimi 27 giorni, un sabato lavorato e una giornata in corso. Nessun dato personale.
+- `08-notification.png`: la card della notifica ritagliata dalla tendina (la tendina è nella lingua di
+  sistema dell'emulatore, che senza root non si cambia) e appoggiata sulla Home sfocata. Serve Pillow
+  (`pip install pillow`).
 - Lingua dell'app cambiata con `adb shell cmd locale set-app-locales`; le schermate si ripetono
   identiche in ogni lingua
 - Contenuto limitato a 640dp di larghezza sui tablet (vedi `WorkItOutAppEntry.kt`)

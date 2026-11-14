@@ -8,7 +8,8 @@ What it does, per locale:
   1. writes demo data straight into the app's DataStore (no personal data: 20 working days, one
      Saturday and a day in progress, all generated here);
   2. puts the status bar in demo mode (clean icons, full battery, no notifications);
-  3. walks through the app with taps found via uiautomator and saves 7 screenshots.
+  3. walks through the app with taps found via uiautomator and saves 7 screenshots (8 on the phone, which adds the notification).
+Needs Pillow for the notification shot.
 
 The emulator clock is moved to Kiritimati time (UTC+14) so that the "day in progress" falls in the
 afternoon whatever the real time is. Needs a debuggable build installed (uses `run-as`).
@@ -242,6 +243,44 @@ def capture_locale(adb, device, locale):
     launch(adb)
     adb.screenshot(out / "07-home-dark.png")
     adb.shell("cmd uimode night no")
+
+    if device == "phone":
+        capture_notification(adb, out)
+
+
+def capture_notification(adb, out):
+    """The persistent notification, cropped from the shade and laid over a blurred Home.
+
+    The shade is drawn in the emulator's system language (no root: cannot change it), so only the
+    notification card, which is the app's own text, is kept.
+    """
+    from io import BytesIO
+    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+
+    adb.shell("input keyevent 3")
+    time.sleep(1.5)
+    adb.shell("cmd statusbar expand-notifications")
+    time.sleep(2.5)
+    shade = Image.open(BytesIO(adb.run("exec-out", "screencap", "-p", binary=True))).convert("RGB")
+    adb.shell("cmd statusbar collapse")
+
+    w, h = shade.size
+    card = shade.crop((int(w * 0.033), int(h * 0.248), int(w * 0.967), int(h * 0.428)))
+    mask = Image.new("L", card.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, *card.size), radius=int(w * 0.045), fill=255)
+
+    backdrop = Image.open(out / "01-home.png").convert("RGB").filter(ImageFilter.GaussianBlur(22))
+    backdrop = ImageEnhance.Brightness(backdrop).enhance(0.8)
+    shadow = Image.new("RGBA", backdrop.size, (0, 0, 0, 0))
+    pos = ((w - card.width) // 2, int(h * 0.36))
+    ImageDraw.Draw(shadow).rounded_rectangle(
+        (pos[0], pos[1] + 14, pos[0] + card.width, pos[1] + card.height + 14),
+        radius=int(w * 0.045), fill=(0, 0, 0, 110),
+    )
+    backdrop = Image.alpha_composite(backdrop.convert("RGBA"), shadow.filter(ImageFilter.GaussianBlur(18)))
+    backdrop.paste(card, pos, mask)
+    backdrop.convert("RGB").save(out / "08-notification.png")
+    print("  saved", (out / "08-notification.png").relative_to(OUT.parent))
 
 
 def main():
