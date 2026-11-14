@@ -2,6 +2,9 @@ package com.ilsecondodasinistra.workitout.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +22,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -68,27 +73,32 @@ fun EditEntryScreen(viewModel: EditEntryViewModel, onClose: () -> Unit) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            DateField(
-                label = stringResource(R.string.field_date),
-                date = draft.date,
-                onDateChange = viewModel::setDate,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TimeField(stringResource(R.string.field_enter), draft.enter, viewModel::setEnter, Modifier.weight(1f))
-                TimeField(stringResource(R.string.field_exit), draft.exit, viewModel::setExit, Modifier.weight(1f))
+            FormCard {
+                DateField(
+                    label = stringResource(R.string.field_date),
+                    date = draft.date,
+                    onDateChange = viewModel::setDate,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TimeField(stringResource(R.string.field_enter), draft.enter, viewModel::setEnter, Modifier.weight(1f))
+                    TimeField(stringResource(R.string.field_exit), draft.exit, viewModel::setExit, Modifier.weight(1f))
+                }
             }
 
             draft.pauses.forEachIndexed { index, pause ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FormCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.pause_number, index + 1),
                             style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp),
                         )
                         IconButton(onClick = { viewModel.removePause(index) }) {
                             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.remove_pause))
@@ -106,30 +116,38 @@ fun EditEntryScreen(viewModel: EditEntryViewModel, onClose: () -> Unit) {
                     }
                 }
             }
-            OutlinedButton(onClick = viewModel::addPause, modifier = Modifier.fillMaxWidth()) {
+            FilledTonalButton(onClick = viewModel::addPause, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(stringResource(R.string.add_pause))
             }
 
-            OutlinedTextField(
-                value = uiState.targetInput,
-                onValueChange = viewModel::onTargetInputChange,
-                label = { Text(stringResource(R.string.field_target_hours)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Button(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.save))
+            FormCard {
+                OutlinedTextField(
+                    value = uiState.targetInput,
+                    onValueChange = viewModel::onTargetInputChange,
+                    label = { Text(stringResource(R.string.field_target_hours)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
+
+            Button(
+                onClick = viewModel::save,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.large,
+            ) { Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium) }
             if (!uiState.isNew) {
-                OutlinedButton(
+                TextButton(
                     onClick = viewModel::requestDelete,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) { Text(stringResource(R.string.delete)) }
             }
+            Spacer(Modifier.height(8.dp))
         }
 
         if (uiState.showDeleteConfirm) {
@@ -146,5 +164,20 @@ fun EditEntryScreen(viewModel: EditEntryViewModel, onClose: () -> Unit) {
                 dismissButton = { TextButton(onClick = viewModel::cancelDelete) { Text(stringResource(R.string.cancel)) } },
             )
         }
+    }
+}
+
+@Composable
+private fun FormCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content,
+        )
     }
 }

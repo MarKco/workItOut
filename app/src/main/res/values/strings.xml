@@ -84,7 +84,7 @@
     <!-- Alarm permission dialog -->
     <string name="alarm_permission_message">To ensure precise notifications, please allow the app to schedule exact alarms. You can enable this in the system settings.</string>
     <string name="alarm_permission_settings_button">Go to settings</string>
-    <string name="reset_all">reset</string>
+    <string name="reset_all">Reset today</string>
 
     <string name="statistics">Statistics</string>
     <string name="add_day">Add day</string>
@@ -111,11 +111,7 @@
     <string name="backup_restored">Backup restored</string>
     <string name="work_days">Working days</string>
     <string name="work_days_hint">Hours worked on other days all count as overtime.</string>
-    <string name="this_week">This week</string>
-    <string name="this_month">This month</string>
-    <string name="all_time">All time</string>
     <string name="stat_worked">Worked</string>
-    <string name="stat_target">Target</string>
     <string name="stat_balance">Overtime balance</string>
     <string name="stat_average">Daily average</string>
     <string name="stat_days">Days</string>
@@ -139,4 +135,32 @@
     <string name="action_start_pause">Start break</string>
     <string name="action_end_pause">End break</string>
     <string name="timeline_estimated">estimated</string>
+
+    <!-- Full redesign -->
+    <string name="status_stale">To close</string>
+    <string name="stale_session_title">Session from %1$s not closed</string>
+    <string name="stale_set_exit">Set exit</string>
+    <string name="stale_discard">Discard</string>
+    <string name="reset_confirm_title">Reset today?</string>
+    <string name="reset_confirm_message">The current day will be cleared. Your history is not affected.</string>
+    <string name="more_options">More options</string>
+    <string name="history_breaks">Breaks %1$s</string>
+    <string name="history_day_deleted">Day deleted</string>
+    <string name="undo">Undo</string>
+    <string name="history_empty_hint">Days you complete show up here.</string>
+    <string name="stats_tab_week">Week</string>
+    <string name="stats_tab_month">Month</string>
+    <string name="stats_tab_all">All</string>
+    <string name="stats_chart_hint">Tap a bar for details</string>
+    <string name="stats_no_data">no data</string>
+    <string name="legend_target_met">Target met</string>
+    <string name="legend_below">Below target</string>
+    <string name="legend_day_off">Day off</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="dynamic_color">Dynamic colors</string>
+    <string name="dynamic_color_hint">Use colors from your wallpaper instead of the app\'s orange.</string>
+    <plurals name="history_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
 </resources>

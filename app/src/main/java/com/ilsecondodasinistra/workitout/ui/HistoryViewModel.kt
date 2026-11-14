@@ -21,6 +21,8 @@ data class HistoryUiState(
     val shareText: String? = null,
     /** One-shot: CSV content to be written to a file and shared. */
     val shareCsv: String? = null,
+    /** One-shot: the history before the last swipe-delete, so the user can undo it. */
+    val undoDelete: List<WorkHistoryEntry>? = null,
 )
 
 class HistoryViewModel(
@@ -48,6 +50,21 @@ class HistoryViewModel(
         if (history.isEmpty()) return showMessage(R.string.no_history_to_share)
         _uiState.update { it.copy(shareCsv = HistoryCsv.export(history)) }
     }
+
+    fun deleteEntry(id: String) {
+        val before = _uiState.value.history
+        if (before.none { it.id == id }) return
+        _uiState.update { it.copy(undoDelete = before) }
+        viewModelScope.launch { repository.replaceHistory(before.filterNot { it.id == id }) }
+    }
+
+    fun undoDelete() {
+        val before = _uiState.value.undoDelete ?: return
+        _uiState.update { it.copy(undoDelete = null) }
+        viewModelScope.launch { repository.replaceHistory(before) }
+    }
+
+    fun undoDeleteHandled() = _uiState.update { it.copy(undoDelete = null) }
 
     fun onShareLaunched() = _uiState.update { it.copy(shareText = null, shareCsv = null) }
 

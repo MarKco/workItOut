@@ -85,7 +85,7 @@
     <!-- Alarm permission dialog -->
     <string name="alarm_permission_message">Per garantire notifiche precise, consenti all\'app di programmare sveglie esatte. Puoi abilitarlo nelle impostazioni di sistema.</string>
     <string name="alarm_permission_settings_button">Vai alle impostazioni</string>
-    <string name="reset_all">reset</string>
+    <string name="reset_all">Azzera oggi</string>
 
     <string name="statistics">Statistiche</string>
     <string name="add_day">Aggiungi giornata</string>
@@ -112,11 +112,7 @@
     <string name="backup_restored">Backup ripristinato</string>
     <string name="work_days">Giorni lavorativi</string>
     <string name="work_days_hint">Le ore lavorate negli altri giorni contano tutte come straordinario.</string>
-    <string name="this_week">Questa settimana</string>
-    <string name="this_month">Questo mese</string>
-    <string name="all_time">Totale</string>
     <string name="stat_worked">Lavorate</string>
-    <string name="stat_target">Obiettivo</string>
     <string name="stat_balance">Saldo straordinari</string>
     <string name="stat_average">Media giornaliera</string>
     <string name="stat_days">Giorni</string>
@@ -140,4 +136,32 @@
     <string name="action_start_pause">Inizia pausa</string>
     <string name="action_end_pause">Fine pausa</string>
     <string name="timeline_estimated">stimata</string>
+
+    <!-- Full redesign -->
+    <string name="status_stale">Da chiudere</string>
+    <string name="stale_session_title">Sessione del %1$s non chiusa</string>
+    <string name="stale_set_exit">Imposta uscita</string>
+    <string name="stale_discard">Scarta</string>
+    <string name="reset_confirm_title">Azzerare la giornata di oggi?</string>
+    <string name="reset_confirm_message">La giornata in corso verrà cancellata. Lo storico non viene toccato.</string>
+    <string name="more_options">Altre opzioni</string>
+    <string name="history_breaks">Pause %1$s</string>
+    <string name="history_day_deleted">Giorno eliminato</string>
+    <string name="undo">Annulla</string>
+    <string name="history_empty_hint">Le giornate che completi compaiono qui.</string>
+    <string name="stats_tab_week">Settimana</string>
+    <string name="stats_tab_month">Mese</string>
+    <string name="stats_tab_all">Totale</string>
+    <string name="stats_chart_hint">Tocca una barra per i dettagli</string>
+    <string name="stats_no_data">nessun dato</string>
+    <string name="legend_target_met">Obiettivo raggiunto</string>
+    <string name="legend_below">Sotto obiettivo</string>
+    <string name="legend_day_off">Giorno libero</string>
+    <string name="settings_appearance">Aspetto</string>
+    <string name="dynamic_color">Colori dinamici</string>
+    <string name="dynamic_color_hint">Usa i colori dello sfondo invece dell\'arancione dell\'app.</string>
+    <plurals name="history_days">
+        <item quantity="one">%d giorno</item>
+        <item quantity="other">%d giorni</item>
+    </plurals>
 </resources>

@@ -31,7 +31,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +47,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
@@ -188,6 +191,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Spacer(Modifier.height(4.dp))
+                if (uiState.status(now) == DayStatus.Stale) StaleSessionBanner(uiState, actions)
                 HeroCard(uiState = uiState, now = now)
                 TimelineCard(uiState = uiState, actions = actions)
                 Spacer(Modifier.height(4.dp))
@@ -195,6 +199,7 @@ fun HomeScreen(
             ActionBar(
                 uiState = uiState,
                 actions = actions,
+                now = now,
                 modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
             )
         }
@@ -225,26 +230,65 @@ fun HomeScreen(
 
 // --- Derived state --------------------------------------------------------------------------
 
-private enum class DayStatus { NotStarted, Working, OnPause, Done }
+private enum class DayStatus { NotStarted, Working, OnPause, Done, Stale }
 
 private fun HomeUiState.openPause(): PausePair? = pauses.lastOrNull()?.takeIf { it.end == null }
 
-private fun HomeUiState.status(): DayStatus = when {
+private fun HomeUiState.status(now: Long): DayStatus = when {
     enterTime == null -> DayStatus.NotStarted
     exitTime != null -> DayStatus.Done
+    WorkTimeCalculator.isStale(enterTime, now) -> DayStatus.Stale
     openPause()?.start != null -> DayStatus.OnPause
     else -> DayStatus.Working
+}
+
+// --- Forgotten session ----------------------------------------------------------------------
+
+@Composable
+private fun StaleSessionBanner(uiState: HomeUiState, actions: HomeActions) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Warning, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.stale_session_title, TimeFormats.date(uiState.enterTime)),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { actions.requestTimeEdit(ButtonType.Exit) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) { Text(stringResource(R.string.stale_set_exit)) }
+                TextButton(
+                    onClick = actions::discardSession,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                ) { Text(stringResource(R.string.stale_discard)) }
+            }
+        }
+    }
 }
 
 // --- Hero -----------------------------------------------------------------------------------
 
 @Composable
 private fun HeroCard(uiState: HomeUiState, now: Long) {
-    val status = uiState.status()
+    val status = uiState.status(now)
+    val stale = status == DayStatus.Stale
     val enter = uiState.enterTime
     val targetMillis = (uiState.dailyHours * MS_PER_HOUR).toLong()
     val workedMillis = when {
-        enter == null -> 0L
+        enter == null || stale -> 0L
         uiState.exitTime != null -> WorkTimeCalculator.workedMillis(enter, uiState.exitTime, uiState.pauses) ?: 0L
         else -> WorkTimeCalculator.workedSoFarMillis(enter, now, uiState.pauses)
     }
@@ -255,7 +299,7 @@ private fun HeroCard(uiState: HomeUiState, now: Long) {
     val openPauseMillis = uiState.openPause()?.start
         ?.takeIf { uiState.exitTime == null }
         ?.let { (now - it).coerceAtLeast(0) } ?: 0L
-    val exitMillis = uiState.exitTime ?: uiState.calculatedExitTime?.plus(openPauseMillis)
+    val exitMillis = if (stale) null else uiState.exitTime ?: uiState.calculatedExitTime?.plus(openPauseMillis)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -301,7 +345,7 @@ private fun HeroCard(uiState: HomeUiState, now: Long) {
                 )
                 HeroStat(
                     label = stringResource(if (overtime) R.string.hero_overtime else R.string.hero_remaining),
-                    value = if (enter == null) {
+                    value = if (enter == null || stale) {
                         TimeFormats.PLACEHOLDER
                     } else if (overtime) {
                         WorkTimeCalculator.formatBalance(workedMillis - targetMillis)
@@ -332,6 +376,11 @@ private fun StatusPill(status: DayStatus) {
             R.string.status_on_pause,
             MaterialTheme.colorScheme.tertiary,
             MaterialTheme.colorScheme.onTertiary,
+        )
+        DayStatus.Stale -> Triple(
+            R.string.status_stale,
+            MaterialTheme.colorScheme.error,
+            MaterialTheme.colorScheme.onError,
         )
         DayStatus.Done -> Triple(
             R.string.status_done,
@@ -597,15 +646,15 @@ private fun pauseDurationText(pause: PausePair): String? {
 // --- Actions --------------------------------------------------------------------------------
 
 @Composable
-private fun ActionBar(uiState: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
+private fun ActionBar(uiState: HomeUiState, actions: HomeActions, now: Long, modifier: Modifier = Modifier) {
     val haptics = LocalHapticFeedback.current
-    val status = uiState.status()
+    val status = uiState.status(now)
     val open = uiState.openPause()
 
     val primaryLabel: Int
     val onPrimary: () -> Unit
     when (status) {
-        DayStatus.NotStarted, DayStatus.Done -> {
+        DayStatus.NotStarted, DayStatus.Done, DayStatus.Stale -> {
             primaryLabel = R.string.button_enter
             onPrimary = { actions.press(ButtonType.Enter) }
         }
@@ -692,6 +741,19 @@ private fun HomeScreenOnBreakPreview() {
                 pauses = listOf(PausePair(now - 20 * 60_000L, null)),
                 calculatedExitTime = now + 4 * MS_PER_HOUR,
             ),
+            actions = HomeActions.None,
+            now = now,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Home - forgotten session")
+@Composable
+private fun HomeScreenStalePreview() {
+    val now = System.currentTimeMillis()
+    WorkItOutM3Theme {
+        HomeScreen(
+            uiState = HomeUiState(enterTime = now - 30 * MS_PER_HOUR, calculatedExitTime = now - 22 * MS_PER_HOUR),
             actions = HomeActions.None,
             now = now,
         )

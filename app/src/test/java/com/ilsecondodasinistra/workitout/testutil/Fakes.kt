@@ -17,6 +17,7 @@ class FakeRepository : HistoryRepository {
     override val dailyHours = MutableStateFlow(8.0)
     override val workDays = MutableStateFlow<Set<DayOfWeek>>(DEFAULT_WORK_DAYS)
     override val activeSession = MutableStateFlow<ActiveSession?>(null)
+    override val dynamicColor = MutableStateFlow(false)
     override suspend fun addEntry(entry: WorkHistoryEntry) {
         history.value = listOf(entry) + history.value.filterNot { it.id == entry.id }
     }
@@ -25,6 +26,7 @@ class FakeRepository : HistoryRepository {
     override suspend fun setDailyHours(hours: Double) { dailyHours.value = hours }
     override suspend fun setWorkDays(days: Set<DayOfWeek>) { workDays.value = days }
     override suspend fun saveActiveSession(session: ActiveSession?) { activeSession.value = session }
+    override suspend fun setDynamicColor(enabled: Boolean) { dynamicColor.value = enabled }
 }
 
 class FakeReminder(var canSchedule: Boolean = true) : ExitReminderScheduler {

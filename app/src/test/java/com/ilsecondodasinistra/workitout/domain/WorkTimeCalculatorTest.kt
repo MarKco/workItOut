@@ -119,4 +119,12 @@ class WorkTimeCalculatorTest {
     fun workedSoFar_isZeroBeforeEnter() {
         assertEquals(0, WorkTimeCalculator.workedSoFarMillis(hour, 0, emptyList()))
     }
+
+    @Test
+    fun isStale_whenEnterIsFromAnEarlierDay() {
+        val zone = ZoneId.of("UTC")
+        val enter = Instant.parse("2026-11-06T08:42:00Z").toEpochMilli()
+        assertEquals(true, WorkTimeCalculator.isStale(enter, Instant.parse("2026-11-07T00:01:00Z").toEpochMilli(), zone))
+        assertEquals(false, WorkTimeCalculator.isStale(enter, Instant.parse("2026-11-06T23:59:00Z").toEpochMilli(), zone))
+    }
 }

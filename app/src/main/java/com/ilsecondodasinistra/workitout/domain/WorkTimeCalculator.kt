@@ -49,6 +49,10 @@ object WorkTimeCalculator {
         return (now - enterTime - paused).coerceAtLeast(0)
     }
 
+    /** A session whose entry is from an earlier day than [now]: the user forgot to record the exit. */
+    fun isStale(enterTime: Long, now: Long, zone: ZoneId = ZoneId.systemDefault()): Boolean =
+        Instant.ofEpochMilli(enterTime).atZone(zone).toLocalDate() < Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+
     /** "7h 30m" */
     fun formatDuration(millis: Long): String {
         val hours = TimeUnit.MILLISECONDS.toHours(millis)

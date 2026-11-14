@@ -63,6 +63,7 @@ interface HomeActions {
     fun requestPauseEndEdit(index: Int) {}
     fun messageShown() {}
     fun alarmPermissionHandled() {}
+    fun discardSession() {}
 
     object None : HomeActions
 }
@@ -135,7 +136,7 @@ class HomeViewModel(
     override fun onTimeEdited(type: ButtonType, hour: Int, minute: Int) {
         val pauseIndex = _uiState.value.timePickerEvent?.pauseIndex
         update { it.copy(timePickerEvent = null) }
-        val selected = LocalDate.now(clock).atTime(hour, minute).atZone(clock.zone).toInstant().toEpochMilli()
+        val selected = editBaseDate(type).atTime(hour, minute).atZone(clock.zone).toInstant().toEpochMilli()
 
         when (type) {
             ButtonType.Enter -> {
@@ -151,6 +152,22 @@ class HomeViewModel(
                 }
             ButtonType.ToLunch -> editPauseStart(pauseIndex, selected)
             ButtonType.FromLunch -> editPauseEnd(pauseIndex, selected)
+        }
+    }
+
+    /**
+     * Times are picked without a date. For a session forgotten on an earlier day the exit and
+     * pause times belong to that day, not to today.
+     */
+    private fun editBaseDate(type: ButtonType): LocalDate {
+        val today = LocalDate.now(clock)
+        val state = _uiState.value
+        val enter = state.enterTime
+        if (type == ButtonType.Enter || enter == null || state.exitTime != null) return today
+        return if (WorkTimeCalculator.isStale(enter, clock.millis(), clock.zone)) {
+            Instant.ofEpochMilli(enter).atZone(clock.zone).toLocalDate()
+        } else {
+            today
         }
     }
 
@@ -234,6 +251,8 @@ class HomeViewModel(
         update { state -> state.copy(pauses = state.pauses.mapIndexed { i, p -> if (i == index) pause else p }) }
 
     // --- Session lifecycle ------------------------------------------------------------------
+
+    override fun discardSession() = resetAll()
 
     /** Clears the current day and cancels the reminder. History is untouched. */
     fun resetAll() {

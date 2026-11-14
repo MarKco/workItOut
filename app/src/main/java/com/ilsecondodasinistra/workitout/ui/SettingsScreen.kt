@@ -1,9 +1,12 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -25,7 +32,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,16 +116,16 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Section(stringResource(R.string.total_working_hours)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    TextField(
+                    OutlinedTextField(
                         value = textFieldValue,
                         onValueChange = {
                             textFieldValue = it
@@ -127,17 +133,17 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                         },
                         label = { Text(stringResource(R.string.hours_example)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
+                        modifier = Modifier.weight(1f),
                         singleLine = true,
+                        shape = MaterialTheme.shapes.large,
                     )
                     Button(
                         onClick = {
                             keyboardController?.hide()
                             settingsViewModel.saveDailyHours()
                         },
-                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.height(56.dp),
+                        shape = MaterialTheme.shapes.large,
                     ) {
                         Text(text = stringResource(R.string.save), style = MaterialTheme.typography.labelLarge)
                     }
@@ -158,28 +164,51 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                     text = stringResource(R.string.work_days_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Section(stringResource(R.string.settings_appearance)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.dynamic_color), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = stringResource(R.string.dynamic_color_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = uiState.dynamicColor,
+                            onCheckedChange = settingsViewModel::setDynamicColor,
+                        )
+                    }
+                }
+            }
+
             Section(stringResource(R.string.backup)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     FilledTonalButton(
                         onClick = { exportLauncher.launch(settingsViewModel.backupFileName()) },
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = MaterialTheme.shapes.large,
                     ) { Text(stringResource(R.string.backup_export)) }
                     FilledTonalButton(
                         onClick = { importLauncher.launch(arrayOf("*/*")) },
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = MaterialTheme.shapes.large,
                     ) { Text(stringResource(R.string.backup_restore)) }
                 }
             }
+            Spacer(Modifier.height(8.dp))
         }
 
         uiState.pendingRestore?.let { file ->
@@ -199,15 +228,23 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-        content()
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            content()
+        }
     }
 }
 

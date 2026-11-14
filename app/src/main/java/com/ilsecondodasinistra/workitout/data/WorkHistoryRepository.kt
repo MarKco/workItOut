@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.workitout.data
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -30,6 +31,9 @@ interface HistoryRepository {
     val workDays: Flow<Set<DayOfWeek>>
     val activeSession: Flow<ActiveSession?>
 
+    /** Use wallpaper-based colors (Android 12+) instead of the app palette. Off by default. */
+    val dynamicColor: Flow<Boolean>
+
     /** Newest entry goes first; an entry with the same id is replaced. */
     suspend fun addEntry(entry: WorkHistoryEntry)
     suspend fun replaceHistory(entries: List<WorkHistoryEntry>)
@@ -37,6 +41,7 @@ interface HistoryRepository {
     suspend fun setDailyHours(hours: Double)
     suspend fun setWorkDays(days: Set<DayOfWeek>)
     suspend fun saveActiveSession(session: ActiveSession?)
+    suspend fun setDynamicColor(enabled: Boolean)
 }
 
 /**
@@ -53,6 +58,7 @@ class DataStoreHistoryRepository(
         /** Comma separated [DayOfWeek] names; absent means [DEFAULT_WORK_DAYS]. */
         val WORK_DAYS = stringPreferencesKey("work_days")
         val ENTER_TIME = longPreferencesKey("current_enter_time")
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
 
         /** Legacy: pauses as an unordered string set, one JSON object per pause. */
         val PAUSES_LEGACY_SET = stringSetPreferencesKey("current_pauses_json")
@@ -87,6 +93,13 @@ class DataStoreHistoryRepository(
             val enter = prefs[Keys.ENTER_TIME] ?: return@map null
             ActiveSession(enter, decodePauses(prefs))
         }.distinctUntilChanged()
+
+    override val dynamicColor: Flow<Boolean> =
+        safeData.map { it[Keys.DYNAMIC_COLOR] ?: false }.distinctUntilChanged()
+
+    override suspend fun setDynamicColor(enabled: Boolean) {
+        dataStore.edit { it[Keys.DYNAMIC_COLOR] = enabled }
+    }
 
     override suspend fun addEntry(entry: WorkHistoryEntry) {
         dataStore.edit { prefs ->

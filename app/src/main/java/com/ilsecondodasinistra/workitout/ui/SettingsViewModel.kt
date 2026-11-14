@@ -23,6 +23,7 @@ import java.util.Locale
 data class SettingsUiState(
     val dailyHoursInput: String = "8",
     val workDays: Set<DayOfWeek> = DEFAULT_WORK_DAYS,
+    val dynamicColor: Boolean = false,
     val message: UiMessage? = null,
     /** A parsed backup waiting for the user to confirm replacing the current data. */
     val pendingRestore: BackupFile? = null,
@@ -44,6 +45,9 @@ class SettingsViewModel(
             repository.dailyHours.collect { hours ->
                 _uiState.update { it.copy(dailyHoursInput = hoursInputFormat.format(hours)) }
             }
+        }
+        viewModelScope.launch {
+            repository.dynamicColor.collect { enabled -> _uiState.update { it.copy(dynamicColor = enabled) } }
         }
         viewModelScope.launch {
             repository.workDays.collect { days -> _uiState.update { it.copy(workDays = days) } }
@@ -69,6 +73,10 @@ class SettingsViewModel(
     fun toggleWorkDay(day: DayOfWeek) {
         val days = _uiState.value.workDays.let { if (day in it) it - day else it + day }
         viewModelScope.launch { repository.setWorkDays(days) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch { repository.setDynamicColor(enabled) }
     }
 
     // --- Backup -----------------------------------------------------------------------------

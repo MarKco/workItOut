@@ -16,7 +16,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +30,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -76,9 +84,11 @@ data class EditEntryKey(val id: String? = null) : NavKey
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkItOutAppEntry() {
-    WorkItOutM3Theme {
-        val context = LocalContext.current
-        val container = (context.applicationContext as WorkItOutApp).container
+    val context = LocalContext.current
+    val container = (context.applicationContext as WorkItOutApp).container
+    val dynamicColor by container.historyRepository.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
+
+    WorkItOutM3Theme(dynamicColor = dynamicColor) {
         val backStack = rememberNavBackStack(HomeKey)
         val current = backStack.lastOrNull() ?: HomeKey
 
@@ -88,6 +98,9 @@ fun WorkItOutAppEntry() {
                 initializer { HomeViewModel(container.historyRepository, container.exitReminderScheduler) }
             },
         )
+
+        val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+        var showResetConfirm by rememberSaveable { mutableStateOf(false) }
 
         RequestNotificationPermission()
 
@@ -110,8 +123,10 @@ fun WorkItOutAppEntry() {
                     },
                     actions = {
                         if (current == HomeKey) {
-                            IconButton(onClick = homeViewModel::resetAll) {
-                                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reset_all))
+                            if (homeState.enterTime != null) {
+                                IconButton(onClick = { showResetConfirm = true }) {
+                                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reset_all))
+                                }
                             }
                             IconButton(onClick = { backStack.add(HistoryKey) }) {
                                 Icon(painterResource(R.drawable.ic_history), contentDescription = stringResource(R.string.history))
@@ -207,6 +222,26 @@ fun WorkItOutAppEntry() {
                     )
                 }
             }
+        }
+
+        if (showResetConfirm) {
+            AlertDialog(
+                onDismissRequest = { showResetConfirm = false },
+                title = { Text(stringResource(R.string.reset_confirm_title)) },
+                text = { Text(stringResource(R.string.reset_confirm_message)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showResetConfirm = false
+                            homeViewModel.resetAll()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(R.string.confirm)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(R.string.cancel)) }
+                },
+            )
         }
     }
 }
