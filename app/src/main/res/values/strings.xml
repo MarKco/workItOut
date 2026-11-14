@@ -45,7 +45,6 @@
     <string name="hours_example">Hours (e.g. 7.5)</string>
     <string name="save">Save</string>
     <string name="share">Share</string>
-    <string name="clear">Clear</string>
     <string name="history">History</string>
     <string name="no_history_available">No history available.</string>
     <string name="clear_history">Clear History</string>
@@ -163,4 +162,19 @@
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>
     </plurals>
+
+    <!-- Persistent notification -->
+    <string name="notif_channel_session">Day in progress</string>
+    <string name="notif_channel_session_description">Persistent notification with the progress of your day</string>
+    <string name="notif_text_remaining_exit">%1$s left · exit %2$s</string>
+    <string name="notif_text_goal">Target reached</string>
+    <string name="notif_text_exit">Estimated exit %1$s</string>
+    <string name="notif_sub_pause">Break</string>
+    <string name="notif_exit_recorded">Exit recorded: %1$s worked</string>
+    <string name="settings_notification">Notification</string>
+    <string name="session_notification">Persistent notification</string>
+    <string name="session_notification_hint">Shows the progress of your day, with break and exit buttons, while it is in progress.</string>
+    <string name="notification_chronometer">The chronometer shows</string>
+    <string name="chronometer_remaining">Time left</string>
+    <string name="chronometer_worked">Time worked</string>
 </resources>

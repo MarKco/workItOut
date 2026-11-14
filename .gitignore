@@ -16,4 +16,4 @@ local.properties
 /app/release/
 /.kotlin/errors/
 /.kotlin/sessions/
-/.idea/
+/.idea/__pycache__/

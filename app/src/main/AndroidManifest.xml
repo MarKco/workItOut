@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android 16 Live Updates: the day-in-progress notification can show as a status bar chip. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <application
         android:name=".WorkItOutApp"
         android:allowBackup="true"
@@ -27,6 +29,9 @@
         <receiver
             android:exported="false"
             android:name="com.ilsecondodasinistra.workitout.AlarmReceiver" />
+        <receiver
+            android:name=".session.SessionNotificationReceiver"
+            android:exported="false" />
         <receiver
             android:name=".ReminderRestoreReceiver"
             android:exported="false">

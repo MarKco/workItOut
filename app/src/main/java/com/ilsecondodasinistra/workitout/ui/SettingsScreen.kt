@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.workitout.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +25,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -99,6 +104,8 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
             text.onSuccess(settingsViewModel::onBackupRead).onFailure { settingsViewModel.onBackupIoError() }
         }
     }
+
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.dailyHoursInput)) }
     LaunchedEffect(uiState.dailyHoursInput) {
@@ -186,6 +193,53 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                             checked = uiState.dynamicColor,
                             onCheckedChange = settingsViewModel::setDynamicColor,
                         )
+                    }
+                }
+            }
+
+            Section(stringResource(R.string.settings_notification)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.session_notification), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = stringResource(R.string.session_notification_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = uiState.sessionNotification,
+                        onCheckedChange = { enabled ->
+                            settingsViewModel.setSessionNotification(enabled)
+                            if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
+                    )
+                }
+                if (uiState.sessionNotification) {
+                    Text(
+                        text = stringResource(R.string.notification_chronometer),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = uiState.notificationCountdown,
+                            onClick = { settingsViewModel.setNotificationCountdown(true) },
+                            shape = SegmentedButtonDefaults.itemShape(0, 2),
+                        ) { Text(stringResource(R.string.chronometer_remaining)) }
+                        SegmentedButton(
+                            selected = !uiState.notificationCountdown,
+                            onClick = { settingsViewModel.setNotificationCountdown(false) },
+                            shape = SegmentedButtonDefaults.itemShape(1, 2),
+                        ) { Text(stringResource(R.string.chronometer_worked)) }
                     }
                 }
             }

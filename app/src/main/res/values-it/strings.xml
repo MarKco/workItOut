@@ -46,7 +46,6 @@
     <string name="hours_example">Ore (es. 7.5)</string>
     <string name="save">Salva</string>
     <string name="share">Condividi</string>
-    <string name="clear">Pulisci</string>
     <string name="history">Storico</string>
     <string name="no_history_available">Nessuno storico disponibile.</string>
     <string name="clear_history">Pulisci lo storico</string>
@@ -162,6 +161,22 @@
     <string name="dynamic_color_hint">Usa i colori dello sfondo invece dell\'arancione dell\'app.</string>
     <plurals name="history_days">
         <item quantity="one">%d giorno</item>
+        <item quantity="many">%d giorni</item>
         <item quantity="other">%d giorni</item>
     </plurals>
+
+    <!-- Persistent notification -->
+    <string name="notif_channel_session">Giornata in corso</string>
+    <string name="notif_channel_session_description">Notifica persistente con l\'avanzamento della giornata</string>
+    <string name="notif_text_remaining_exit">Mancano %1$s · uscita %2$s</string>
+    <string name="notif_text_goal">Obiettivo raggiunto</string>
+    <string name="notif_text_exit">Uscita stimata %1$s</string>
+    <string name="notif_sub_pause">Pausa</string>
+    <string name="notif_exit_recorded">Uscita registrata: %1$s lavorate</string>
+    <string name="settings_notification">Notifica</string>
+    <string name="session_notification">Notifica persistente</string>
+    <string name="session_notification_hint">Mostra l\'avanzamento della giornata, con i bottoni pausa e uscita, finché è in corso.</string>
+    <string name="notification_chronometer">Il cronometro mostra</string>
+    <string name="chronometer_remaining">Tempo rimanente</string>
+    <string name="chronometer_worked">Tempo lavorato</string>
 </resources>

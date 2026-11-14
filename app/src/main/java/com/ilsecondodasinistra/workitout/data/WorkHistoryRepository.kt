@@ -34,6 +34,12 @@ interface HistoryRepository {
     /** Use wallpaper-based colors (Android 12+) instead of the app palette. Off by default. */
     val dynamicColor: Flow<Boolean>
 
+    /** Persistent notification with the day's progress while a session is open. On by default. */
+    val sessionNotification: Flow<Boolean>
+
+    /** What the notification chronometer counts: true = time left to the exit, false = time worked. */
+    val notificationCountdown: Flow<Boolean>
+
     /** Newest entry goes first; an entry with the same id is replaced. */
     suspend fun addEntry(entry: WorkHistoryEntry)
     suspend fun replaceHistory(entries: List<WorkHistoryEntry>)
@@ -42,6 +48,8 @@ interface HistoryRepository {
     suspend fun setWorkDays(days: Set<DayOfWeek>)
     suspend fun saveActiveSession(session: ActiveSession?)
     suspend fun setDynamicColor(enabled: Boolean)
+    suspend fun setSessionNotification(enabled: Boolean)
+    suspend fun setNotificationCountdown(countdown: Boolean)
 }
 
 /**
@@ -59,6 +67,8 @@ class DataStoreHistoryRepository(
         val WORK_DAYS = stringPreferencesKey("work_days")
         val ENTER_TIME = longPreferencesKey("current_enter_time")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val SESSION_NOTIFICATION = booleanPreferencesKey("session_notification")
+        val NOTIFICATION_COUNTDOWN = booleanPreferencesKey("notification_countdown")
 
         /** Legacy: pauses as an unordered string set, one JSON object per pause. */
         val PAUSES_LEGACY_SET = stringSetPreferencesKey("current_pauses_json")
@@ -96,6 +106,20 @@ class DataStoreHistoryRepository(
 
     override val dynamicColor: Flow<Boolean> =
         safeData.map { it[Keys.DYNAMIC_COLOR] ?: false }.distinctUntilChanged()
+
+    override val sessionNotification: Flow<Boolean> =
+        safeData.map { it[Keys.SESSION_NOTIFICATION] ?: true }.distinctUntilChanged()
+
+    override val notificationCountdown: Flow<Boolean> =
+        safeData.map { it[Keys.NOTIFICATION_COUNTDOWN] ?: true }.distinctUntilChanged()
+
+    override suspend fun setSessionNotification(enabled: Boolean) {
+        dataStore.edit { it[Keys.SESSION_NOTIFICATION] = enabled }
+    }
+
+    override suspend fun setNotificationCountdown(countdown: Boolean) {
+        dataStore.edit { it[Keys.NOTIFICATION_COUNTDOWN] = countdown }
+    }
 
     override suspend fun setDynamicColor(enabled: Boolean) {
         dataStore.edit { it[Keys.DYNAMIC_COLOR] = enabled }

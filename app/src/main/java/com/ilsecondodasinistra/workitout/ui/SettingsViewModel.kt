@@ -24,6 +24,8 @@ data class SettingsUiState(
     val dailyHoursInput: String = "8",
     val workDays: Set<DayOfWeek> = DEFAULT_WORK_DAYS,
     val dynamicColor: Boolean = false,
+    val sessionNotification: Boolean = true,
+    val notificationCountdown: Boolean = true,
     val message: UiMessage? = null,
     /** A parsed backup waiting for the user to confirm replacing the current data. */
     val pendingRestore: BackupFile? = null,
@@ -48,6 +50,12 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             repository.dynamicColor.collect { enabled -> _uiState.update { it.copy(dynamicColor = enabled) } }
+        }
+        viewModelScope.launch {
+            repository.sessionNotification.collect { enabled -> _uiState.update { it.copy(sessionNotification = enabled) } }
+        }
+        viewModelScope.launch {
+            repository.notificationCountdown.collect { countdown -> _uiState.update { it.copy(notificationCountdown = countdown) } }
         }
         viewModelScope.launch {
             repository.workDays.collect { days -> _uiState.update { it.copy(workDays = days) } }
@@ -77,6 +85,14 @@ class SettingsViewModel(
 
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { repository.setDynamicColor(enabled) }
+    }
+
+    fun setSessionNotification(enabled: Boolean) {
+        viewModelScope.launch { repository.setSessionNotification(enabled) }
+    }
+
+    fun setNotificationCountdown(countdown: Boolean) {
+        viewModelScope.launch { repository.setNotificationCountdown(countdown) }
     }
 
     // --- Backup -----------------------------------------------------------------------------

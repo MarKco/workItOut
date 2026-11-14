@@ -9,7 +9,7 @@ import com.ilsecondodasinistra.workitout.data.ActiveSession
 import com.ilsecondodasinistra.workitout.data.DEFAULT_DAILY_HOURS
 import com.ilsecondodasinistra.workitout.data.HistoryRepository
 import com.ilsecondodasinistra.workitout.data.PausePair
-import com.ilsecondodasinistra.workitout.data.WorkHistoryEntry
+import com.ilsecondodasinistra.workitout.domain.SessionRules
 import com.ilsecondodasinistra.workitout.domain.TimeFormats
 import com.ilsecondodasinistra.workitout.domain.WorkTimeCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,10 +82,26 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            repository.activeSession.first()?.let { session ->
-                update { it.copy(enterTime = session.enterTime, pauses = session.pauses) }
-            }
             repository.dailyHours.collect { hours -> update { it.copy(dailyHours = hours) } }
+        }
+        // The notification buttons change the session while the app may be open: follow the stored one.
+        viewModelScope.launch { repository.activeSession.collect(::onStoredSession) }
+    }
+
+    private suspend fun onStoredSession(session: ActiveSession?) {
+        val state = _uiState.value
+        if (session != null) {
+            if (session.enterTime != state.enterTime || session.pauses != state.pauses) {
+                update { it.copy(enterTime = session.enterTime, pauses = session.pauses, exitTime = null, totalWorkedTime = null) }
+            }
+        } else if (state.enterTime != null && state.exitTime == null) {
+            // The day ended outside the screen (exit button of the notification): show what was saved.
+            val saved = repository.history.first().firstOrNull { it.id == state.enterTime.toString() }
+            if (saved != null) {
+                update { it.copy(pauses = saved.pauses, exitTime = saved.exitTime, totalWorkedTime = saved.totalWorkedTime) }
+            } else {
+                update { HomeUiState(dailyHours = it.dailyHours) }
+            }
         }
     }
 
@@ -263,24 +279,13 @@ class HomeViewModel(
     private fun finalizeSession(rawExitTime: Long) {
         val state = _uiState.value
         val enter = state.enterTime ?: return showMessage(R.string.error_must_enter_first)
-        val exit = WorkTimeCalculator.rollToNextDayIfBefore(rawExitTime, enter, clock.zone)
-        val worked = WorkTimeCalculator.workedMillis(enter, exit, state.pauses) ?: return
-        val total = WorkTimeCalculator.formatDuration(worked)
+        val entry = SessionRules.completedEntry(enter, state.pauses, rawExitTime, state.dailyHours, clock.zone) ?: return
 
         viewModelScope.launch {
-            repository.addEntry(
-                WorkHistoryEntry(
-                    id = enter.toString(),
-                    enterTime = enter,
-                    pauses = state.pauses,
-                    exitTime = exit,
-                    totalWorkedTime = total,
-                    dailyHoursTarget = state.dailyHours,
-                ),
-            )
+            repository.addEntry(entry)
             repository.saveActiveSession(null)
         }
-        update { it.copy(exitTime = exit, totalWorkedTime = total) }
+        update { it.copy(pauses = entry.pauses, exitTime = entry.exitTime, totalWorkedTime = entry.totalWorkedTime) }
     }
 
     // --- Messages & alarm -------------------------------------------------------------------
