@@ -12,8 +12,8 @@ android {
         applicationId = "com.ilsecondodasinistra.workitout"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1007
-        versionName = "4.0.0"
+        versionCode = 1008
+        versionName = "4.1.0"
     }
 
     buildTypes {
