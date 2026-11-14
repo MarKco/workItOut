@@ -28,12 +28,24 @@ Play Console accetta fino a 8 screenshot per tipo di dispositivo; per i tablet s
 
 ## Come sono stati generati
 
-- Emulatori Pixel 9a (telefono, display forzato a 1080×2160 e 360 dpi), Tablet7_Store e Pixel_Tablet_Store (in verticale)
-- Barra di stato pulita con la demo mode di Android (ore 10:09, batteria piena, nessuna notifica)
-- Dati demo scritti direttamente nel DataStore dell'app: 21 giornate nelle ultime 4 settimane più una
-  giornata in corso, tutte con orari plausibili. Nessun dato personale.
+Con lo script `tools/capture.py`, su emulatore con l'app debug installata:
+
+```
+python3 play-store/tools/capture.py --serial emulator-5554 --device phone
+python3 play-store/tools/capture.py --serial emulator-5556 --device tablet-7
+python3 play-store/tools/capture.py --serial emulator-5558 --device tablet-10   # in verticale
+```
+
+- Emulatori Pixel 9a (telefono, display forzato a 1080×2160 e 360 dpi), Tablet7_Store e Pixel_Tablet_Store
+  (quest'ultimo ruotato in verticale: `settings put system user_rotation 1`)
+- Orologio dell'emulatore spostato sul fuso Pacific/Kiritimati (UTC+14), così la "giornata in corso" cade
+  nel pomeriggio qualunque sia l'ora reale
+- Barra di stato pulita con la demo mode di Android (batteria piena, nessuna notifica)
+- Dati demo generati dallo script e scritti direttamente nel DataStore dell'app: 20 giornate lavorative
+  negli ultimi 27 giorni, un sabato lavorato e una giornata in corso. Nessun dato personale.
 - Lingua dell'app cambiata con `adb shell cmd locale set-app-locales`; le schermate si ripetono
   identiche in ogni lingua
 - Contenuto limitato a 640dp di larghezza sui tablet (vedi `WorkItOutAppEntry.kt`)
 
-Per aggiungere una lingua basta tradurre `strings.xml` e ripetere la cattura nella nuova lingua.
+Per aggiungere una lingua basta tradurre `strings.xml`, aggiungere le etichette in `LABELS` dello script
+e ripetere la cattura.
