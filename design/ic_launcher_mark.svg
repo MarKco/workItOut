@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <path id="outer_dark" fill="#FDA506" d="M67.03,93.85A249,249 0 0 0 378.76,472.63L346.91,430.77A197,197 0 0 1 104.02,130.65Z"/>
+  <path id="outer_light" fill="#FEC254" d="M378.76,472.63A249,249 0 1 0 67.03,93.85L104.02,130.65A197,197 0 1 1 346.91,430.77Z"/>
+  <path id="inner_dark" fill="#FA6101" d="M104.02,130.65A197,197 0 0 0 346.91,430.77L318.51,393.45A151,151 0 0 1 136.82,163.28Z"/>
+  <path id="inner_light" fill="#FD831E" d="M346.91,430.77A197,197 0 0 0 414.89,139.54L381.86,172.57A151,151 0 0 1 318.51,393.45ZM372.46,97.11A197,197 0 0 0 104.02,130.65L136.82,163.28A151,151 0 0 1 339.43,130.14Z"/>
+  <path id="hand" fill="none" stroke="#FE6B00" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" d="M256,163L256,258L336,258"/>
+  <path id="arrow" fill="none" stroke="#FC7506" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M340,172L381,131M347,133L381,131L378,165"/>
+</svg>
