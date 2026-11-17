@@ -6,7 +6,8 @@
 Writes:
   design/ic_launcher_mark.svg        the mark alone, transparent, 512x512 (source of truth)
   design/ic_launcher_playstore.svg   the mark on white, laid out like the adaptive icon
-  app/src/main/ic_launcher-playstore.png               512x512 for the Play Console (needs rsvg-convert)
+  app/src/main/ic_launcher-playstore.png               512x512 for the Play Console (needs rsvg-convert and Pillow)
+  play-store/icon/icon-512.png                         the same file, next to the screenshots
   app/src/main/res/drawable/ic_launcher_foreground.xml  adaptive icon foreground (108dp)
   app/src/main/res/drawable/ic_launcher_monochrome.xml  themed icon layer (Android 13+)
   app/src/main/res/drawable/ic_launcher_for_topbar.xml  the mark for the app bar
@@ -16,6 +17,7 @@ The drawing was reconstructed from the old raster icon (centre 256,256; hole r=1
 arrow with round caps). Edit the constants below to change it.
 """
 import math
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -203,14 +205,14 @@ def write_png():
         ["rsvg-convert", "-w", "512", "-h", "512", str(ROOT / "design/ic_launcher_playstore.svg"), "-o", str(out)],
         check=True,
     )
-    subprocess.run(
-        ["rsvg-convert", "-w", "512", "-h", "512", str(ROOT / "design/ic_launcher_mark.svg"), "-o", "/dev/stdout"],
-        check=True, stdout=subprocess.DEVNULL,
-    )
+    from PIL import Image  # the Play Console wants a 32-bit PNG
+    Image.open(out).convert("RGBA").save(out)
+    shutil.copyfile(out, ROOT / "play-store/icon/icon-512.png")
 
 
 if __name__ == "__main__":
     (ROOT / "design").mkdir(exist_ok=True)
+    (ROOT / "play-store/icon").mkdir(parents=True, exist_ok=True)
     write_svgs()
     write_android()
     write_png()
