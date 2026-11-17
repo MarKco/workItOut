@@ -4,6 +4,7 @@ Screenshot dell'app generati su emulatore con dati di esempio (nessun dato reale
 nella scheda Play Console.
 
 ```
+icon/             icona dell'app 512×512 (icon-512.png)
 screenshots/
 ├── en-US/            inglese
 │   ├── phone/        1080×2160  (9:18)
@@ -53,3 +54,9 @@ python3 play-store/tools/capture.py --serial emulator-5558 --device tablet-10   
 
 Per aggiungere una lingua basta tradurre `strings.xml`, aggiungere le etichette in `LABELS` dello script
 e ripetere la cattura.
+
+## Icona
+
+`icon/icon-512.png` (512×512, PNG a 32 bit) è generata da `design/ic_launcher_playstore.svg` con
+`python3 design/build_icon.py`, che aggiorna anche l'icona dell'app. Il Play Console applica da solo gli
+angoli arrotondati: l'immagine è quadrata e piena.
